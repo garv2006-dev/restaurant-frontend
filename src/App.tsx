@@ -1,34 +1,32 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 
 // Context Providers
+import { AccessibilityProvider } from './context/AccessibilityContext';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { AccessibilityProvider } from './context/AccessibilityContext';
 
 // Layout
 import Layout from './components/layout/Layout';
 
 // Pages
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/Profile';
-import MyBookings from './pages/MyBookings';
-import MyReviews from './pages/MyReviews';
-import Home from './pages/Home';
-import Menu from './pages/Menu';
+import AdminDashboard from './pages/admin/AdminDashboard';
 import Booking from './pages/Booking';
 import Contact from './pages/Contact';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import LoyaltyDashboard from './pages/LoyaltyDashboard';
 import Dashboard from './pages/Dashboard';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import LoyaltyDashboard from './pages/LoyaltyDashboard';
+import Menu from './pages/Menu';
+import MyBookings from './pages/MyBookings';
+import MyReviews from './pages/MyReviews';
+import Profile from './pages/Profile';
+import Register from './pages/Register';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
-import './styles/components.css';
 import './styles/responsive.css';
 
 import { useAuth } from './context/AuthContext';
