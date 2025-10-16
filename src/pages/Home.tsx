@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Carousel } from 'react-bootstrap';
-import { FaStar, FaWifi, FaSnowflake, FaTv, FaCoffee, FaCar } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import { Button, Card, Carousel, Col, Container, Row } from 'react-bootstrap';
+import { FaCar, FaCoffee, FaSnowflake, FaStar, FaTv, FaWifi } from 'react-icons/fa';
 import api from '../services/api';
 
 // Create a wrapper component for FontAwesome icons to ensure React 19 compatibility
@@ -258,7 +258,7 @@ const Home: React.FC = () => {
             <Carousel.Item>
               <div className="text-center p-4">
                 <h4 className="text-primary">Loyalty Program</h4>
-                <p className="lead">Earn points with every booking and unlock exclusive benefits</p>
+                <p className="lead ">Earn points with every booking and unlock exclusive benefits</p>
                 <Button variant="outline-primary" href="/loyalty">Join Now</Button>
               </div>
             </Carousel.Item>

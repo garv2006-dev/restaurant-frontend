@@ -274,3 +274,32 @@ body {
   white-space: nowrap !important;
   border: 0 !important;
 }
+
+/* Footer styles */
+.footer-link {
+  color: rgba(255, 255, 255, 0.75) !important;
+  transition: color 0.3s ease !important;
+}
+
+.footer-link:hover {
+  color: var(--bs-primary) !important;
+}
+
+/* Social media icons */
+.social-link {
+  color: var(--bs-primary);
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.social-link:hover {
+  color: #ffffff;
+  transform: translateY(-3px);
+}
+
+.social-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+}
