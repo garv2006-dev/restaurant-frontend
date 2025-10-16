@@ -126,29 +126,36 @@ const Home: React.FC = () => {
   return (
     <div>
       {/* Hero Section */}
-      <section className="hero-section" style={{
-        background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200") center/cover',
-        height: '500px',
+      <section className="hero-section parallax-section" style={{
+        background: 'linear-gradient(rgba(0,0,0,0.65), rgba(0,0,0,0.65)), url("https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200") center/cover fixed',
+        minHeight: '80vh',
         display: 'flex',
         alignItems: 'center',
         color: 'white',
-        textAlign: 'center'
+        textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
         <Container>
-          <Row>
-            <Col>
-              <h1 className="display-4 fw-bold mb-4">Welcome to Luxury Restaurant & Rooms</h1>
-              <p className="lead mb-4">
-                Experience fine dining and comfortable accommodation in the heart of the city.
-                Book your perfect stay and enjoy our exquisite cuisine.
-              </p>
-              <div className="d-flex gap-3 justify-content-center">
-                <Button variant="primary" size="lg" href="/rooms">
-                  Explore Rooms
-                </Button>
-                <Button variant="outline-light" size="lg" href="/menu">
-                  View Menu
-                </Button>
+          <Row className="justify-content-center">
+            <Col lg={8} xl={7}>
+              <div className="hero-content fade-in-up">
+                <span className="text-gold text-uppercase tracking-wider mb-3 d-block">Welcome to</span>
+                <h1 className="hero-title mb-4">
+                  Luxury Restaurant & Rooms
+                </h1>
+                <p className="hero-description mb-5">
+                  Experience fine dining and luxurious accommodation in the heart of the city.
+                  Indulge in our exquisite cuisine and create unforgettable memories.
+                </p>
+                <div className="d-flex gap-4 justify-content-center">
+                  <Button variant="primary" size="lg" href="/rooms" className="btn-hero">
+                    Explore Rooms
+                  </Button>
+                  <Button variant="outline-light" size="lg" href="/menu" className="btn-hero">
+                    View Menu
+                  </Button>
+                </div>
               </div>
             </Col>
           </Row>
@@ -156,11 +163,12 @@ const Home: React.FC = () => {
       </section>
 
       {/* Featured Rooms Section */}
-      <section className="py-5">
+      <section className="featured-rooms-section py-5">
         <Container>
           <div className="text-center mb-5">
-            <h2 className="mb-3">Featured Rooms</h2>
-            <p className="text-muted">Discover our most popular accommodations</p>
+            <span className="text-gold text-uppercase tracking-wider mb-2 d-block">Our Signature Spaces</span>
+            <h2 className="section-title">Featured Rooms</h2>
+            <p className="section-description">Discover our most exquisite accommodations, crafted for your comfort</p>
           </div>
           
           {loading ? (
@@ -175,17 +183,16 @@ const Home: React.FC = () => {
               {featuredRooms.map((room) => (
                 <Col key={room._id} md={6} lg={4} className="mb-4">
                   <Card className="room-card h-100">
-                    <div className="position-relative">
+                    <div className="room-image-wrapper">
                       <Card.Img 
                         variant="top" 
                         src={room.images[0]?.url || 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500'} 
                         alt={room.images[0]?.altText || room.name}
-                        style={{ height: '200px', objectFit: 'cover' }}
+                        className="room-image"
                       />
-                      <div className="position-absolute top-0 end-0 m-2">
-                        <span className="price-tag">
-                          ₹{room.price.basePrice}/night
-                        </span>
+                      <div className="room-price">
+                        <span className="price-amount">₹{room.price.basePrice}</span>
+                        <span className="price-period">/night</span>
                       </div>
                     </div>
                     <Card.Body className="d-flex flex-column">
@@ -233,19 +240,25 @@ const Home: React.FC = () => {
       </section>
 
       {/* Special Offers Section */}
-      <section className="py-5 bg-light">
+      <section className="special-offers-section py-5">
         <Container>
           <div className="text-center mb-5">
-            <h2 className="mb-3">Special Offers</h2>
-            <p className="text-muted">Take advantage of our exclusive deals</p>
+            <span className="text-gold text-uppercase tracking-wider mb-2 d-block">Limited Time</span>
+            <h2 className="section-title">Special Offers</h2>
+            <p className="section-description">Indulge in our exclusive packages and memorable experiences</p>
           </div>
           
-          <Carousel indicators={false}>
+          <Carousel 
+            indicators={false}
+            interval={5000}
+            className="special-offers-carousel"
+          >
             <Carousel.Item>
-              <div className="text-center p-4">
-                <h4 className="text-primary">Weekend Getaway Package</h4>
-                <p className="lead">20% off on weekend stays with complimentary breakfast</p>
-                <Button variant="outline-primary">Book Now</Button>
+              <div className="special-offer">
+                <span className="offer-badge">Save 20%</span>
+                <h4 className="mb-3">Weekend Getaway Package</h4>
+                <p className="lead mb-4">Enjoy a luxurious weekend stay with complimentary breakfast and spa access</p>
+                <Button variant="outline-primary" className="btn-offer">Book Now</Button>
               </div>
             </Carousel.Item>
             <Carousel.Item>
