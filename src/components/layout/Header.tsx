@@ -1,7 +1,7 @@
+import { Bell, LogIn, Moon, Sun, User, UserPlus } from 'lucide-react';
 import React from 'react';
-import { Navbar, Nav, NavDropdown, Container, Button, Badge } from 'react-bootstrap';
+import { Badge, Button, Container, Nav, Navbar, NavDropdown } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { User, Sun, Moon, Bell, LogIn, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -24,23 +24,61 @@ const Header: React.FC = () => {
     <Navbar expand="lg" className="navbar-custom shadow-sm" fixed="top">
       <Container>
         {/* Brand */}
-        <Navbar.Brand as={Link} to="/" className="fw-bold fs-4">
-          <span className="text-primary">Luxury</span> Restaurant
+        <Navbar.Brand as={Link} to="/" className="brand-name-main">
+          <span className="text-gold">Velora</span> Retreat
         </Navbar.Brand>
 
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Toggle aria-controls="basic-navbar-nav">
+          <span className="navbar-toggler-icon">
+            <span className="hamburger-bar"></span>
+          </span>
+        </Navbar.Toggle>
         
         <Navbar.Collapse id="basic-navbar-nav">
+          {/* Mobile Menu Header */}
+          <div className="d-lg-none">
+            <div className="mobile-menu-header">
+              <div className="mobile-menu-close" onClick={() => {
+                const toggler = document.querySelector('.navbar-toggler') as HTMLElement;
+                if (toggler) toggler.click();
+              }}>
+                ✕
+              </div>
+              <div className="mobile-menu-logo">
+                <Link to="/" className="brand-name">
+                  VELORA
+                </Link>
+                <div className="brand-subtitle">
+                  RETREAT
+                </div>
+                <div className="tagline-separator"></div>
+                <div className="brand-tagline">
+                  Where Elegance Meets
+                  <br />
+                  Culinary Excellence
+                </div>
+              </div>
+            </div>
+            <div className="mobile-menu-content">
+          </div>
+          </div>
           {/* Main Navigation */}
           <Nav className="me-auto">
-            <Nav.Link as={Link} to="/" className={isActive('/')}>
+            <Nav.Link as={Link} to="/" className={`nav-link ${isActive('/')}`}>
+              <i className="fas fa-home"></i>
               Home
             </Nav.Link>
-            {/* <Nav.Link as={Link} to="/rooms" className={isActive('/rooms')}>
-              Rooms
-            </Nav.Link> */}
-            <Nav.Link as={Link} to="/menu" className={isActive('/menu')}>
+            <Nav.Link as={Link} to="/menu" className={`nav-link ${isActive('/menu')}`}>
+              <i className="fas fa-utensils"></i>
               Menu
+            </Nav.Link>
+            <Nav.Link as={Link} to="/booking" className={`nav-link ${isActive('/booking')}`}>
+              <i className="fas fa-calendar-alt"></i>
+              Booking
+            </Nav.Link>
+            <Nav.Link as={Link} to="/contact" className={`nav-link ${isActive('/contact')}`}>
+              <i className="fas fa-envelope"></i>
+              Contact
             </Nav.Link>
             <Nav.Link as={Link} to="/booking" className={isActive('/booking')}>
               Booking
@@ -51,13 +89,13 @@ const Header: React.FC = () => {
           </Nav>
 
           {/* Right Side Navigation */}
-          <Nav className="align-items-center">
+          <Nav className="align-items-center nav-user-mobile">
             {/* Theme Toggle */}
             <Button
               variant="outline-secondary"
               size="sm"
               onClick={toggleTheme}
-              className="me-2 border-0"
+              className="me-2 border-0 d-flex align-items-center"
               title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             >
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}

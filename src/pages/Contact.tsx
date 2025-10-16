@@ -1,6 +1,6 @@
+import { Clock, Mail, MapPin, MessageSquare, Phone, Send } from 'lucide-react';
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Button, Form, Alert } from 'react-bootstrap';
-import { MapPin, Phone, Mail, Clock, Send, MessageSquare } from 'lucide-react';
+import { Alert, Button, Card, Col, Container, Form, Row } from 'react-bootstrap';
 
 interface ContactForm {
   name: string;
