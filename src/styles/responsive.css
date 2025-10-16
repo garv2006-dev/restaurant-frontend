@@ -1,0 +1,277 @@
+/* Responsive Design and Accessibility Styles */
+
+/* Mobile-first responsive breakpoints */
+:root {
+  --breakpoint-xs: 576px;
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 992px;
+  --breakpoint-lg: 1200px;
+  --breakpoint-xl: 1400px;
+  
+  /* Accessibility colors */
+  --focus-color: #0056b3;
+  --focus-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+  --high-contrast-bg: #000000;
+  --high-contrast-text: #ffffff;
+  --error-color: #dc3545;
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+}
+
+/* Focus styles for accessibility */
+*:focus {
+  outline: 2px solid var(--focus-color) !important;
+  outline-offset: 2px;
+  box-shadow: var(--focus-shadow) !important;
+}
+
+/* Skip navigation link for screen readers */
+.skip-nav {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--focus-color);
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.skip-nav:focus {
+  top: 6px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .card, .btn, .form-control, .table {
+    border: 2px solid #000 !important;
+  }
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile optimizations */
+@media (max-width: 767.98px) {
+  /* Typography adjustments */
+  h1 { font-size: 1.75rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  h3 { font-size: 1.25rem !important; }
+  
+  /* Container adjustments */
+  .container-fluid {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+  
+  /* Table responsiveness */
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .table th, .table td {
+    padding: 0.5rem !important;
+  }
+  
+  /* Button adjustments */
+  .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .btn-group-vertical > .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Form optimizations */
+  .form-control {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.75rem 0.5rem;
+  }
+  
+  /* Modal adjustments */
+  .modal-dialog {
+    margin: 0.5rem !important;
+  }
+  
+  .modal-content {
+    border-radius: 0;
+  }
+  
+  /* Navigation adjustments */
+  .navbar-nav .nav-link {
+    padding: 0.75rem 1rem;
+    text-align: center;
+  }
+  
+  /* Card adjustments */
+  .card {
+    margin-bottom: 1rem;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  /* Hide desktop-only elements */
+  .d-mobile-none {
+    display: none !important;
+  }
+}
+
+/* Tablet optimizations */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .container-fluid {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .col-tablet-12 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+  
+  .col-tablet-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+}
+
+/* Desktop optimizations */
+@media (min-width: 992px) {
+  .d-desktop-only {
+    display: block !important;
+  }
+}
+
+/* Touch-friendly improvements */
+@media (pointer: coarse) {
+  .btn, .form-control, .nav-link {
+    min-height: 44px; /* Minimum touch target size */
+    min-width: 44px;
+  }
+  
+  .table th, .table td {
+    padding: 1rem !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .container-fluid {
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  .card {
+    border: 1px solid #000 !important;
+    break-inside: avoid;
+  }
+  
+  .btn {
+    border: 1px solid #000 !important;
+    background: transparent !important;
+    color: #000 !important;
+  }
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.sr-only-focusable:focus {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: inherit !important;
+  margin: inherit !important;
+  overflow: visible !important;
+  clip: auto !important;
+  white-space: normal !important;
+}
+
+/* Error and success message accessibility */
+.alert {
+  border-left: 4px solid;
+}
+
+.alert-danger {
+  border-left-color: var(--error-color);
+}
+
+.alert-success {
+  border-left-color: var(--success-color);
+}
+
+.alert-warning {
+  border-left-color: var(--warning-color);
+}
+
+/* Form validation accessibility */
+.was-validated .form-control:invalid,
+.form-control.is-invalid {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.was-validated .form-control:valid,
+.form-control.is-valid {
+  border-color: var(--success-color);
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Loading state accessibility */
+.loading {
+  position: relative;
+}
+
+.loading::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Sticky navigation improvements */
+.navbar.sticky-top {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Improved spacing for mobile */
+@media (max-width: 767.98px) {
+  .mb-mobile-2 { margin-bottom: 0.5rem !important; }
+  .mb-mobile-3 { margin-bottom: 1rem !important; }
+  .mb-mobile-4 { margin-bottom: 1.5rem !important; }
+  .mt-mobile-2 { margin-top: 0.5rem !important; }
+  .mt-mobile-3 { margin-top: 1rem !important; }
+  .mt-mobile-4 { margin-top: 1.5rem !important; }
+  .p-mobile-2 { padding: 0.5rem !important; }
+  .p-mobile-3 { padding: 1rem !important; }
+}

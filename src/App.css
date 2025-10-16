@@ -1,0 +1,276 @@
+/* Custom Restaurant Theme Styles */
+
+/* Primary brand colors */
+:root {
+  --bs-primary: #d4af37;
+  --bs-primary-rgb: 212, 175, 55;
+  --bs-secondary: #8b4513;
+  --bs-success: #28a745;
+  --bs-danger: #dc3545;
+  --bs-warning: #ffc107;
+  --bs-info: #17a2b8;
+  --bs-light: #f8f9fa;
+  --bs-dark: #343a40;
+}
+
+/* Dark theme support */
+[data-bs-theme="dark"] {
+  --bs-body-color: #dee2e6;
+  --bs-body-bg: #121212;
+  --bs-emphasis-color: #ffffff;
+  --bs-secondary-color: rgba(222, 226, 230, 0.75);
+  --bs-tertiary-color: rgba(222, 226, 230, 0.5);
+  --bs-border-color: #495057;
+  --bs-secondary-bg: #1e1e1e;
+}
+
+/* Global styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+}
+
+/* Navbar customization */
+.navbar-custom {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-bs-theme="dark"] .navbar-custom {
+  background-color: rgba(18, 18, 18, 0.95) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card hover effects */
+.card:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Button hover effects */
+.btn {
+  transition: all 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bs-light);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bs-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bs-secondary);
+}
+
+/* Dark mode scrollbar */
+[data-bs-theme="dark"] ::-webkit-scrollbar-track {
+  background: var(--bs-dark);
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Utility classes */
+.text-gold {
+  color: var(--bs-primary) !important;
+}
+
+.bg-gold {
+  background-color: var(--bs-primary) !important;
+}
+
+.border-gold {
+  border-color: var(--bs-primary) !important;
+}
+
+/* Hero section styles */
+.hero-section {
+  background: linear-gradient(135deg, var(--bs-primary) 0%, var(--bs-secondary) 100%);
+  color: white;
+  padding: 80px 0;
+}
+
+/* Room card styles */
+.room-card {
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.room-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Price tag styles */
+.price-tag {
+  background: linear-gradient(45deg, var(--bs-success), #20c997);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+/* Rating stars */
+.rating-stars {
+  color: #ffc107;
+}
+
+/* Status badges */
+.status-available {
+  background-color: var(--bs-success) !important;
+}
+
+.status-occupied {
+  background-color: var(--bs-danger) !important;
+}
+
+.status-maintenance {
+  background-color: var(--bs-warning) !important;
+  color: var(--bs-dark) !important;
+}
+
+/* Animation keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Animation classes */
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.pulse-hover:hover {
+  animation: pulse 0.6s ease-in-out;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 60px 0;
+  }
+  
+  .hero-section h1 {
+    font-size: 2rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .navbar,
+  .footer,
+  .btn {
+    display: none !important;
+  }
+}
+
+/* Accessibility Enhancements */
+
+/* High contrast mode */
+.high-contrast {
+  filter: contrast(200%);
+}
+
+.high-contrast .card,
+.high-contrast .btn,
+.high-contrast .form-control {
+  border: 2px solid #000 !important;
+}
+
+/* Large text mode */
+.large-text {
+  font-size: 1.2em;
+}
+
+.large-text h1 { font-size: 2.5rem !important; }
+.large-text h2 { font-size: 2rem !important; }
+.large-text h3 { font-size: 1.75rem !important; }
+.large-text .btn { font-size: 1.1rem !important; }
+.large-text .form-control { font-size: 1.1rem !important; }
+
+/* Focus styles for keyboard navigation */
+.focus-visible *:focus {
+  outline: 3px solid #0056b3 !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+}
+
+/* Reduced motion preferences */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Touch-friendly sizing */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1.5rem;
+  }
+  
+  .form-control {
+    min-height: 44px;
+    padding: 0.75rem;
+  }
+  
+  .nav-link {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Screen reader only content */
+.visually-hidden-focusable:not(:focus):not(:focus-within) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
