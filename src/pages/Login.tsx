@@ -124,15 +124,6 @@ const Login: React.FC = () => {
                       checked={userType === 'user'}
                       onChange={() => setUserType('user')}
                     />
-                    <Form.Check
-                      type="radio"
-                      id="admin-login"
-                      name="userType"
-                      label="Administrator"
-                      value="admin"
-                      checked={userType === 'admin'}
-                      onChange={() => setUserType('admin')}
-                    />
                   </div>
                 </Form.Group>
 
