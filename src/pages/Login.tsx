@@ -112,20 +112,7 @@ const Login: React.FC = () => {
 
               <Form onSubmit={handleSubmit}>
                 {/* User Type Selection */}
-                <Form.Group className="mb-3">
-                  <Form.Label>Login As</Form.Label>
-                  <div className="d-flex gap-3">
-                    <Form.Check
-                      type="radio"
-                      id="user-login"
-                      name="userType"
-                      label="Customer"
-                      value="user"
-                      checked={userType === 'user'}
-                      onChange={() => setUserType('user')}
-                    />
-                  </div>
-                </Form.Group>
+
 
                 {/* Email Field */}
                 <Form.Group className="mb-3">
