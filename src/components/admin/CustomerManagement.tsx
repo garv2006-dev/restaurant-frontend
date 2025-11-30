@@ -25,16 +25,20 @@ const CustomerManagement: React.FC = () => {
       setLoading(true);
       setError('');
       const response = await adminAPI.getAllUsers();
-      if (response.success && response.data) {
+      console.log('API Response:', response); // Debug log
+      
+      if (response && response.success && response.data) {
         // The data structure is { users: User[], pagination: any }
         const users = response.data.users || [];
+        console.log('Fetched users:', users); // Debug log
         setCustomers(users);
       } else {
+        setError(response?.message || 'No customer data available');
         setCustomers([]);
       }
     } catch (error: any) {
       console.error('Error fetching customers:', error);
-      setError('Failed to load customers. Please try again.');
+      setError(error.response?.data?.message || 'Failed to load customers. Please try again.');
       setCustomers([]);
     } finally {
       setLoading(false);

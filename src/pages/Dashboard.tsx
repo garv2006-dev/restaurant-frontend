@@ -82,11 +82,8 @@ const Dashboard: React.FC = () => {
         <Col md={4}>
           <Card className="p-3">
             <h5 className="mb-2">Bookings</h5>
-            <ListGroup variant="flush">
-              <ListGroup.Item className="d-flex justify-content-between"><span>Total</span><strong>{bookingSummary.total}</strong></ListGroup.Item>
-              <ListGroup.Item className="d-flex justify-content-between"><span>Upcoming</span><strong>{bookingSummary.upcoming}</strong></ListGroup.Item>
-              <ListGroup.Item className="d-flex justify-content-between"><span>Pending</span><strong>{bookingSummary.pending}</strong></ListGroup.Item>
-            </ListGroup>
+            <ListGroup.Item className="d-flex justify-content-between">Total<strong>{bookingSummary.total}</strong></ListGroup.Item>
+              
           </Card>
         </Col>
         <Col md={4}>
