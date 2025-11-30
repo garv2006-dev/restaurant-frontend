@@ -17,9 +17,8 @@ const MyReviews: React.FC = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        // Backend route exposes GET /api/reviews/my-reviews for the current user
         const { data } = await api.get('/reviews/my-reviews');
-        setReviews(data.reviews || data.data || []);
+        setReviews(data.reviews || []);
       } catch (err: any) {
         setError(err?.response?.data?.message || err?.message || 'Failed to load reviews');
       } finally {

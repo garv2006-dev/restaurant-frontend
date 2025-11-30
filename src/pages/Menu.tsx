@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Form, Spinner, Alert } from 'react-bootstrap';
-import { Star, Filter, Search, Heart } from 'lucide-react';
+import { Container, Row, Col, Card, Button, Badge, Form, Spinner, Alert, Modal } from 'react-bootstrap';
+import { Star, Search, Plus, X, Save, Heart } from 'lucide-react';
 
 interface MenuItem {
   id: string;
@@ -13,6 +13,22 @@ interface MenuItem {
   isSpicy: boolean;
   rating: number;
   preparationTime: number;
+  isAvailable?: boolean;
+  dietaryInfo?: {
+    isVegetarian: boolean;
+    isVegan: boolean;
+    isGlutenFree: boolean;
+    isDairyFree: boolean;
+    isKeto: boolean;
+    isSpicy: boolean;
+    spiceLevel: number;
+  };
+  ingredients?: string[];
+  allergens?: string[];
+  servingSize?: string;
+  isSignatureDish?: boolean;
+  isFeatured?: boolean;
+  isActive?: boolean;
 }
 
 const Menu: React.FC = () => {
@@ -22,115 +38,149 @@ const Menu: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [dietaryFilter, setDietaryFilter] = useState('all');
   const [error, setError] = useState('');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const categories = ['all', 'Appetizers', 'Main Course', 'Desserts', 'Beverages', 'Specials'];
+  const [newItem, setNewItem] = useState<Omit<MenuItem, 'id' | 'rating'>>({
+    name: '',
+    description: '',
+    price: 0,
+    category: 'Main Course',
+    image: '',
+    isVegetarian: false,
+    isSpicy: false,
+    preparationTime: 15,
+    isAvailable: true,
+    dietaryInfo: {
+      isVegetarian: false,
+      isVegan: false,
+      isGlutenFree: false,
+      isDairyFree: false,
+      isKeto: false,
+      isSpicy: false,
+      spiceLevel: 0,
+    },
+    ingredients: [],
+    allergens: [],
+    servingSize: '1 portion',
+    isSignatureDish: false,
+    isFeatured: false,
+    isActive: true,
+  });
 
-  useEffect(() => {
-    // Mock data for demonstration
-    const mockMenuItems: MenuItem[] = [
-      {
-        id: '1',
-        name: 'Butter Chicken',
-        description: 'Tender chicken cooked in rich, creamy tomato sauce with Indian spices',
-        price: 450,
-        category: 'Main Course',
-        image: '/api/placeholder/300/200',
-        isVegetarian: false,
-        isSpicy: true,
-        rating: 4.8,
-        preparationTime: 25
-      },
-      {
-        id: '2',
-        name: 'Paneer Tikka Masala',
-        description: 'Grilled cottage cheese cubes in aromatic tomato and cashew gravy',
-        price: 380,
-        category: 'Main Course',
-        image: '/api/placeholder/300/200',
-        isVegetarian: true,
-        isSpicy: true,
-        rating: 4.6,
-        preparationTime: 20
-      },
-      {
-        id: '3',
-        name: 'Caesar Salad',
-        description: 'Fresh romaine lettuce with parmesan cheese, croutons and caesar dressing',
-        price: 280,
-        category: 'Appetizers',
-        image: '/api/placeholder/300/200',
-        isVegetarian: true,
-        isSpicy: false,
-        rating: 4.4,
-        preparationTime: 10
-      },
-      {
-        id: '4',
-        name: 'Chocolate Lava Cake',
-        description: 'Warm chocolate cake with molten chocolate center, served with vanilla ice cream',
-        price: 220,
-        category: 'Desserts',
-        image: '/api/placeholder/300/200',
-        isVegetarian: true,
-        isSpicy: false,
-        rating: 4.9,
-        preparationTime: 15
-      },
-      {
-        id: '5',
-        name: 'Fresh Lime Soda',
-        description: 'Refreshing lime juice with soda water and mint leaves',
-        price: 120,
-        category: 'Beverages',
-        image: '/api/placeholder/300/200',
-        isVegetarian: true,
-        isSpicy: false,
-        rating: 4.2,
-        preparationTime: 5
-      },
-      {
-        id: '6',
-        name: 'Chef\'s Special Biryani',
-        description: 'Aromatic basmati rice with tender mutton, saffron and traditional spices',
-        price: 550,
-        category: 'Specials',
-        image: '/api/placeholder/300/200',
-        isVegetarian: false,
-        isSpicy: true,
-        rating: 4.7,
-        preparationTime: 35
-      }
-    ];
+  const categories = ['Appetizers', 'Main Course', 'Desserts', 'Beverages', 'Specials'];
+  const allCategories = ['all', ...categories];
 
-    setTimeout(() => {
-      setMenuItems(mockMenuItems);
-      setLoading(false);
-    }, 1000);
-  }, []);
+  // useEffect(() => {
+  //   const mockMenuItems: MenuItem[] = [
+  //     {
+  //       id: '1',
+  //       name: 'Butter Chicken',
+  //       description: 'Tender chicken cooked in rich, creamy tomato sauce with Indian spices',
+  //       price: 450,
+  //       category: 'Main Course',
+  //       image: '/api/placeholder/300/200',
+  //       isVegetarian: false,
+  //       isSpicy: true,
+  //       rating: 4.8,
+  //       preparationTime: 25
+  //     },
+  //     {
+  //       id: '2',
+  //       name: 'Paneer Tikka Masala',
+  //       description: 'Grilled cottage cheese cubes in aromatic tomato and cashew gravy',
+  //       price: 380,
+  //       category: 'Main Course',
+  //       image: '/api/placeholder/300/200',
+  //       isVegetarian: true,
+  //       isSpicy: true,
+  //       rating: 4.6,
+  //       preparationTime: 20
+  //     },
+  //     {
+  //       id: '3',
+  //       name: 'Caesar Salad',
+  //       description: 'Fresh romaine lettuce with parmesan cheese, croutons and caesar dressing',
+  //       price: 280,
+  //       category: 'Appetizers',
+  //       image: '/api/placeholder/300/200',
+  //       isVegetarian: true,
+  //       isSpicy: false,
+  //       rating: 4.4,
+  //       preparationTime: 10
+  //     },
+  //     {
+  //       id: '4',
+  //       name: 'Chocolate Lava Cake',
+  //       description: 'Warm chocolate cake with molten chocolate center, served with vanilla ice cream',
+  //       price: 220,
+  //       category: 'Desserts',
+  //       image: '/api/placeholder/300/200',
+  //       isVegetarian: true,
+  //       isSpicy: false,
+  //       rating: 4.9,
+  //       preparationTime: 15
+  //     },
+  //     {
+  //       id: '5',
+  //       name: 'Fresh Lime Soda',
+  //       description: 'Refreshing lime juice with soda water and mint leaves',
+  //       price: 120,
+  //       category: 'Beverages',
+  //       image: '/api/placeholder/300/200',
+  //       isVegetarian: true,
+  //       isSpicy: false,
+  //       rating: 4.2,
+  //       preparationTime: 5
+  //     },
+  //     {
+  //       id: '6',
+  //       name: "Chef's Special Biryani",
+  //       description: 'Aromatic basmati rice with tender mutton, saffron and traditional spices',
+  //       price: 550,
+  //       category: 'Specials',
+  //       image: '/api/placeholder/300/200',
+  //       isVegetarian: false,
+  //       isSpicy: true,
+  //       rating: 4.7,
+  //       preparationTime: 35
+  //     }
+  //   ];
+
+  //   setTimeout(() => {
+  //     setMenuItems(mockMenuItems);
+  //     setLoading(false);
+  //   }, 1000);
+  // }, []);
 
   const filteredItems = menuItems.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchesDietary = dietaryFilter === 'all' || 
-                          (dietaryFilter === 'vegetarian' && item.isVegetarian) ||
-                          (dietaryFilter === 'non-vegetarian' && !item.isVegetarian);
-    
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesCategory =
+      selectedCategory === 'all' || item.category === selectedCategory;
+
+    const matchesDietary =
+      dietaryFilter === 'all' ||
+      (dietaryFilter === 'vegetarian' && item.isVegetarian) ||
+      (dietaryFilter === 'non-vegetarian' && !item.isVegetarian);
+
     return matchesSearch && matchesCategory && matchesDietary;
   });
 
   const renderStars = (rating: number) => {
     const fullStars = Math.floor(rating);
     const stars = [];
-    
+
     for (let i = 0; i < fullStars; i++) {
       stars.push(<Star key={i} size={14} className="text-warning fill-current" />);
     }
-    
+
     if (rating % 1 !== 0) {
       stars.push(<Star key="half" size={14} className="text-warning" style={{ opacity: 0.5 }} />);
     }
-    
+
     return stars;
   };
 
@@ -151,49 +201,270 @@ const Menu: React.FC = () => {
     );
   }
 
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+
+    if (name.startsWith('dietaryInfo.')) {
+      const field = name.split('.')[1];
+      setNewItem(prev => ({
+        ...prev,
+        dietaryInfo: {
+          ...prev.dietaryInfo!,
+          [field]: type === 'checkbox'
+            ? (e.target as HTMLInputElement).checked
+            : value
+        }
+      }));
+    } else if (type === 'checkbox') {
+      setNewItem(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else if (name === 'price' || name === 'preparationTime') {
+      setNewItem(prev => ({ ...prev, [name]: parseFloat(value) || 0 }));
+    } else {
+      setNewItem(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleAddItem = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const newId = (menuItems.length + 1).toString();
+
+    const newMenuItem: MenuItem = {
+      ...newItem,
+      id: newId,
+      rating: 0,
+    };
+
+    setMenuItems(prev => [...prev, newMenuItem]);
+
+    setNewItem({
+      name: '',
+      description: '',
+      price: 0,
+      category: 'Main Course',
+      image: '',
+      isVegetarian: false,
+      isSpicy: false,
+      preparationTime: 15,
+      isAvailable: true,
+      dietaryInfo: {
+        isVegetarian: false,
+        isVegan: false,
+        isGlutenFree: false,
+        isDairyFree: false,
+        isKeto: false,
+        isSpicy: false,
+        spiceLevel: 0,
+      },
+      ingredients: [],
+      allergens: [],
+      servingSize: '1 portion',
+      isSignatureDish: false,
+      isFeatured: false,
+      isActive: true,
+    });
+
+    setShowAddModal(false);
+  };
+
   return (
     <Container className="py-5">
+
+      {/* Add Item Modal */}
+      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Menu Item</Modal.Title>
+        </Modal.Header>
+
+        <Form onSubmit={handleAddItem}>
+          <Modal.Body>
+            <Row className="g-3">
+              <Col md={6}>
+                <Form.Group controlId="formName">
+                  <Form.Label>Item Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="name"
+                    value={newItem.name}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="formCategory">
+                  <Form.Label>Category</Form.Label>
+                  <Form.Select
+                    name="category"
+                    value={newItem.category}
+                    onChange={handleInputChange}
+                  >
+                    {categories.map(c => <option key={c}>{c}</option>)}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="formPrice">
+                  <Form.Label>Price (₹)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="price"
+                    value={newItem.price}
+                    onChange={handleInputChange}
+                    min="0"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="formPrepTime">
+                  <Form.Label>Preparation Time (minutes)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="preparationTime"
+                    value={newItem.preparationTime}
+                    onChange={handleInputChange}
+                    min="1"
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={12}>
+                <Form.Group controlId="formDescription">
+                  <Form.Label>Description</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    name="description"
+                    value={newItem.description}
+                    onChange={handleInputChange}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="formImage">
+                  <Form.Label>Image URL</Form.Label>
+                  <Form.Control
+                    type="url"
+                    name="image"
+                    value={newItem.image}
+                    onChange={handleInputChange}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group controlId="formServing">
+                  <Form.Label>Serving Size</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="servingSize"
+                    value={newItem.servingSize}
+                    onChange={handleInputChange}
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col xs={12}>
+                <div className="d-flex gap-3 flex-wrap">
+                  <Form.Check
+                    type="checkbox"
+                    label="Vegetarian"
+                    name="isVegetarian"
+                    checked={newItem.isVegetarian}
+                    onChange={handleInputChange}
+                  />
+
+                  <Form.Check
+                    type="checkbox"
+                    label="Spicy"
+                    name="isSpicy"
+                    checked={newItem.isSpicy}
+                    onChange={handleInputChange}
+                  />
+
+                  <Form.Check
+                    type="checkbox"
+                    label="Featured"
+                    name="isFeatured"
+                    checked={newItem.isFeatured}
+                    onChange={handleInputChange}
+                  />
+
+                  <Form.Check
+                    type="checkbox"
+                    label="Signature Dish"
+                    name="isSignatureDish"
+                    checked={newItem.isSignatureDish}
+                    onChange={handleInputChange}
+                  />
+                </div>
+              </Col>
+            </Row>
+          </Modal.Body>
+
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+              <X size={18} /> Cancel
+            </Button>
+
+            <Button variant="primary" type="submit">
+              <Save size={18} /> Save Item
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
       {/* Header */}
       <Row className="mb-5">
         <Col>
-          <div className="text-center">
-            <h1 className="display-4 mb-3">Our Menu</h1>
-            <p className="lead text-muted">Discover our exquisite culinary offerings</p>
+          <div className="d-flex justify-content-between">
+            <div>
+              <h1 className="display-4">Our Menu</h1>
+              <p className="text-muted">Discover our exquisite culinary offerings</p>
+            </div>
+
+            {isAdmin && (
+              <Button variant="primary" onClick={() => setShowAddModal(true)}>
+                <Plus /> Add New Item
+              </Button>
+            )}
           </div>
         </Col>
       </Row>
 
       {/* Filters */}
       <Row className="mb-4">
-        <Col md={4} className="mb-3">
+        <Col md={4}>
           <div className="position-relative">
-            <Search className="position-absolute" size={20} style={{ left: '12px', top: '12px', color: '#6c757d' }} />
+            <Search className="position-absolute" size={20} style={{ left: 12, top: 12 }} />
             <Form.Control
               type="text"
-              placeholder="Search menu items..."
+              placeholder="Search..."
+              style={{ paddingLeft: 45 }}
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ paddingLeft: '45px' }}
+              onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
         </Col>
-        <Col md={4} className="mb-3">
-          <Form.Select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            {categories.map(category => (
-              <option key={category} value={category}>
-                {category === 'all' ? 'All Categories' : category}
+
+        <Col md={4}>
+          <Form.Select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}>
+            {allCategories.map(c => (
+              <option key={c} value={c}>
+                {c === 'all' ? 'All Categories' : c}
               </option>
             ))}
           </Form.Select>
         </Col>
-        <Col md={4} className="mb-3">
-          <Form.Select
-            value={dietaryFilter}
-            onChange={(e) => setDietaryFilter(e.target.value)}
-          >
+
+        <Col md={4}>
+          <Form.Select value={dietaryFilter} onChange={e => setDietaryFilter(e.target.value)}>
             <option value="all">All Items</option>
             <option value="vegetarian">Vegetarian</option>
             <option value="non-vegetarian">Non-Vegetarian</option>
@@ -201,67 +472,60 @@ const Menu: React.FC = () => {
         </Col>
       </Row>
 
-      {/* Menu Items */}
+      {/* Items */}
       <Row>
         {filteredItems.length === 0 ? (
           <Col>
             <Alert variant="info" className="text-center">
-              No menu items found matching your criteria.
+              No menu items found.
             </Alert>
           </Col>
         ) : (
           filteredItems.map(item => (
             <Col md={6} lg={4} key={item.id} className="mb-4">
-              <Card className="h-100 shadow-sm border-0">
+              <Card className="h-100 shadow-sm">
                 <div className="position-relative">
-                  <Card.Img 
-                    variant="top" 
-                    src={item.image} 
-                    style={{ height: '200px', objectFit: 'cover' }}
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Menu+Item';
+                  <Card.Img
+                    variant="top"
+                    src={item.image}
+                    style={{ height: 200, objectFit: 'cover' }}
+                    onError={e => {
+                      (e.currentTarget as HTMLImageElement).src =
+                        'https://via.placeholder.com/300x200?text=Menu+Item';
                     }}
                   />
+
                   <div className="position-absolute top-0 end-0 m-2">
-                    {item.isVegetarian && (
-                      <Badge bg="success" className="me-1">Veg</Badge>
-                    )}
-                    {item.isSpicy && (
-                      <Badge bg="danger">Spicy</Badge>
-                    )}
+                    {item.isVegetarian && <Badge bg="success">Veg</Badge>}
+                    {item.isSpicy && <Badge bg="danger">Spicy</Badge>}
                   </div>
+
                   <Button
                     variant="light"
-                    size="sm"
                     className="position-absolute top-0 start-0 m-2 rounded-circle"
-                    style={{ width: '35px', height: '35px' }}
+                    style={{ width: 35, height: 35 }}
                   >
                     <Heart size={16} />
                   </Button>
                 </div>
+
                 <Card.Body className="d-flex flex-column">
-                  <div className="d-flex justify-content-between align-items-start mb-2">
-                    <Card.Title className="h5 mb-0">{item.name}</Card.Title>
-                    <span className="fw-bold text-primary">₹{item.price}</span>
+                  <div className="d-flex justify-content-between">
+                    <Card.Title>{item.name}</Card.Title>
+                    <strong className="text-primary">₹{item.price}</strong>
                   </div>
-                  
+
                   <div className="d-flex align-items-center mb-2">
-                    <div className="d-flex me-2">
-                      {renderStars(item.rating)}
-                    </div>
+                    <div className="d-flex me-2">{renderStars(item.rating)}</div>
                     <small className="text-muted">({item.rating})</small>
                     <small className="text-muted ms-auto">{item.preparationTime} mins</small>
                   </div>
-                  
-                  <Card.Text className="text-muted small flex-grow-1">
-                    {item.description}
-                  </Card.Text>
-                  
-                  <div className="mt-auto">
-                    <Button variant="primary" className="w-100">
-                      Add to Cart
-                    </Button>
-                  </div>
+
+                  <Card.Text className="text-muted small flex-grow-1">{item.description}</Card.Text>
+
+                  <Button variant="primary" className="w-100 mt-auto">
+                    Add to Cart
+                  </Button>
                 </Card.Body>
               </Card>
             </Col>
@@ -269,7 +533,6 @@ const Menu: React.FC = () => {
         )}
       </Row>
 
-      {/* Results count */}
       {filteredItems.length > 0 && (
         <Row className="mt-4">
           <Col>
