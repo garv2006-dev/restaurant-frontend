@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Form, Spinner, Alert, Modal } from 'react-bootstrap';
 import { Star, Search, Plus, X, Save, Heart } from 'lucide-react';
+import { menuAPI } from '../services/api';
+import { useCart } from '../context/CartContext';
 
 interface MenuItem {
   id: string;
@@ -40,6 +42,7 @@ const Menu: React.FC = () => {
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { addItem } = useCart();
 
   const [newItem, setNewItem] = useState<Omit<MenuItem, 'id' | 'rating'>>({
     name: '',
@@ -71,87 +74,66 @@ const Menu: React.FC = () => {
   const categories = ['Appetizers', 'Main Course', 'Desserts', 'Beverages', 'Specials'];
   const allCategories = ['all', ...categories];
 
-  // useEffect(() => {
-  //   const mockMenuItems: MenuItem[] = [
-  //     {
-  //       id: '1',
-  //       name: 'Butter Chicken',
-  //       description: 'Tender chicken cooked in rich, creamy tomato sauce with Indian spices',
-  //       price: 450,
-  //       category: 'Main Course',
-  //       image: '/api/placeholder/300/200',
-  //       isVegetarian: false,
-  //       isSpicy: true,
-  //       rating: 4.8,
-  //       preparationTime: 25
-  //     },
-  //     {
-  //       id: '2',
-  //       name: 'Paneer Tikka Masala',
-  //       description: 'Grilled cottage cheese cubes in aromatic tomato and cashew gravy',
-  //       price: 380,
-  //       category: 'Main Course',
-  //       image: '/api/placeholder/300/200',
-  //       isVegetarian: true,
-  //       isSpicy: true,
-  //       rating: 4.6,
-  //       preparationTime: 20
-  //     },
-  //     {
-  //       id: '3',
-  //       name: 'Caesar Salad',
-  //       description: 'Fresh romaine lettuce with parmesan cheese, croutons and caesar dressing',
-  //       price: 280,
-  //       category: 'Appetizers',
-  //       image: '/api/placeholder/300/200',
-  //       isVegetarian: true,
-  //       isSpicy: false,
-  //       rating: 4.4,
-  //       preparationTime: 10
-  //     },
-  //     {
-  //       id: '4',
-  //       name: 'Chocolate Lava Cake',
-  //       description: 'Warm chocolate cake with molten chocolate center, served with vanilla ice cream',
-  //       price: 220,
-  //       category: 'Desserts',
-  //       image: '/api/placeholder/300/200',
-  //       isVegetarian: true,
-  //       isSpicy: false,
-  //       rating: 4.9,
-  //       preparationTime: 15
-  //     },
-  //     {
-  //       id: '5',
-  //       name: 'Fresh Lime Soda',
-  //       description: 'Refreshing lime juice with soda water and mint leaves',
-  //       price: 120,
-  //       category: 'Beverages',
-  //       image: '/api/placeholder/300/200',
-  //       isVegetarian: true,
-  //       isSpicy: false,
-  //       rating: 4.2,
-  //       preparationTime: 5
-  //     },
-  //     {
-  //       id: '6',
-  //       name: "Chef's Special Biryani",
-  //       description: 'Aromatic basmati rice with tender mutton, saffron and traditional spices',
-  //       price: 550,
-  //       category: 'Specials',
-  //       image: '/api/placeholder/300/200',
-  //       isVegetarian: false,
-  //       isSpicy: true,
-  //       rating: 4.7,
-  //       preparationTime: 35
-  //     }
-  //   ];
+  useEffect(() => {
+    const fetchMenu = async () => {
+      try {
+        setLoading(true);
+        setError('');
 
-  //   setTimeout(() => {
-  //     setMenuItems(mockMenuItems);
-  //     setLoading(false);
-  //   }, 1000);
-  // }, []);
+        const response: any = await menuAPI.getMenuItems();
+
+        // Backend shape:
+        //   { success: true, items: MenuItem[] }
+        // Fallbacks:
+        //   { success, data: MenuItem[] } or raw array
+        let rawItems: any[] = [];
+
+        if (Array.isArray(response)) {
+          rawItems = response;
+        } else if (Array.isArray(response?.items)) {
+          rawItems = response.items;
+        } else if (Array.isArray(response?.data)) {
+          rawItems = response.data;
+        }
+
+        const normalized: MenuItem[] = rawItems.map((item: any) => ({
+          id: item.id || item._id,
+          name: item.name,
+          description: item.description,
+          price: item.price,
+          category: item.category,
+          image:
+            item.image ||
+            (Array.isArray(item.images) && item.images.length > 0
+              ? item.images[0].url
+              : ''),
+          isVegetarian:
+            item.isVegetarian ?? item.dietaryInfo?.isVegetarian ?? false,
+          isSpicy: item.isSpicy ?? item.dietaryInfo?.isSpicy ?? false,
+          rating: item.popularity?.averageRating ?? item.rating ?? 0,
+          preparationTime: item.preparationTime ?? 0,
+          isAvailable: item.availability?.isAvailable ?? item.isAvailable ?? true,
+          dietaryInfo: item.dietaryInfo,
+          ingredients: Array.isArray(item.ingredients)
+            ? item.ingredients.map((ing: any) => (typeof ing === 'string' ? ing : ing.name))
+            : [],
+          allergens: item.allergens || [],
+          servingSize: item.servingSize,
+          isSignatureDish: item.isSignatureDish,
+          isFeatured: item.isFeatured,
+          isActive: item.isActive,
+        }));
+
+        setMenuItems(normalized);
+      } catch (err: any) {
+        setError('Failed to load menu. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenu();
+  }, []);
 
   const filteredItems = menuItems.filter(item => {
     const matchesSearch =
@@ -182,6 +164,16 @@ const Menu: React.FC = () => {
     }
 
     return stars;
+  };
+
+  const handleAddToCart = (item: MenuItem) => {
+    addItem({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      category: item.category,
+    });
   };
 
   if (loading) {
@@ -523,8 +515,13 @@ const Menu: React.FC = () => {
 
                   <Card.Text className="text-muted small flex-grow-1">{item.description}</Card.Text>
 
-                  <Button variant="primary" className="w-100 mt-auto">
-                    Add to Cart
+                  <Button
+                    variant="primary"
+                    className="w-100 mt-auto"
+                    onClick={() => handleAddToCart(item)}
+                    disabled={!item.isAvailable}
+                  >
+                    {item.isAvailable ? 'Add to Cart' : 'Unavailable'}
                   </Button>
                 </Card.Body>
               </Card>

@@ -17,12 +17,15 @@ const Booking: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [totalNights, setTotalNights] = useState(1);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'Cash' | 'Card' | 'UPI' | 'Online'>('Cash');
+  const [pendingBookingPayload, setPendingBookingPayload] = useState<any | null>(null);
   
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
     roomId: '',
@@ -64,14 +67,18 @@ const Booking: React.FC = () => {
     const fetchRooms = async () => {
       try {
         setLoading(true);
+        setBookingError(null);
+
         const response = await roomsAPI.getAllRooms({ status: 'Available' });
         console.log('Rooms API response:', response);
+
         const availableRooms = response?.success && response?.data ? response.data.rooms : [];
-        setRooms(availableRooms || []); // Ensure rooms is always an array
+        const safeRooms = Array.isArray(availableRooms) ? availableRooms : [];
+        setRooms(safeRooms);
         
         // If roomId is provided in URL, select that room
-        if (roomId && availableRooms) {
-          const room = availableRooms.find((r: Room) => r.id === roomId);
+        if (roomId && safeRooms.length > 0) {
+          const room = safeRooms.find((r: Room) => r.id === roomId);
           if (room) {
             setSelectedRoom(room);
             setBookingForm(prev => ({
@@ -102,7 +109,7 @@ const Booking: React.FC = () => {
     
     // Set the form data with the selected room
     const newForm: BookingFormData = {
-      roomId: room.id,
+      roomId: room._id || room.id, // Use _id if available, fallback to id
       checkInDate: '',
       checkOutDate: '',
       nights: 1,
@@ -153,21 +160,28 @@ const Booking: React.FC = () => {
   };
 
   const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: any = {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     console.log('Validating form:', bookingForm);
 
+    // Validate check-in date
     if (!bookingForm.checkInDate) {
       newErrors.checkInDate = 'Check-in date is required';
-    } else if (new Date(bookingForm.checkInDate) < today) {
-      newErrors.checkInDate = 'Check-in date cannot be in the past';
+    } else {
+      const checkInDate = new Date(bookingForm.checkInDate);
+      checkInDate.setHours(0, 0, 0, 0);
+      
+      if (checkInDate < today) {
+        newErrors.checkInDate = 'Check-in date cannot be in the past';
+      }
     }
     
+    // Validate check-out date
     if (!bookingForm.checkOutDate) {
       newErrors.checkOutDate = 'Check-out date is required';
-    } else {
+    } else if (bookingForm.checkInDate) {
       const checkInDate = new Date(bookingForm.checkInDate);
       const checkOutDate = new Date(bookingForm.checkOutDate);
       
@@ -185,6 +199,7 @@ const Booking: React.FC = () => {
       newErrors.room = 'Please select a room';
     }
     
+    // Validate guest details
     if (!bookingForm.guestDetails.name?.trim()) {
       newErrors['guestDetails.name'] = 'Name is required';
     }
@@ -202,7 +217,7 @@ const Booking: React.FC = () => {
     }
     
     // Check room capacity
-    const roomToCheck = selectedRoom || rooms.find(r => r.id === bookingForm.roomId);
+    const roomToCheck = selectedRoom || rooms.find(r => r._id === bookingForm.roomId || r.id === bookingForm.roomId);
     if (roomToCheck) {
       const totalGuests = bookingForm.guests.adults + bookingForm.guests.children;
       const maxCapacity = roomToCheck.capacity.adults + roomToCheck.capacity.children;
@@ -227,7 +242,7 @@ const Booking: React.FC = () => {
     
     // Ensure we have a room selected
     if (!selectedRoom && bookingForm.roomId) {
-      const room = rooms.find(r => r.id === bookingForm.roomId);
+      const room = rooms.find(r => r._id === bookingForm.roomId || r.id === bookingForm.roomId);
       if (room) {
         setSelectedRoom(room);
       }
@@ -241,38 +256,17 @@ const Booking: React.FC = () => {
       return;
     }
 
+    // Step 1: build payload and open payment modal instead of calling API directly
     try {
-      setSubmitting(true);
-      setBookingError(null); // Clear previous errors
-      console.log('Submitting booking data:', {
-        roomId: selectedRoom.id,
-        checkInDate: new Date(bookingForm.checkInDate).toISOString(),
-        checkOutDate: new Date(bookingForm.checkOutDate).toISOString(),
-        guestDetails: {
-          primaryGuest: {
-            name: bookingForm.guestDetails.name.trim(),
-            email: bookingForm.guestDetails.email.trim(),
-            phone: bookingForm.guestDetails.phone.replace(/[^0-9]/g, '')
-          },
-          totalAdults: bookingForm.guests.adults,
-          totalChildren: bookingForm.guests.children,
-          additionalGuests: bookingForm.additionalGuests || []
-        },
-        specialRequests: bookingForm.specialRequests || '',
-        preferences: bookingForm.preferences || {},
-        extraServices: bookingForm.extraServices || [],
-        menuItems: bookingForm.menuItems || []
-      });
-      
-      // Format dates properly for the backend
+      setBookingError(null);
+
       const checkInDate = new Date(bookingForm.checkInDate);
-      checkInDate.setUTCHours(12, 0, 0, 0); // Set to noon UTC to avoid timezone issues
-      
+      checkInDate.setUTCHours(12, 0, 0, 0);
       const checkOutDate = new Date(bookingForm.checkOutDate);
-      checkOutDate.setUTCHours(12, 0, 0, 0); // Set to noon UTC to avoid timezone issues
-      
+      checkOutDate.setUTCHours(12, 0, 0, 0);
+
       const bookingData = {
-        roomId: selectedRoom.id,
+        roomId: selectedRoom._id || selectedRoom.id, // Use _id if available, fallback to id
         checkInDate: checkInDate.toISOString(),
         checkOutDate: checkOutDate.toISOString(),
         guestDetails: {
@@ -290,39 +284,55 @@ const Booking: React.FC = () => {
         extraServices: bookingForm.extraServices || [],
         menuItems: bookingForm.menuItems || []
       };
-      
-      const response = await bookingsAPI.createBooking(bookingData);
+
+      setPendingBookingPayload(bookingData);
+      setShowBookingModal(false);
+      setShowPaymentModal(true);
+    } catch (error: any) {
+      console.error('Error preparing booking payload:', error);
+      setBookingError('Failed to prepare booking. Please try again.');
+    }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!pendingBookingPayload || !selectedRoom) return;
+
+    try {
+      setSubmitting(true);
+      setBookingError(null);
+
+      const payload = {
+        ...pendingBookingPayload,
+        paymentDetails: {
+          method: selectedPaymentMethod
+        }
+      };
+
+      console.log('Submitting booking with payment:', payload);
+
+      const response = await bookingsAPI.createBooking(payload);
       console.log('Booking API response:', response);
-      
+
       if (response?.success) {
         setSuccess(true);
-        setShowBookingModal(false);
-        
-        // Show success message
+        setShowPaymentModal(false);
         alert('Booking confirmed successfully!');
-        
-        // Redirect to my bookings page to show all booking data
-        setTimeout(() => {
-          navigate('/bookings');
-        }, 1000);
+        navigate('/bookings');
       } else {
         throw new Error(response?.message || 'Failed to create booking');
       }
     } catch (error: any) {
       console.error('Booking error:', error);
       let errorMessage = 'Failed to submit booking. Please try again.';
-      
+
       if (error.response) {
-        // Handle HTTP error responses
         errorMessage = error.response.data?.message || error.response.statusText || errorMessage;
       } else if (error.request) {
-        // The request was made but no response was received
         errorMessage = 'No response from server. Please check your connection.';
       } else if (error.message) {
-        // Something happened in setting up the request
         errorMessage = error.message;
       }
-      
+
       setBookingError(errorMessage);
     } finally {
       setSubmitting(false);
@@ -468,6 +478,7 @@ const Booking: React.FC = () => {
                     onChange={(e) => handleFormChange('checkInDate', e.target.value)}
                     isInvalid={!!errors.checkInDate}
                     min={new Date().toISOString().split('T')[0]}
+                    required
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.checkInDate}
@@ -487,6 +498,7 @@ const Booking: React.FC = () => {
                     onChange={(e) => handleFormChange('checkOutDate', e.target.value)}
                     isInvalid={!!errors.checkOutDate}
                     min={bookingForm.checkInDate || new Date().toISOString().split('T')[0]}
+                    required
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.checkOutDate}
@@ -603,10 +615,52 @@ const Booking: React.FC = () => {
               Cancel
             </Button>
             <Button variant="primary" type="submit">
-              Confirm Booking
+              Continue to Payment
             </Button>
           </Modal.Footer>
         </Form>
+      </Modal>
+
+      {/* Payment Method Modal */}
+      <Modal show={showPaymentModal} onHide={() => setShowPaymentModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Select Payment Method</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {bookingError && (
+            <Alert variant="danger" className="mb-3">
+              {bookingError}
+            </Alert>
+          )}
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Payment Method</Form.Label>
+              <Form.Select
+                value={selectedPaymentMethod}
+                onChange={(e) => setSelectedPaymentMethod(e.target.value as any)}
+              >
+                <option value="Cash">Cash</option>
+                <option value="Card">Card</option>
+                <option value="UPI">UPI</option>
+                <option value="Online">Online</option>
+              </Form.Select>
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setShowPaymentModal(false);
+              setShowBookingModal(true);
+            }}
+          >
+            Back
+          </Button>
+          <Button variant="primary" onClick={handleConfirmPayment} disabled={submitting}>
+            {submitting ? 'Processing...' : 'Pay & Confirm'}
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Container>
   );
