@@ -4,7 +4,7 @@ import { authAPI } from '../services/api';
 import { toast } from 'react-toastify';
 
 interface AuthContextType extends AuthState {
-  login: (credentials: LoginCredentials, userType?: 'admin' | 'user') => Promise<boolean>;
+  login: (credentials: LoginCredentials) => Promise<boolean>;
   register: (userData: RegisterData) => Promise<boolean>;
   logout: () => void;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
@@ -97,21 +97,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, [updateAuthState]);
 
-  const login = useCallback(async (credentials: LoginCredentials, userType: 'admin' | 'user' = 'user'): Promise<boolean> => {
+  const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
     try {
       updateAuthState({ loading: true });
-      
-      const response = await authAPI.login(credentials, userType);
-      
+
+      const response = await authAPI.login(credentials);
+
       if (response.success && response.user && response.token) {
         const { user, token } = response;
-        const userRole = user.role || (userType === 'admin' ? 'admin' : 'user');
-        
+        const userRole = user.role || 'user';
+        const effectiveUserType: 'admin' | 'user' = userRole === 'admin' ? 'admin' : 'user';
+
         // Store in localStorage
         localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('userType', userType);
-        
+        localStorage.setItem('user', JSON.stringify({ ...user, role: userRole }));
+        localStorage.setItem('userType', effectiveUserType);
+
         // Update state
         updateAuthState({
           user: { ...user, role: userRole },
@@ -119,11 +120,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isAuthenticated: true,
           loading: false,
         });
-        
-        // Redirect based on user type
-        const redirectPath = userType === 'admin' ? '/admin/dashboard' : '/dashboard';
+
+        // Redirect based on actual user role
+        const redirectPath = userRole === 'admin' ? '/admin/dashboard' : '/dashboard';
         window.location.href = redirectPath;
-        
+
         return true;
       } else {
         throw new Error(response.message || 'Login failed');

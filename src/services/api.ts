@@ -41,8 +41,8 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  login: async (credentials: LoginCredentials, userType?: 'admin' | 'user'): Promise<{ success: boolean; user?: User; token?: string; message?: string; userType?: string }> => {
-    const response = await api.post('/auth/login', { ...credentials, userType });
+  login: async (credentials: LoginCredentials): Promise<{ success: boolean; user?: User; token?: string; message?: string; userType?: string }> => {
+    const response = await api.post('/auth/login', credentials);
     return response.data;
   },
 
@@ -91,6 +91,26 @@ export const authAPI = {
     const response: AxiosResponse<ApiResponse> = await api.post('/auth/resend-verification', { email });
     return response.data;
   },
+
+  // Social login
+  socialLogin: async (socialData: {
+    uid: string;
+    email: string;
+    displayName: string;
+    photoURL?: string;
+    provider: 'google' | 'facebook';
+  }): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
+    const response = await api.post('/auth/social-login', socialData);
+    return response.data;
+  },
+};
+
+// Orders API (cart / menu orders)
+export const ordersAPI = {
+  createOrder: async (orderData: any): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.post('/orders', orderData);
+    return response.data;
+  },
 };
 
 // Users API
@@ -118,10 +138,40 @@ export const usersAPI = {
 // Rooms API
 export const roomsAPI = {
   getAllRooms: async (filters?: any): Promise<ApiResponse<{ rooms: Room[]; pagination: any }>> => {
-    const response: AxiosResponse<ApiResponse<{ rooms: Room[]; pagination: any }>> = await api.get('/rooms', {
+    const response: AxiosResponse<any> = await api.get('/rooms', {
       params: filters,
     });
-    return response.data;
+
+    const raw = response.data || {};
+
+    // Backend returns: { success, count, total, pagination, data: Room[] }
+    let rooms: any[] = [];
+    let pagination: any = raw.pagination || null;
+
+    if (Array.isArray(raw.data)) {
+      rooms = raw.data;
+    } else if (Array.isArray(raw.rooms)) {
+      // Fallback if backend ever sends rooms directly
+      rooms = raw.rooms;
+    } else if (Array.isArray(raw)) {
+      // Fallback if the entire response is just an array
+      rooms = raw;
+    }
+
+    // Normalize id field so frontend can rely on room.id
+    const normalizedRooms: Room[] = rooms.map((room: any) => ({
+      ...room,
+      id: room.id || room._id,
+    }));
+
+    return {
+      success: raw.success !== undefined ? raw.success : true,
+      message: raw.message,
+      data: {
+        rooms: normalizedRooms,
+        pagination,
+      },
+    } as ApiResponse<{ rooms: Room[]; pagination: any }>;
   },
 
   getRoomById: async (id: string): Promise<ApiResponse<Room>> => {
@@ -174,8 +224,9 @@ export const bookingsAPI = {
 
 // Menu API
 export const menuAPI = {
-  getMenuItems: async (filters?: any): Promise<ApiResponse<{ items: MenuItem[]; pagination: any }>> => {
-    const response: AxiosResponse<ApiResponse<{ items: MenuItem[]; pagination: any }>> = await api.get('/menu', {
+  // Get public menu items list
+  getMenuItems: async (filters?: any): Promise<ApiResponse<MenuItem[]>> => {
+    const response: AxiosResponse<ApiResponse<MenuItem[]>> = await api.get('/menu', {
       params: filters,
     });
     return response.data;
@@ -192,7 +243,7 @@ export const menuAPI = {
   },
 
   getFeaturedItems: async (): Promise<ApiResponse<MenuItem[]>> => {
-    const response: AxiosResponse<ApiResponse<MenuItem[]>> = await api.get('/menu/featured');
+    const response: AxiosResponse<ApiResponse<MenuItem[]>> = await api.get('/menu?isFeatured=true');
     return response.data;
   },
 };
@@ -234,11 +285,52 @@ export const reviewsAPI = {
 
 // Payments API
 export const paymentsAPI = {
-  createPayment: async (paymentData: any): Promise<ApiResponse<{ paymentId: string; clientSecret?: string }>> => {
-    const response: AxiosResponse<ApiResponse<{ paymentId: string; clientSecret?: string }>> = await api.post('/payments', paymentData);
+  createPayment: async (paymentData: any): Promise<ApiResponse<Payment>> => {
+    const response: AxiosResponse<ApiResponse<Payment>> = await api.post('/payments/create', paymentData);
     return response.data;
   },
 
+  createPaymentIntent: async (paymentData: any): Promise<ApiResponse<{ clientSecret?: string; amount: number; currency: string; bookingId: string; paymentMethod: string }>> => {
+    const response: AxiosResponse<ApiResponse<{ clientSecret?: string; amount: number; currency: string; bookingId: string; paymentMethod: string }>> = await api.post('/payments/create-intent', paymentData);
+    return response.data;
+  },
+
+  confirmPayment: async (paymentData: any): Promise<ApiResponse<{ payment: Payment; booking: any }>> => {
+    const response: AxiosResponse<ApiResponse<{ payment: Payment; booking: any }>> = await api.post('/payments/confirm', paymentData);
+    return response.data;
+  },
+
+  getPayments: async (filters?: any): Promise<ApiResponse<{ payments: Payment[]; pagination: any }>> => {
+    const response: AxiosResponse<ApiResponse<{ payments: Payment[]; pagination: any }>> = await api.get('/payments', {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  getPaymentById: async (id: string): Promise<ApiResponse<Payment>> => {
+    const response: AxiosResponse<ApiResponse<Payment>> = await api.get(`/payments/${id}`);
+    return response.data;
+  },
+
+  getPaymentInvoice: async (id: string): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.get(`/payments/${id}/invoice`);
+    return response.data;
+  },
+
+  processRefund: async (id: string, refundData: any): Promise<ApiResponse<Payment>> => {
+    const response: AxiosResponse<ApiResponse<Payment>> = await api.post(`/payments/${id}/refund`, refundData);
+    return response.data;
+  },
+
+  // Admin only
+  getAllPayments: async (filters?: any): Promise<ApiResponse<{ payments: Payment[]; pagination: any }>> => {
+    const response: AxiosResponse<ApiResponse<{ payments: Payment[]; pagination: any }>> = await api.get('/payments/admin/all', {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  // Legacy methods for backward compatibility
   verifyPayment: async (paymentId: string, verificationData: any): Promise<ApiResponse<Payment>> => {
     const response: AxiosResponse<ApiResponse<Payment>> = await api.post(`/payments/${paymentId}/verify`, verificationData);
     return response.data;
@@ -273,10 +365,34 @@ export const adminAPI = {
   },
 
   getAllBookings: async (filters?: any): Promise<ApiResponse<{ bookings: Booking[]; pagination: any }>> => {
-    const response: AxiosResponse<ApiResponse<{ bookings: Booking[]; pagination: any }>> = await api.get('/admin/bookings', {
+    const response: AxiosResponse<any> = await api.get('/admin/bookings', {
       params: filters,
     });
-    return response.data;
+
+    const raw = response.data || {};
+
+    // Backend returns: { success, count, total, pagination, data: Booking[] }
+    // Normalize to: { success, data: { bookings: Booking[]; pagination } }
+    let bookings: Booking[] = [];
+    let pagination: any = raw.pagination || null;
+
+    if (Array.isArray(raw.data)) {
+      bookings = raw.data as Booking[];
+    } else if (raw.data && Array.isArray(raw.data.bookings)) {
+      bookings = raw.data.bookings as Booking[];
+      pagination = raw.data.pagination || pagination;
+    } else if (Array.isArray(raw.bookings)) {
+      bookings = raw.bookings as Booking[];
+    }
+
+    return {
+      success: raw.success !== undefined ? raw.success : true,
+      message: raw.message,
+      data: {
+        bookings,
+        pagination,
+      },
+    } as ApiResponse<{ bookings: Booking[]; pagination: any }>;
   },
 
   updateBookingStatus: async (id: string, status: string): Promise<ApiResponse<Booking>> => {
@@ -297,7 +413,7 @@ export const adminAPI = {
   },
   
   createRoom: async (roomData: any): Promise<ApiResponse<Room>> => {
-    const response: AxiosResponse<ApiResponse<Room>> = await api.post('/admin/rooms', roomData);
+    const response: AxiosResponse<ApiResponse<Room>> = await api.post('/rooms', roomData);
     return response.data;
   },
   
@@ -312,17 +428,30 @@ export const adminAPI = {
   },
 
   createMenuItem: async (itemData: any): Promise<ApiResponse<MenuItem>> => {
-    const response: AxiosResponse<ApiResponse<MenuItem>> = await api.post('/admin/menu', itemData);
+    const response: AxiosResponse<ApiResponse<MenuItem>> = await api.post('/menu', itemData);
     return response.data;
   },
 
   updateMenuItem: async (id: string, itemData: any): Promise<ApiResponse<MenuItem>> => {
-    const response: AxiosResponse<ApiResponse<MenuItem>> = await api.put(`/admin/menu/${id}`, itemData);
+    const response: AxiosResponse<ApiResponse<MenuItem>> = await api.put(`/menu/${id}`, itemData);
     return response.data;
   },
 
   deleteMenuItem: async (id: string): Promise<ApiResponse> => {
-    const response: AxiosResponse<ApiResponse> = await api.delete(`/admin/menu/${id}`);
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/menu/${id}`);
+    return response.data;
+  },
+
+  // Customer API
+  getCustomers: async (filters?: any): Promise<ApiResponse<{ customers: any[]; pagination: any }>> => {
+    const response: AxiosResponse<ApiResponse<{ customers: any[]; pagination: any }>> = await api.get('/customers', {
+      params: filters,
+    });
+    return response.data;
+  },
+
+  addCustomer: async (customerData: any): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post('/customers', customerData);
     return response.data;
   },
 
@@ -365,6 +494,63 @@ export const newsletterAPI = {
 
   unsubscribe: async (email: string): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.post('/newsletter/unsubscribe', { email });
+    return response.data;
+  },
+};
+
+// Loyalty API
+export const loyaltyAPI = {
+  // Get loyalty program details
+  getProgram: async (): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.get('/loyalty/program');
+    return response.data;
+  },
+
+  // Get all loyalty programs (admin)
+  getPrograms: async (): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.get('/loyalty/programs');
+    return response.data;
+  },
+
+  // Create loyalty program (admin)
+  createProgram: async (programData: any): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post('/loyalty/programs', programData);
+    return response.data;
+  },
+
+  // Update loyalty program (admin)
+  updateProgram: async (id: string, programData: any): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.put(`/loyalty/programs/${id}`, programData);
+    return response.data;
+  },
+
+  // Delete loyalty program (admin)
+  deleteProgram: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/loyalty/programs/${id}`);
+    return response.data;
+  },
+
+  // Join loyalty program
+  joinProgram: async (): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post('/loyalty/join');
+    return response.data;
+  },
+
+  // Get user loyalty data
+  getUserLoyaltyData: async (): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.get('/loyalty/my-points');
+    return response.data;
+  },
+
+  // Get all user loyalty data (admin)
+  getUserLoyaltyDataAll: async (): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.get('/loyalty/users');
+    return response.data;
+  },
+
+  // Redeem reward
+  redeemReward: async (rewardId: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post('/loyalty/redeem', { rewardId });
     return response.data;
   },
 };

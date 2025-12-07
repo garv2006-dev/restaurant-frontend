@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, ProgressBar, Badge, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, ProgressBar, Badge, Modal, Alert } from 'react-bootstrap';
 import { Gift, Star, Award, Coins, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { loyaltyAPI } from '../services/api';
 
 interface LoyaltyProgram {
   _id: string;
@@ -60,10 +61,9 @@ const LoyaltyDashboard: React.FC = () => {
 
   const fetchLoyaltyProgram = async () => {
     try {
-      const response = await fetch('/api/loyalty/program');
-      if (response.ok) {
-        const data = await response.json();
-        setLoyaltyProgram(data.data);
+      const response = await loyaltyAPI.getProgram();
+      if (response.success) {
+        setLoyaltyProgram(response.data);
       }
     } catch (error) {
       console.error('Error fetching loyalty program:', error);
@@ -72,16 +72,9 @@ const LoyaltyDashboard: React.FC = () => {
 
   const fetchUserLoyaltyData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/loyalty/my-points', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUserLoyaltyData(data.data);
+      const response = await loyaltyAPI.getUserLoyaltyData();
+      if (response.success) {
+        setUserLoyaltyData(response.data);
       }
     } catch (error) {
       console.error('Error fetching user loyalty data:', error);
@@ -99,29 +92,35 @@ const LoyaltyDashboard: React.FC = () => {
     if (!selectedReward) return;
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/loyalty/redeem', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ rewardId: selectedReward._id })
-      });
-
-      const data = await response.json();
+      const response = await loyaltyAPI.redeemReward(selectedReward._id);
       
-      if (response.ok) {
-        setSuccess(data.message);
+      if (response.success) {
+        setSuccess(response.message || 'Reward redeemed successfully!');
         setShowRedeemModal(false);
         setSelectedReward(null);
         fetchUserLoyaltyData(); // Refresh user data
       } else {
-        setError(data.message || 'Failed to redeem reward');
+        setError(response.message || 'Failed to redeem reward');
       }
-    } catch (error) {
-      setError('Error redeeming reward');
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Error redeeming reward');
       console.error('Error redeeming reward:', error);
+    }
+  };
+
+  const handleJoinProgram = async () => {
+    try {
+      const response = await loyaltyAPI.joinProgram();
+      
+      if (response.success) {
+        setSuccess('Successfully joined the loyalty program!');
+        fetchUserLoyaltyData(); // Refresh user data
+      } else {
+        setError(response.message || 'Failed to join loyalty program');
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Error joining loyalty program');
+      console.error('Error joining loyalty program:', error);
     }
   };
 
@@ -167,6 +166,22 @@ const LoyaltyDashboard: React.FC = () => {
             <h5>Join Our Loyalty Program</h5>
             <p className="text-muted">Sign in to start earning points and unlock exclusive rewards!</p>
             <Button variant="primary" href="/login">Sign In</Button>
+          </Card.Body>
+        </Card>
+      </Container>
+    );
+  }
+
+  // Show join button if user is authenticated but not enrolled
+  if (!userLoyaltyData) {
+    return (
+      <Container className="py-5">
+        <Card className="text-center">
+          <Card.Body>
+            <h5>Join Our Loyalty Program</h5>
+            <p className="text-muted">{loyaltyProgram.description}</p>
+            <p className="text-muted">Earn {loyaltyProgram.pointsPerRupee} point{loyaltyProgram.pointsPerRupee !== 1 ? 's' : ''} for every ₹1 spent and unlock exclusive rewards!</p>
+            <Button variant="primary" onClick={handleJoinProgram}>Join Now</Button>
           </Card.Body>
         </Card>
       </Container>

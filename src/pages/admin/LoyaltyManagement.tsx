@@ -15,7 +15,7 @@ import {
   Tabs
 } from 'react-bootstrap';
 import { toast } from 'react-toastify';
-import api from '../../services/api';
+import { loyaltyAPI } from '../../services/api';
 
 interface LoyaltyProgram {
   _id: string;
@@ -78,22 +78,20 @@ const LoyaltyManagement: React.FC = () => {
 
   const fetchLoyaltyPrograms = async () => {
     try {
-      const { data } = await api.get('/loyalty/programs');
-      setLoyaltyPrograms(data.programs || data.data || []);
+      const response = await loyaltyAPI.getPrograms();
+      setLoyaltyPrograms(response.data || []);
     } catch (error: any) {
       console.error('Error fetching loyalty programs:', error);
-      // Don't show toast error, just log it
       setLoyaltyPrograms([]);
     }
   };
 
   const fetchUserLoyaltyData = async () => {
     try {
-      const { data } = await api.get('/loyalty/users');
-      setUserLoyaltyData(data.users || data.data || []);
+      const response = await loyaltyAPI.getUserLoyaltyDataAll();
+      setUserLoyaltyData(response.data || []);
     } catch (error: any) {
       console.error('Error fetching user loyalty data:', error);
-      // Don't show toast error, just log it
       setUserLoyaltyData([]);
     } finally {
       setLoading(false);
@@ -105,9 +103,9 @@ const LoyaltyManagement: React.FC = () => {
 
     try {
       if (editingProgram) {
-        await api.put(`/loyalty/programs/${editingProgram._id}`, formData);
+        await loyaltyAPI.updateProgram(editingProgram._id, formData);
       } else {
-        await api.post('/loyalty/programs', formData);
+        await loyaltyAPI.createProgram(formData);
       }
 
       setShowModal(false);
@@ -115,7 +113,6 @@ const LoyaltyManagement: React.FC = () => {
       fetchLoyaltyPrograms();
     } catch (error: any) {
       console.error('Error saving program:', error);
-      // Don't show toast error, just log it
     }
   };
 
@@ -136,11 +133,10 @@ const LoyaltyManagement: React.FC = () => {
     if (!window.confirm('Are you sure you want to delete this loyalty program?')) return;
 
     try {
-      await api.delete(`/loyalty/programs/${id}`);
+      await loyaltyAPI.deleteProgram(id);
       fetchLoyaltyPrograms();
     } catch (error: any) {
       console.error('Error deleting program:', error);
-      // Don't show toast error, just log it
     }
   };
 

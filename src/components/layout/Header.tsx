@@ -1,13 +1,16 @@
 import React from 'react';
 import { Navbar, Nav, NavDropdown, Container, Button, Badge } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { User, Sun, Moon, Bell, LogIn, UserPlus } from 'lucide-react';
+import { User, Sun, Moon, Bell, LogIn, UserPlus, ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useCart } from '../../context/CartContext';
 
 const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { totalQuantity } = useCart();
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -52,6 +55,7 @@ const Header: React.FC = () => {
 
           {/* Right Side Navigation */}
           <Nav className="align-items-center">
+
             {/* Theme Toggle */}
             <Button
               variant="outline-secondary"
@@ -61,6 +65,28 @@ const Header: React.FC = () => {
               title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
             >
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+            </Button>
+
+            {/* Cart */}
+            <Button
+              as={Link as any}
+              to="/cart"
+              variant="outline-primary"
+              size="sm"
+              className="me-2 d-flex align-items-center position-relative"
+            >
+              <ShoppingCart size={16} className="me-1" />
+              Cart
+              {totalQuantity > 0 && (
+                <Badge
+                  pill
+                  bg="danger"
+                  className="position-absolute top-0 start-100 translate-middle"
+                  style={{ fontSize: '0.6rem' }}
+                >
+                  {totalQuantity}
+                </Badge>
+              )}
             </Button>
 
             {isAuthenticated && user ? (

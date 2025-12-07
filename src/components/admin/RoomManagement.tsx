@@ -102,8 +102,8 @@ const RoomManagement: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      // Use the correct endpoint
-      const response = await api.get('/api/rooms');
+      // Use the correct endpoint relative to baseURL (which already includes /api)
+      const response = await api.get('/rooms');
       
       // Handle different response structures
       let roomsData = [];
@@ -227,54 +227,46 @@ const RoomManagement: React.FC = () => {
 
   try {
     setSubmitting(true);
-    
-    // Prepare the payload
-    const payload = {
-      ...formData,
-      // If no images are selected, use a placeholder
-      images: selectedImages.length === 0 ? [{
-        url: 'https://via.placeholder.com/400x250?text=Room+Image',
-        altText: `${formData.name} - Image`,
-        isPrimary: true,
-      }] : [],
-    };
 
-    // Handle file uploads if there are any selected images
-    if (selectedImages.length > 0) {
-      const formDataToSend = new FormData();
-      selectedImages.forEach((file, index) => {
-        formDataToSend.append('images', file);
-        if (index === 0) formDataToSend.append('isPrimary', 'true');
-      });
-      
-      try {
-        // Upload images first - Changed from '/api/upload' to '/api/rooms/upload'
-        const uploadResponse = await api.post('/api/rooms/upload', formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-        
-        // Update payload with uploaded image URLs
-        if (uploadResponse.data && uploadResponse.data.images) {
-          payload.images = uploadResponse.data.images.map((img: any, index: number) => ({
-            url: img.url,
-            altText: `${formData.name} - Image ${index + 1}`,
-            isPrimary: index === 0,
-          }));
-        }
-      } catch (uploadError) {
-        console.error('Error uploading images:', uploadError);
-        throw new Error('Failed to upload images. Please try again.');
-      }
-    }
-
-    // Create or update room - Ensure these endpoints match your backend
+    // Create or update room
     let response;
+
     if (editingRoom) {
-      response = await api.put(`/api/rooms/${editingRoom._id}`, payload);
+      // For now, keep updates as JSON payloads
+      const payload = {
+        ...formData,
+      };
+      response = await api.put(`/rooms/${editingRoom._id}`, payload);
     } else {
-      response = await api.post('/api/rooms', payload);
+      // Build FormData for creating a new room with optional images
+      const formDataToSend = new FormData();
+
+      // Primitive fields
+      formDataToSend.append('roomNumber', formData.roomNumber);
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('type', formData.type);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('bedType', formData.bedType);
+      formDataToSend.append('status', formData.status);
+      formDataToSend.append('isActive', String(formData.isActive));
+      formDataToSend.append('area', String(formData.area));
+      formDataToSend.append('floor', String(formData.floor));
+
+      // Nested objects as JSON strings (parsed on backend)
+      formDataToSend.append('capacity', JSON.stringify(formData.capacity));
+      formDataToSend.append('price', JSON.stringify(formData.price));
+      formDataToSend.append('features', JSON.stringify(formData.features));
+
+      // Images - up to 5, enforced by handleImageSelect
+      selectedImages.forEach((file) => {
+        formDataToSend.append('images', file);
+      });
+
+      response = await api.post('/rooms', formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
     }
 
     // Show success message and refresh the list

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Carousel, Col, Container, Row } from 'react-bootstrap';
 import { FaCar, FaCoffee, FaSnowflake, FaStar, FaTv, FaWifi } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 // Create a wrapper component for FontAwesome icons to ensure React 19 compatibility
@@ -226,9 +227,9 @@ const Home: React.FC = () => {
                       </div>
                       
                       <div className="mt-auto">
-                        <Button variant="primary" href={`/rooms/${room._id}`} className="w-100">
+                        <Link to="/booking" className="btn btn-primary w-100">
                           Book Now
-                        </Button>
+                        </Link>
                       </div>
                     </Card.Body>
                   </Card>

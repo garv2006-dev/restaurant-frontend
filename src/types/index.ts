@@ -23,6 +23,7 @@ export interface User {
 // Room types
 export interface Room {
   id: string;
+  _id: string; // MongoDB _id field
   roomNumber: string;
   name: string;
   type: 'Standard' | 'Deluxe' | 'Suite';
@@ -74,6 +75,7 @@ export interface Room {
 // Booking types
 export interface Booking {
   id: string;
+  _id: string; // MongoDB _id field
   bookingId: string;
   user: string | User;
   room: string | Room;
