@@ -1,7 +1,6 @@
 import React from 'react';
 import SocialButtons from './SocialButtons';
 import { authAPI } from '../../services/api';
-import { signInWithGoogle, SocialAuthResult } from '../../services/firebaseAuth';
 import { useAuth } from '../../context/AuthContext';
 import styles from './SocialLogin.module.css';
 
@@ -20,42 +19,30 @@ const SocialLogin: React.FC<SocialLoginProps> = ({
 }) => {
   const { refreshUser } = useAuth();
 
-  const handleSocialLogin = async (
-    signInFunction: () => Promise<SocialAuthResult>,
-    provider: 'google'
-  ) => {
+  const handleSocialLogin = async (provider: 'google', idToken?: string) => {
     if (setLoading) setLoading(true);
     
     try {
-      // First authenticate with Firebase
-      const firebaseResult = await signInFunction();
-      
-      if (!firebaseResult.success || !firebaseResult.user) {
-        onError?.(firebaseResult.error || 'Authentication failed');
+      // Use Google OAuth directly without Firebase
+      if (!idToken) {
+        onError?.('Google authentication token is required');
         return;
       }
-
-      // Then send data to backend
-      const backendResult = await authAPI.socialLogin({
-        uid: firebaseResult.user.uid,
-        email: firebaseResult.user.email,
-        displayName: firebaseResult.user.displayName,
-        photoURL: firebaseResult.user.photoURL,
-        provider
-      });
-
-      if (backendResult.success && backendResult.user && backendResult.token) {
+      
+      const result = await authAPI.googleLogin(idToken);
+      
+      if (result.success && result.user && result.token) {
         // Store in localStorage
-        localStorage.setItem('token', backendResult.token);
-        localStorage.setItem('user', JSON.stringify(backendResult.user));
-        localStorage.setItem('userType', backendResult.user.role || 'customer');
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        localStorage.setItem('userType', result.user.role || 'customer');
         
         // Refresh the auth context to pick up new values
         await refreshUser();
         
-        onSuccess?.(backendResult.user, backendResult.token);
+        onSuccess?.(result.user, result.token);
       } else {
-        onError?.(backendResult.message || 'Login failed');
+        onError?.(result.message || 'Login failed');
       }
     } catch (error: any) {
       console.error(`${provider} login error:`, error);
@@ -66,7 +53,9 @@ const SocialLogin: React.FC<SocialLoginProps> = ({
   };
 
   const handleGoogleSignIn = () => {
-    handleSocialLogin(signInWithGoogle, 'google');
+    // This component is now deprecated - use GoogleLoginButton directly
+    // The GoogleLoginButton component handles the OAuth flow internally
+    console.warn('SocialLogin component is deprecated. Use GoogleLoginButton directly.');
   };
 
   return (

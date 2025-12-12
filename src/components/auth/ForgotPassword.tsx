@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../../config/firebase';
+import { authAPI } from '../../services/api';
 import styles from './ForgotPassword.module.css';
 
 interface ForgotPasswordProps {
@@ -29,24 +28,16 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({
     setLoading(true);
     
     try {
-      await sendPasswordResetEmail(auth, email);
+      await authAPI.forgotPassword(email);
       setSuccess(true);
       onSuccess?.('Password reset email sent! Please check your inbox.');
     } catch (error: any) {
       let errorMessage = 'Failed to send password reset email';
       
-      switch (error.code) {
-        case 'auth/user-not-found':
-          errorMessage = 'No account found with this email address';
-          break;
-        case 'auth/invalid-email':
-          errorMessage = 'Invalid email address';
-          break;
-        case 'auth/too-many-requests':
-          errorMessage = 'Too many requests. Please try again later';
-          break;
-        default:
-          errorMessage = error.message || errorMessage;
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
       
       onError?.(errorMessage);
