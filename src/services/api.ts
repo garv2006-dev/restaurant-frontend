@@ -30,10 +30,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Clear token and redirect to login
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('userType');
-      window.location.href = '/login';
+      // localStorage.removeItem('token');
+      // localStorage.removeItem('user');
+      // localStorage.removeItem('userType');
+      // window.location.href = '/login';
     }
     return Promise.reject(error);
   }
@@ -48,6 +48,11 @@ export const authAPI = {
 
   register: async (userData: RegisterData): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
     const response = await api.post('/auth/register', userData);
+    return response.data;
+  },
+
+  googleLogin: async (idToken: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
+    const response = await api.post('/auth/login/google', { idToken });
     return response.data;
   },
 
@@ -411,12 +416,12 @@ export const adminAPI = {
     const response: AxiosResponse<ApiResponse<User>> = await api.put(`/admin/users/${id}/status`, { isActive });
     return response.data;
   },
-  
+
   createRoom: async (roomData: any): Promise<ApiResponse<Room>> => {
     const response: AxiosResponse<ApiResponse<Room>> = await api.post('/rooms', roomData);
     return response.data;
   },
-  
+
   updateRoom: async (id: string, roomData: any): Promise<ApiResponse<Room>> => {
     const response: AxiosResponse<ApiResponse<Room>> = await api.put(`/rooms/${id}`, roomData);
     return response.data;

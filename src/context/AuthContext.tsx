@@ -13,6 +13,7 @@ interface AuthContextType extends AuthState {
   verifyEmail: (token: string) => Promise<boolean>;
   resendVerification: (email: string) => Promise<boolean>;
   refreshUser: () => Promise<void>;
+  setAuthState: React.Dispatch<React.SetStateAction<AuthState>>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -55,7 +56,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 ...response.user,
                 role: response.user.role || (userType === 'admin' ? 'admin' : 'user')
               };
-              
+
               updateAuthState({
                 user,
                 token,
@@ -68,9 +69,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           } catch (error) {
             // Token is invalid, clear it
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            localStorage.removeItem('userType');
+            // localStorage.removeItem('token');
+            // localStorage.removeItem('user');
+            // localStorage.removeItem('userType');
           }
         }
 
@@ -141,16 +142,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = useCallback(async (userData: RegisterData): Promise<boolean> => {
     try {
       updateAuthState({ loading: true });
-      
+
       const response = await authAPI.register(userData);
-      
+
       if (response.success && response.user && response.token) {
         const { user, token } = response;
-        
+
         // Store in localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-        
+
         // Update state
         updateAuthState({
           user,
@@ -158,7 +159,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isAuthenticated: true,
           loading: false,
         });
-        
+
         toast.success('Registration successful! Please verify your email.');
         return true;
       } else {
@@ -168,7 +169,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.error('Registration error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Registration failed';
       toast.error(errorMessage);
-      
+
       updateAuthState({ loading: false });
       return false;
     }
@@ -177,12 +178,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = useCallback(() => {
     // Call logout API (don't wait for response)
     authAPI.logout().catch(error => console.error('Logout API error:', error));
-    
+
     // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userType');
-    
+
     // Update state
     updateAuthState({
       user: null,
@@ -190,24 +191,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       isAuthenticated: false,
       loading: false,
     });
-    
+
     toast.success('Logged out successfully');
   }, [updateAuthState]);
 
   const updatePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
     try {
       const response = await authAPI.updatePassword(currentPassword, newPassword);
-      
+
       if (response.success && response.user && response.token) {
         const { user, token } = response;
-        
+
         // Update stored data
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-        
+
         // Update state
         updateAuthState({ user, token });
-        
+
         toast.success('Password updated successfully');
         return true;
       } else {
@@ -224,7 +225,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const forgotPassword = useCallback(async (email: string): Promise<boolean> => {
     try {
       const response = await authAPI.forgotPassword(email);
-      
+
       if (response.success) {
         toast.success('Password reset email sent successfully');
         return true;
@@ -242,14 +243,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const resetPassword = useCallback(async (token: string, password: string): Promise<boolean> => {
     try {
       const response = await authAPI.resetPassword(token, password);
-      
+
       if (response.success && response.user && response.token) {
         const { user, token: newToken } = response;
-        
+
         // Store in localStorage
         localStorage.setItem('token', newToken);
         localStorage.setItem('user', JSON.stringify(user));
-        
+
         // Update state
         updateAuthState({
           user,
@@ -257,7 +258,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isAuthenticated: true,
           loading: false,
         });
-        
+
         toast.success('Password reset successful');
         return true;
       } else {
@@ -282,7 +283,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             ...response.user,
             role: response.user.role || (userType === 'admin' ? 'admin' : 'user')
           };
-          
+
           updateAuthState({ user });
           localStorage.setItem('user', JSON.stringify(user));
         }
@@ -297,7 +298,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const verifyEmail = useCallback(async (token: string): Promise<boolean> => {
     try {
       const response = await authAPI.verifyEmail(token);
-      
+
       if (response.success) {
         // Refresh user data to get updated verification status
         await refreshUser();
@@ -317,7 +318,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const resendVerification = useCallback(async (email: string): Promise<boolean> => {
     try {
       const response = await authAPI.resendVerification(email);
-      
+
       if (response.success) {
         toast.success('Verification email sent successfully');
         return true;
@@ -347,6 +348,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     verifyEmail,
     resendVerification,
     refreshUser,
+    setAuthState
   }), [
     authState.user,
     authState.token,
@@ -361,6 +363,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     verifyEmail,
     resendVerification,
     refreshUser,
+    setAuthState
   ]);
 
   return (

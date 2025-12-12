@@ -8,6 +8,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import SocialLogin from '../components/auth/SocialLogin';
 import { getAuth, verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { GoogleLoginButton } from '../components/common/GoogleLoginButton';
 
 // Create a wrapper component for FontAwesome icons to ensure React 19 compatibility
 const IconWrapper = ({ icon: Icon, className, ...props }: { icon: any; className?: string }) => {
@@ -29,11 +30,11 @@ const Login: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetSuccess, setResetSuccess] = useState(false);
-  
+
   const { login, loading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
@@ -48,7 +49,7 @@ const Login: React.FC = () => {
     const urlParams = new URLSearchParams(location.search);
     const mode = urlParams.get('mode');
     const oobCode = urlParams.get('oobCode');
-    
+
     if (mode === 'resetPassword' && oobCode) {
       setIsResetMode(true);
       setResetCode(oobCode);
@@ -80,7 +81,7 @@ const Login: React.FC = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name as keyof LoginCredentials]) {
       setErrors(prev => ({
@@ -92,7 +93,7 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     const success = await login(credentials);
@@ -104,37 +105,37 @@ const Login: React.FC = () => {
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!resetCode) {
       setResetError('Invalid reset code');
       return;
     }
-    
+
     if (!newPassword || !confirmPassword) {
       setResetError('Please enter both password fields');
       return;
     }
-    
+
     if (newPassword.length < 6) {
       setResetError('Password must be at least 6 characters long');
       return;
     }
-    
+
     if (newPassword !== confirmPassword) {
       setResetError('Passwords do not match');
       return;
     }
-    
+
     try {
       // Verify the reset code
       const email = await verifyPasswordResetCode(auth, resetCode);
-      
+
       // Confirm the password reset
       await confirmPasswordReset(auth, resetCode, newPassword);
-      
+
       setResetSuccess(true);
       setResetError(null);
-      
+
       // After 3 seconds, switch back to login mode
       setTimeout(() => {
         setIsResetMode(false);
@@ -143,7 +144,7 @@ const Login: React.FC = () => {
         setConfirmPassword('');
         setResetSuccess(false);
       }, 3000);
-      
+
     } catch (error: any) {
       console.error('Password reset error:', error);
       setResetError(error.message || 'Failed to reset password');
@@ -185,7 +186,7 @@ const Login: React.FC = () => {
                       {socialError}
                     </Alert>
                   )}
-                  <SocialLogin 
+                  {/* <SocialLogin 
                     onSuccess={(user, token) => {
                       setSocialError(null);
                       // The AuthContext will handle the redirect
@@ -197,8 +198,9 @@ const Login: React.FC = () => {
                     setLoading={(loading) => {
                       // You can add loading state handling here if needed
                     }}
-                  />
+                  /> */}
 
+                  <GoogleLoginButton />
                   <div className="position-relative mb-4">
                     <hr />
                     <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
@@ -317,7 +319,7 @@ const Login: React.FC = () => {
                       autoComplete="new-password"
                     />
                   </Form.Group>
-                  
+
                   <div className="d-grid mb-3">
                     <Button
                       type="submit"
