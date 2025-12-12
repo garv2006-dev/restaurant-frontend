@@ -81,6 +81,7 @@ const Menu: React.FC = () => {
         setError('');
 
         const response: any = await menuAPI.getMenuItems();
+        console.log("response>>>>>>>>>", response)
 
         // Backend shape:
         //   { success: true, items: MenuItem[] }
