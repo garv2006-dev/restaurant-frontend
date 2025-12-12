@@ -29,7 +29,7 @@ function GoogleLoginButton() {
                 });
                 // Update stored user data
                 localStorage.setItem('user', JSON.stringify(user));
-                localStorage.setItem('token', token as string);
+                localStorage.setItem('token', token || '');
             }
         }
         catch (error) {

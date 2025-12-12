@@ -51,11 +51,6 @@ export const authAPI = {
     return response.data;
   },
 
-  googleLogin: async (idToken: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
-    const response = await api.post('/auth/login/google', { idToken });
-    return response.data;
-  },
-
   logout: async (): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.post('/auth/logout');
     return response.data;
@@ -97,15 +92,9 @@ export const authAPI = {
     return response.data;
   },
 
-  // Social login
-  socialLogin: async (socialData: {
-    uid: string;
-    email: string;
-    displayName: string;
-    photoURL?: string;
-    provider: 'google' | 'facebook';
-  }): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
-    const response = await api.post('/auth/social-login', socialData);
+  // Google OAuth login
+  googleLogin: async (idToken: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
+    const response = await api.post('/auth/google-login', { idToken });
     return response.data;
   },
 };
