@@ -40,6 +40,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
+import './styles/components.css';
 import './styles/responsive.css';
 
 import { useAuth } from './context/AuthContext';
