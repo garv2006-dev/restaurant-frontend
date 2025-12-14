@@ -153,8 +153,8 @@ const MyBookings: React.FC = () => {
                   <td>{roomLabel}</td>
                   <td>{ci}</td>
                   <td>{co}</td>
-                  <td>{nights}</td>
-                  <td>{b.status || '-'}</td>
+                  <td>{b.guestDetails.totalAdults + b.guestDetails.totalChildren} Guests</td>
+                  <td>{b.status || 'Pending'}</td>
                   <td>{total}</td>
                   <td>
                     {canCancelBooking(b) ? (

@@ -11,6 +11,10 @@ import { CartProvider } from './context/CartContext';
 // Layout
 import Layout from './components/layout/Layout';
 
+// Styles
+import './App.css';
+import './styles/settings-button.css';
+
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -28,6 +32,9 @@ import OrderSuccess from './pages/OrderSuccess';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import LoyaltyDashboard from './pages/LoyaltyDashboard';
 import Dashboard from './pages/Dashboard';
+
+// Components
+import ProtectedRoute from './components/auth/ProtectedRoute';
 
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -56,16 +63,25 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <CartProvider>
-            <Routes>
+          <Routes>
               {/* Admin routes - outside Layout */}
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/dashboard" element={
+                <ProtectedRoute requiredRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
               <Route path="/admin-test" element={<AdminTest />} />
               
               {/* Public routes - inside Layout */}
               <Route path="/*" element={
                 <Layout>
                   <Routes>
+                    {/* Public routes */}
                     <Route path="/" element={<Home />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
@@ -73,14 +89,48 @@ function App() {
                     <Route path="/menu" element={<Menu />} />
                     <Route path="/booking" element={<Booking />} />
                     <Route path="/contact" element={<Contact />} />
-                    <Route path="/cart" element={<Cart />} />
-                    <Route path="/checkout" element={<Checkout />} />
-                    <Route path="/order-success" element={<OrderSuccess />} />
-                    <Route path="/loyalty" element={<LoyaltyDashboard />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/bookings" element={<MyBookings />} />
-                    <Route path="/reviews" element={<MyReviews />} />
+                    
+                    {/* Protected routes - require authentication */}
+                    <Route path="/cart" element={
+                      <ProtectedRoute>
+                        <Cart />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/checkout" element={
+                      <ProtectedRoute>
+                        <Checkout />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/order-success" element={
+                      <ProtectedRoute>
+                        <OrderSuccess />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/loyalty" element={
+                      <ProtectedRoute>
+                        <LoyaltyDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/dashboard" element={
+                      <ProtectedRoute>
+                        <Dashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/profile" element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/bookings" element={
+                      <ProtectedRoute>
+                        <MyBookings />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/reviews" element={
+                      <ProtectedRoute>
+                        <MyReviews />
+                      </ProtectedRoute>
+                    } />
                   </Routes>
                 </Layout>
               } />
@@ -102,8 +152,8 @@ function App() {
             />
           </CartProvider>
         </AuthProvider>
-      </ThemeProvider>
-    </AccessibilityProvider>
+    </ThemeProvider>
+  </AccessibilityProvider>
   );
 }
 

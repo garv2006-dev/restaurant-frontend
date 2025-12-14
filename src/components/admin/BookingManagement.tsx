@@ -11,6 +11,12 @@ const BookingManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0
+  });
   const [filters, setFilters] = useState<{
     status: string;
     date: string;
@@ -29,9 +35,16 @@ const BookingManagement: React.FC = () => {
         const response = await adminAPI.getAllBookings({
           status: filters.status !== 'all' ? filters.status : undefined,
           date: filters.date || undefined,
-          search: filters.search || undefined
+          search: filters.search || undefined,
+          page: pagination.page,
+          limit: pagination.limit
         });
         setBookings(response.data?.bookings || []);
+        setPagination(prev => ({
+          ...prev,
+          total: response.data?.pagination?.total || 0,
+          pages: response.data?.pagination?.pages || 0
+        }));
       } catch (err: any) {
         setError(
           err?.response?.data?.message || err?.message || 'Failed to load bookings'
@@ -41,7 +54,15 @@ const BookingManagement: React.FC = () => {
       }
     };
     fetchBookings();
-  }, [filters]);
+  }, [filters, pagination.page, pagination.limit]);
+
+  const handlePageChange = (newPage: number) => {
+    setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+  };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -49,6 +70,7 @@ const BookingManagement: React.FC = () => {
       ...prev,
       [name]: value
     }));
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleViewDetails = (booking: Booking) => {
@@ -93,18 +115,7 @@ const BookingManagement: React.FC = () => {
     return booking.pricing?.totalAmount?.toFixed(2) || '0.00';
   };
 
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = filters.search === '' || 
-      booking.bookingId?.toLowerCase().includes(filters.search.toLowerCase()) ||
-      (typeof booking.guestDetails?.primaryGuest?.name === 'string' && 
-       booking.guestDetails.primaryGuest.name.toLowerCase().includes(filters.search.toLowerCase()));
-    
-    const matchesDate = !filters.date || 
-      (new Date(booking.bookingDates.checkInDate).toDateString() === new Date(filters.date).toDateString());
-    
-    return matchesSearch && matchesDate;
-  });
-
+  
   const getStatusBadge = (status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
     const variants: { [key: string]: string } = {
       'Confirmed': 'success',
@@ -201,8 +212,8 @@ const BookingManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredBookings.length > 0 ? (
-                  filteredBookings.map((booking) => {
+                {bookings.length > 0 ? (
+                  bookings.map((booking) => {
                     const room = typeof booking.room === 'object' && booking.room !== null ? booking.room : null;
                     const guestName = booking.guestDetails?.primaryGuest?.name || 'Unknown';
                     const roomLabel = room ? `${room.name || ''} ${room.roomNumber ? `#${room.roomNumber}` : ''}`.trim() : '-';
@@ -326,6 +337,78 @@ const BookingManagement: React.FC = () => {
               </tbody>
             </Table>
           </div>
+          
+          {/* Pagination Controls */}
+          {pagination.pages > 1 && (
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-muted">Show</span>
+                <Form.Select 
+                  size="sm" 
+                  style={{ width: 'auto' }}
+                  value={pagination.limit}
+                  onChange={(e) => handleLimitChange(Number(e.target.value))}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </Form.Select>
+                <span className="text-muted">entries</span>
+              </div>
+              
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-muted">
+                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
+                </span>
+              </div>
+              
+              <div className="d-flex gap-1">
+                <Button 
+                  variant="outline-secondary" 
+                  size="sm"
+                  disabled={pagination.page === 1}
+                  onClick={() => handlePageChange(pagination.page - 1)}
+                >
+                  <i className="bi bi-chevron-left"></i> Previous
+                </Button>
+                
+                {/* Page Numbers */}
+                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                  let pageNum: number;
+                  if (pagination.pages <= 5) {
+                    pageNum = i + 1;
+                  } else if (pagination.page <= 3) {
+                    pageNum = i + 1;
+                  } else if (pagination.page >= pagination.pages - 2) {
+                    pageNum = pagination.pages - 4 + i;
+                  } else {
+                    pageNum = pagination.page - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={pagination.page === pageNum ? "primary" : "outline-secondary"}
+                      size="sm"
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+                
+                <Button 
+                  variant="outline-secondary" 
+                  size="sm"
+                  disabled={pagination.page === pagination.pages}
+                  onClick={() => handlePageChange(pagination.page + 1)}
+                >
+                  Next <i className="bi bi-chevron-right"></i>
+                </Button>
+              </div>
+            </div>
+          )}
         </Card.Body>
       </Card>
 

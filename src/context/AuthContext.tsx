@@ -68,24 +68,56 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               return;
             }
           } catch (error) {
-            // Token is invalid, clear it
-            // localStorage.removeItem('token');
-            // localStorage.removeItem('user');
-            // localStorage.removeItem('userType');
+            // Token validation failed, but don't logout immediately
+            console.error('Auth initialization failed:', error);
+            // Try to use stored user data if API is temporarily unavailable
+            if (storedUser && token) {
+              try {
+                const parsedUser = JSON.parse(storedUser);
+                updateAuthState({
+                  user: parsedUser,
+                  token,
+                  isAuthenticated: true,
+                  loading: false,
+                });
+                return;
+              } catch (parseError) {
+                console.error('Failed to parse stored user data:', parseError);
+              }
+            }
           }
         }
 
-        updateAuthState({
-          user: null,
-          token: null,
-          isAuthenticated: false,
-          loading: false,
-        });
+        // Only logout if no valid stored data exists
+        if (!token || !storedUser) {
+          updateAuthState({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            loading: false,
+          });
+        } else {
+          // If we have stored data but API failed, keep user logged in
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            updateAuthState({
+              user: parsedUser,
+              token,
+              isAuthenticated: true,
+              loading: false,
+            });
+          } catch (parseError) {
+            console.error('Failed to parse stored user data:', parseError);
+            updateAuthState({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              loading: false,
+            });
+          }
+        }
       } catch (error) {
-        console.error('Auth initialization error:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('userType');
+        console.error('Unexpected error during auth initialization:', error);
         updateAuthState({
           user: null,
           token: null,
@@ -376,6 +408,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
+    console.error('useAuth called outside AuthProvider');
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;

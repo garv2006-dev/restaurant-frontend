@@ -43,10 +43,15 @@ function GoogleLoginButton() {
 
     return (
         <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+            <div style={{ width: '100%' }}>
                 <GoogleLogin
                     onSuccess={handleSuccess}
                     onError={handleError}
+                    width="100%"
+                    theme="outline"
+                    size="large"
+                    text="signin_with"
+                    shape="pill"
                 />
             </div>
         </GoogleOAuthProvider>

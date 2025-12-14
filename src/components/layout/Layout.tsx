@@ -52,7 +52,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
           right: '20px',
           width: '56px',
           height: '56px',
-          zIndex: 1050,
+        
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
         }}
         onClick={openAccessibilitySettings}
