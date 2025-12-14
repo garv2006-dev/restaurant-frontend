@@ -11,6 +11,10 @@ import { CartProvider } from './context/CartContext';
 // Layout
 import Layout from './components/layout/Layout';
 
+// Styles
+import './App.css';
+import './styles/settings-button.css';
+
 // Pages
 import Login from './pages/Login';
 import Register from './pages/Register';

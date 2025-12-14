@@ -1,0 +1,43 @@
+/* Settings button responsive positioning */
+.btn.position-fixed.rounded-circle.no-print {
+  z-index: 1100 !important;
+  position: fixed !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+@media (max-width: 576px) {
+  .btn.position-fixed.rounded-circle.no-print {
+    bottom: 16px !important;
+    right: 16px !important;
+    width: 48px !important;
+    height: 48px !important;
+  }
+  
+  .btn.position-fixed.rounded-circle.no-print svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .btn.position-fixed.rounded-circle.no-print {
+    bottom: 12px !important;
+    right: 12px !important;
+    width: 44px !important;
+    height: 44px !important;
+  }
+  
+  .btn.position-fixed.rounded-circle.no-print svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+}
+
+/* Ensure button is always visible above mobile menu */
+@media (max-width: 991.98px) {
+  .btn.position-fixed.rounded-circle.no-print {
+    z-index: 1100 !important;
+  }
+}
