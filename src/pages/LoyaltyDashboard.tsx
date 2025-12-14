@@ -49,8 +49,8 @@ const LoyaltyDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     fetchLoyaltyProgram();
@@ -64,9 +64,72 @@ const LoyaltyDashboard: React.FC = () => {
       const response = await loyaltyAPI.getProgram();
       if (response.success) {
         setLoyaltyProgram(response.data);
+      } else {
+        // Create a default loyalty program if API fails
+        setLoyaltyProgram({
+          _id: 'default',
+          name: 'Restaurant Loyalty Program',
+          description: 'Earn points with every booking and unlock exclusive rewards!',
+          pointsPerRupee: 1,
+          rewards: [],
+          tiers: [
+            {
+              _id: 'bronze',
+              name: 'Bronze',
+              minimumPoints: 0,
+              benefits: {
+                pointMultiplier: 1,
+                discountPercentage: 0,
+                perks: ['Free welcome drink', 'Priority booking']
+              }
+            },
+            {
+              _id: 'silver',
+              name: 'Silver',
+              minimumPoints: 100,
+              benefits: {
+                pointMultiplier: 1.2,
+                discountPercentage: 5,
+                perks: ['Free welcome drink', 'Priority booking', '5% discount']
+              }
+            },
+            {
+              _id: 'gold',
+              name: 'Gold',
+              minimumPoints: 500,
+              benefits: {
+                pointMultiplier: 1.5,
+                discountPercentage: 10,
+                perks: ['Free welcome drink', 'Priority booking', '10% discount', 'Complimentary dessert']
+              }
+            }
+          ]
+        });
       }
     } catch (error) {
       console.error('Error fetching loyalty program:', error);
+      // Set default program on error to prevent page from breaking
+      setLoyaltyProgram({
+        _id: 'default',
+        name: 'Restaurant Loyalty Program',
+        description: 'Earn points with every booking and unlock exclusive rewards!',
+        pointsPerRupee: 1,
+        rewards: [],
+        tiers: [
+          {
+            _id: 'bronze',
+            name: 'Bronze',
+            minimumPoints: 0,
+            benefits: {
+              pointMultiplier: 1,
+              discountPercentage: 0,
+              perks: ['Free welcome drink', 'Priority booking']
+            }
+          }
+        ]
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -110,17 +173,30 @@ const LoyaltyDashboard: React.FC = () => {
 
   const handleJoinProgram = async () => {
     try {
+      setError(null);
+      setSuccess(null);
+      
       const response = await loyaltyAPI.joinProgram();
       
       if (response.success) {
-        setSuccess('Successfully joined the loyalty program!');
-        fetchUserLoyaltyData(); // Refresh user data
+        setSuccess('Successfully joined the loyalty program! Welcome aboard!');
+        // Refresh user data after a short delay to ensure backend updates
+        setTimeout(() => {
+          fetchUserLoyaltyData();
+        }, 500);
       } else {
         setError(response.message || 'Failed to join loyalty program');
       }
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Error joining loyalty program');
       console.error('Error joining loyalty program:', error);
+      // Don't log out user on API errors, just show error message
+      if (error.response?.status === 401) {
+        setError('Session expired. Please refresh the page and try again.');
+      } else if (error.response?.status === 400) {
+        setError(error.response?.data?.message || 'You are already a member of the loyalty program');
+      } else {
+        setError('Unable to join loyalty program. Please try again later.');
+      }
     }
   };
 
@@ -193,14 +269,14 @@ const LoyaltyDashboard: React.FC = () => {
       {error && (
         <div className="alert alert-danger alert-dismissible fade show" role="alert">
           {error}
-          <button type="button" className="btn-close" onClick={() => setError('')}></button>
+          <button type="button" className="btn-close" onClick={() => setError(null)}></button>
         </div>
       )}
       
       {success && (
         <div className="alert alert-success alert-dismissible fade show" role="alert">
           {success}
-          <button type="button" className="btn-close" onClick={() => setSuccess('')}></button>
+          <button type="button" className="btn-close" onClick={() => setSuccess(null)}></button>
         </div>
       )}
 

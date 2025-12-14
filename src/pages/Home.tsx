@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Carousel, Col, Container, Row } from 'react-bootstrap';
-import { FaCar, FaCoffee, FaSnowflake, FaStar, FaTv, FaWifi } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Button, Card, Carousel, Col, Container, Row, Alert } from 'react-bootstrap';
+import { FaCar, FaCoffee, FaSnowflake, FaStar, FaTv, FaWifi, FaUser, FaLock } from 'react-icons/fa';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 // Create a wrapper component for FontAwesome icons to ensure React 19 compatibility
 const IconWrapper = ({ icon: Icon, className, style, ...props }: { icon: any; className?: string; style?: React.CSSProperties }) => {
@@ -41,6 +42,8 @@ interface Room {
 const Home: React.FC = () => {
   const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     fetchFeaturedRooms();
@@ -124,8 +127,27 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleWeekendGetaway = () => {
+    // Navigate to booking page with weekend package parameters
+    navigate('/booking?package=weekend-getaway&discount=20');
+  };
+
   return (
     <div>
+      {/* Authentication Notice for non-logged-in users */}
+      {!isAuthenticated && (
+        <Alert variant="info" className="m-3">
+          <div className="d-flex align-items-center">
+            <IconWrapper icon={FaLock} className="me-2" />
+            <div>
+              <strong>Welcome to our restaurant!</strong> To book rooms, access your cart, and enjoy personalized features, please 
+              <Button variant="link" className="p-0 ms-1" href="/login">login</Button> or 
+              <Button variant="link" className="p-0 ms-1" href="/register">register</Button>.
+            </div>
+          </div>
+        </Alert>
+      )}
+
       {/* Hero Section */}
       <section className="hero-section" style={{
         background: 'linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=1200") center/cover',
@@ -134,6 +156,7 @@ const Home: React.FC = () => {
         alignItems: 'center',
         color: 'white',
         textAlign: 'center'
+        
       }}>
         <Container>
           <Row>
@@ -144,7 +167,7 @@ const Home: React.FC = () => {
                 Book your perfect stay and enjoy our exquisite cuisine.
               </p>
               <div className="d-flex gap-3 justify-content-center">
-                <Button variant="primary" size="lg" href="/rooms">
+                <Button variant="primary" size="lg" href="/booking">
                   Explore Rooms
                 </Button>
                 <Button variant="outline-light" size="lg" href="/menu">
@@ -246,7 +269,8 @@ const Home: React.FC = () => {
               <div className="text-center p-4">
                 <h4 className="text-primary">Weekend Getaway Package</h4>
                 <p className="lead">20% off on weekend stays with complimentary breakfast</p>
-                <Button variant="outline-primary">Book Now</Button>
+                <p className="text-muted">Starting from ₹4,000 per night</p>
+                <Button variant="outline-primary" onClick={handleWeekendGetaway}>Book Now</Button>
               </div>
             </Carousel.Item>
             <Carousel.Item>

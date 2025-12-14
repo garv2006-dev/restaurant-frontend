@@ -84,15 +84,16 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col md={6} lg={5} xl={4}>
-          <Card className="shadow-sm border-0">
-            <Card.Body className="p-4">
-              <div className="text-center mb-4">
-                <h2 className="text-primary mb-2">Welcome Back</h2>
-                <p className="text-muted">Sign in to your account</p>
-              </div>
+    <div className="min-vh-100 bg-light">
+      <Container className="py-5">
+        <Row className="justify-content-center">
+          <Col md={6} lg={5} xl={4}>
+            <Card className="shadow-lg border-0 rounded-3">
+              <Card.Body className="p-5">
+                <div className="text-center mb-4">
+                  <h2 className="text-primary mb-2 fw-bold">Welcome Back</h2>
+                  <p className="text-muted">Sign in to your account</p>
+                </div>
 
               {socialError && (
                 <Alert variant="danger" className="mb-3">
@@ -100,7 +101,10 @@ const Login: React.FC = () => {
                 </Alert>
               )}
 
-              <GoogleLoginButton />
+              <div className="mb-3">
+                <GoogleLoginButton />
+              </div>
+
               <div className="position-relative mb-4">
                 <hr />
                 <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
@@ -111,7 +115,7 @@ const Login: React.FC = () => {
               <Form onSubmit={handleSubmit}>
                 {/* Email Field */}
                 <Form.Group className="mb-3">
-                  <Form.Label>Email Address</Form.Label>
+                  <Form.Label className="fw-semibold">Email Address</Form.Label>
                   <Form.Control
                     type="email"
                     name="email"
@@ -120,6 +124,7 @@ const Login: React.FC = () => {
                     placeholder="Enter your email"
                     isInvalid={!!errors.email}
                     autoComplete="email"
+                    className="py-2"
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.email}
@@ -128,7 +133,7 @@ const Login: React.FC = () => {
 
                 {/* Password Field */}
                 <Form.Group className="mb-3">
-                  <Form.Label>Password</Form.Label>
+                  <Form.Label className="fw-semibold">Password</Form.Label>
                   <div className="position-relative">
                     <Form.Control
                       type={showPassword ? 'text' : 'password'}
@@ -138,6 +143,7 @@ const Login: React.FC = () => {
                       placeholder="Enter your password"
                       isInvalid={!!errors.password}
                       autoComplete="current-password"
+                      className="py-2"
                     />
                     <Button
                       variant="link"
@@ -179,7 +185,7 @@ const Login: React.FC = () => {
                     variant="primary"
                     size="lg"
                     disabled={loading}
-                    className="d-flex align-items-center justify-content-center"
+                    className="d-flex align-items-center justify-content-center py-3 fw-semibold"
                   >
                     {loading ? (
                       <LoadingSpinner size="sm" message="" />
@@ -198,7 +204,7 @@ const Login: React.FC = () => {
               {/* Sign Up Link */}
               <div className="text-center">
                 <span className="text-muted">Don't have an account? </span>
-                <Link to="/register" className="text-decoration-none">
+                <Link to="/register" className="text-decoration-none fw-semibold text-primary">
                   Create Account
                 </Link>
               </div>
@@ -212,6 +218,7 @@ const Login: React.FC = () => {
         </Col>
       </Row>
     </Container>
+    </div>
   );
 };
 

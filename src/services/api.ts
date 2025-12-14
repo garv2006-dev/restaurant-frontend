@@ -28,12 +28,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Only logout on 401 for specific API calls and not during app initialization
+    const isLoyaltyAPI = error.config.url?.includes('/loyalty/');
+    const isAuthMeAPI = error.config.url?.includes('/auth/me');
+    
+    if (error.response?.status === 401 && !isLoyaltyAPI && !isAuthMeAPI) {
       // Clear token and redirect to login
-      // localStorage.removeItem('token');
-      // localStorage.removeItem('user');
-      // localStorage.removeItem('userType');
-      // window.location.href = '/login';
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('userType');
+      window.location.href = '/login';
     }
     return Promise.reject(error);
   }

@@ -110,11 +110,11 @@ const Header: React.FC = () => {
                     <span className="d-inline-flex align-items-center">
                       <User size={16} className="me-1" />
                       {user.name}
-                      {user.loyaltyPoints > 0 && (
+                      {/* {user.loyaltyPoints > 0 && (
                         <Badge bg="warning" text="dark" className="ms-2">
                           {user.loyaltyPoints} pts
                         </Badge>
-                      )}
+                      )} */}
                     </span>
                   }
                   id="user-dropdown"
