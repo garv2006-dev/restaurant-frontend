@@ -98,15 +98,15 @@ const Home: React.FC = () => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
-    
+
     for (let i = 0; i < fullStars; i++) {
       stars.push(<IconWrapper icon={FaStar} key={i} className="text-warning" />);
     }
-    
+
     if (hasHalfStar) {
       stars.push(<IconWrapper icon={FaStar} key="half" className="text-warning" style={{ opacity: 0.5 }} />);
     }
-    
+
     return stars;
   };
 
@@ -140,8 +140,8 @@ const Home: React.FC = () => {
           <div className="d-flex align-items-center">
             <IconWrapper icon={FaLock} className="me-2" />
             <div>
-              <strong>Welcome to our restaurant!</strong> To book rooms, access your cart, and enjoy personalized features, please 
-              <Button variant="link" className="p-0 ms-1" href="/login">login</Button> or 
+              <strong>Welcome to our restaurant!</strong> To book rooms, access your cart, and enjoy personalized features, please
+              <Button variant="link" className="p-0 ms-1" href="/login">login</Button> or
               <Button variant="link" className="p-0 ms-1" href="/register">register</Button>.
             </div>
           </div>
@@ -155,26 +155,6 @@ const Home: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         color: 'white',
-
-        textAlign: 'center'
-        
-      }}>
-        <Container>
-          <Row>
-            <Col>
-              <h1 className="display-4 fw-bold mb-4">Welcome to Luxury Restaurant & Rooms</h1>
-              <p className="lead mb-4">
-                Experience fine dining and comfortable accommodation in the heart of the city.
-                Book your perfect stay and enjoy our exquisite cuisine.
-              </p>
-              <div className="d-flex gap-3 justify-content-center">
-                <Button variant="primary" size="lg" href="/booking">
-                  Explore Rooms
-                </Button>
-                <Button variant="outline-light" size="lg" href="/menu">
-                  View Menu
-                </Button>
-=======
         textAlign: 'center',
         position: 'relative',
         overflow: 'hidden'
@@ -213,7 +193,7 @@ const Home: React.FC = () => {
             <h2 className="section-title">Featured Rooms</h2>
             <p className="section-description">Discover our most exquisite accommodations, crafted for your comfort</p>
           </div>
-          
+
           {loading ? (
             <div className="text-center py-5">
               <div className="spinner-border text-primary" role="status">
@@ -227,9 +207,9 @@ const Home: React.FC = () => {
                 <Col key={room._id} md={6} lg={4} className="mb-4">
                   <Card className="room-card h-100">
                     <div className="room-image-wrapper">
-                      <Card.Img 
-                        variant="top" 
-                        src={room.images[0]?.url || 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500'} 
+                      <Card.Img
+                        variant="top"
+                        src={room.images[0]?.url || 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500'}
                         alt={room.images[0]?.altText || room.name}
                         className="room-image"
                       />
@@ -251,14 +231,14 @@ const Home: React.FC = () => {
                           <div className="small text-muted">{room.type}</div>
                         </div>
                       </div>
-                      
+
                       <Card.Text className="text-muted flex-grow-1">
                         {room.description}
                       </Card.Text>
-                      
+
                       <div className="mb-3">
                         <div className="d-flex flex-wrap gap-2">
-                          {Object.entries(room.features).map(([key, value]) => 
+                          {Object.entries(room.features).map(([key, value]) =>
                             value ? (
                               <span key={key} className="badge bg-light text-dark" title={key.replace(/([A-Z])/g, ' $1')}>
                                 {getFeatureIcon(key)}
@@ -267,7 +247,7 @@ const Home: React.FC = () => {
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="mt-auto">
                         <Link to="/booking" className="btn btn-primary w-100">
                           Book Now
@@ -290,24 +270,18 @@ const Home: React.FC = () => {
             <h2 className="section-title">Special Offers</h2>
             <p className="section-description">Indulge in our exclusive packages and memorable experiences</p>
           </div>
-          
-          <Carousel 
+
+          <Carousel
             indicators={false}
             interval={5000}
             className="special-offers-carousel"
           >
             <Carousel.Item>
-
               <div className="text-center p-4">
                 <h4 className="text-primary">Weekend Getaway Package</h4>
                 <p className="lead">20% off on weekend stays with complimentary breakfast</p>
                 <p className="text-muted">Starting from ₹4,000 per night</p>
                 <Button variant="outline-primary" onClick={handleWeekendGetaway}>Book Now</Button>
-              <div className="special-offer">
-                <span className="offer-badge">Save 20%</span>
-                <h4 className="mb-3">Weekend Getaway Package</h4>
-                <p className="lead mb-4">Enjoy a luxurious weekend stay with complimentary breakfast and spa access</p>
-                <Button variant="outline-primary" className="btn-offer">Book Now</Button>
               </div>
             </Carousel.Item>
             <Carousel.Item>
