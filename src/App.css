@@ -721,7 +721,7 @@ p {
     padding: 0.5rem 1rem;
   }
 }
-.navbar-overlay {
+/* .navbar-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -731,15 +731,15 @@ p {
   opacity: 0;
   visibility: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1040;
+  z-index: 1200;
   pointer-events: none;
-}
+} */
 
-.navbar-overlay.show {
+/* .navbar-overlay.show {
   opacity: 1;
   visibility: visible;
-  pointer-events: none; /* Keep overlay non-interactive */
-}
+  pointer-events: none; 
+} */
 
 /* Ensure menu is above overlay and floating buttons */
 @media (max-width: 991.98px) {
@@ -747,12 +747,12 @@ p {
     z-index: 1060;
   }
   
-  .navbar-overlay {
+  /* .navbar-overlay {
     display: block;
-  }
+  } */
   
   /* Add a clickable overlay area outside the menu */
-  .navbar-overlay.show::before {
+  /* .navbar-overlay.show::before {
     content: '';
     position: absolute;
     top: 0;
@@ -760,7 +760,7 @@ p {
     right: 0;
     bottom: 0;
     z-index: 1;
-  }
+  } */
 }
 
 @media (min-width: 992px) {

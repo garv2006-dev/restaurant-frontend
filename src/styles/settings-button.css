@@ -1,6 +1,6 @@
 /* Settings button responsive positioning */
 .btn.position-fixed.rounded-circle.no-print {
-  z-index: 1100 !important;
+  /* z-index: 1100 !important; */
   position: fixed !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -36,8 +36,8 @@
 }
 
 /* Ensure button is always visible above mobile menu */
-@media (max-width: 991.98px) {
+/* @media (max-width: 991.98px) {
   .btn.position-fixed.rounded-circle.no-print {
     z-index: 1100 !important;
   }
-}
+} */
