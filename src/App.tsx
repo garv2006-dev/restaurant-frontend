@@ -19,6 +19,7 @@ import './styles/settings-button.css';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import MyBookings from './pages/MyBookings';
 import MyReviews from './pages/MyReviews';
@@ -86,6 +87,7 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password/:token" element={<ResetPassword />} />
                     <Route path="/menu" element={<Menu />} />
                     <Route path="/booking" element={<Booking />} />
                     <Route path="/contact" element={<Contact />} />
