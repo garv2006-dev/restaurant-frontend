@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import { CartProvider } from './context/CartContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 // Layout
 import Layout from './components/layout/Layout';
@@ -33,6 +34,7 @@ import OrderSuccess from './pages/OrderSuccess';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import LoyaltyDashboard from './pages/LoyaltyDashboard';
 import Dashboard from './pages/Dashboard';
+import NotificationsPage from './pages/NotificationsPage';
 
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -43,6 +45,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
 import './styles/components.css';
 import './styles/responsive.css';
+import './styles/mobile-menu-fix.css';
 
 import { useAuth } from './context/AuthContext';
 
@@ -63,99 +66,105 @@ function App() {
     <AccessibilityProvider>
       <ThemeProvider>
         <AuthProvider>
-          <CartProvider>
-          <Routes>
-              {/* Admin routes - outside Layout */}
-              <Route path="/admin" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/dashboard" element={
-                <ProtectedRoute requiredRole="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin-test" element={<AdminTest />} />
-              
-              {/* Public routes - inside Layout */}
-              <Route path="/*" element={
-                <Layout>
-                  <Routes>
-                    {/* Public routes */}
-                    <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/reset-password/:token" element={<ResetPassword />} />
-                    <Route path="/menu" element={<Menu />} />
-                    <Route path="/booking" element={<Booking />} />
-                    <Route path="/contact" element={<Contact />} />
-                    
-                    {/* Protected routes - require authentication */}
-                    <Route path="/cart" element={
-                      <ProtectedRoute>
-                        <Cart />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/checkout" element={
-                      <ProtectedRoute>
-                        <Checkout />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/order-success" element={
-                      <ProtectedRoute>
-                        <OrderSuccess />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/loyalty" element={
-                      <ProtectedRoute>
-                        <LoyaltyDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/dashboard" element={
-                      <ProtectedRoute>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/profile" element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/bookings" element={
-                      <ProtectedRoute>
-                        <MyBookings />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/reviews" element={
-                      <ProtectedRoute>
-                        <MyReviews />
-                      </ProtectedRoute>
-                    } />
-                  </Routes>
-                </Layout>
-              } />
-            </Routes>
-            
-            {/* Toast Notifications */}
-            <ToastContainer
-              position="top-right"
-              autoClose={5000}
-              hideProgressBar={false}
-              newestOnTop={false}
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="colored"
-              aria-live="polite"
-            />
-          </CartProvider>
+          <NotificationProvider>
+            <CartProvider>
+              <Routes>
+                {/* Admin routes - outside Layout */}
+                <Route path="/admin" element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/dashboard" element={
+                  <ProtectedRoute requiredRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin-test" element={<AdminTest />} />
+                
+                {/* Public routes - inside Layout */}
+                <Route path="/*" element={
+                  <Layout>
+                    <Routes>
+                      {/* Public routes */}
+                      <Route path="/" element={<Home />} />
+                      <Route path="/login" element={<Login />} />
+                      <Route path="/register" element={<Register />} />
+                      <Route path="/forgot-password" element={<ForgotPassword />} />
+                      <Route path="/reset-password/:token" element={<ResetPassword />} />
+                      <Route path="/menu" element={<Menu />} />
+                      <Route path="/booking" element={<Booking />} />
+                      <Route path="/contact" element={<Contact />} />
+                      
+                      {/* Protected routes - require authentication */}
+                      <Route path="/cart" element={
+                        <ProtectedRoute>
+                          <Cart />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/checkout" element={
+                        <ProtectedRoute>
+                          <Checkout />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/order-success" element={
+                        <ProtectedRoute>
+                          <OrderSuccess />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/loyalty" element={
+                        <ProtectedRoute>
+                          <LoyaltyDashboard />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/dashboard" element={
+                        <ProtectedRoute>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/profile" element={
+                        <ProtectedRoute>
+                          <Profile />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/bookings" element={
+                        <ProtectedRoute>
+                          <MyBookings />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/reviews" element={
+                        <ProtectedRoute>
+                          <MyReviews />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/notifications" element={
+                        <ProtectedRoute>
+                          <NotificationsPage />
+                        </ProtectedRoute>
+                      } />
+                    </Routes>
+                  </Layout>
+                } />
+              </Routes>
+              {/* Toast Notifications */}
+              <ToastContainer
+                position="top-right"
+                autoClose={5000}
+                hideProgressBar={false}
+                newestOnTop={false}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="colored"
+                aria-live="polite"
+              />
+            </CartProvider>
+          </NotificationProvider>
         </AuthProvider>
-    </ThemeProvider>
-  </AccessibilityProvider>
+      </ThemeProvider>
+    </AccessibilityProvider>
   );
 }
 

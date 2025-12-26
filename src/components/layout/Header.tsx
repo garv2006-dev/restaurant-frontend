@@ -5,11 +5,13 @@ import { User, Sun, Moon, Bell, LogIn, UserPlus, ShoppingCart } from 'lucide-rea
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useCart } from '../../context/CartContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const { totalQuantity } = useCart();
+  const { unreadCount } = useNotifications();
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -60,15 +62,40 @@ const Header: React.FC = () => {
         fixed="top"
       >
         <Container>
-          <Navbar.Brand as={Link} to="/" className="fw-bold fs-3" onClick={() => handleNavLinkClick()}>
+          <Navbar.Brand as={Link} to="/" className="fw-bold" onClick={() => handleNavLinkClick()}>
             <span className="text-primary">Luxury</span> Restaurant
           </Navbar.Brand>
 
-          <Navbar.Toggle aria-controls="basic-navbar-nav">
-            <span className="navbar-toggler-icon">
-              <span></span>
-            </span>
-          </Navbar.Toggle>
+          <div className="navbar-icons">
+            {/* Mobile notification icon */}
+            <div className="d-lg-none mobile-notification-wrapper">
+              {isAuthenticated && user && (
+                <Nav.Link 
+                  as={Link}
+                  to="/notifications" 
+                  className="mobile-notification-bell"
+                  onClick={() => handleNavLinkClick()}
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <Badge 
+                      pill 
+                      bg="danger" 
+                      className="position-absolute top-0 start-100 translate-middle mobile-notification-badge"
+                    >
+                      {unreadCount}
+                    </Badge>
+                  )}
+                </Nav.Link>
+              )}
+            </div>
+
+            <Navbar.Toggle aria-controls="basic-navbar-nav">
+              <span className="navbar-toggler-icon">
+                <span></span>
+              </span>
+            </Navbar.Toggle>
+          </div>
           
           <Navbar.Collapse id="basic-navbar-nav">
             {/* Mobile menu header */}
@@ -276,16 +303,23 @@ const Header: React.FC = () => {
               {isAuthenticated && user ? (
                 <>
                   {/* Notifications */}
-                  <Nav.Link href="#notifications" className="position-relative me-2">
+                  <Nav.Link 
+                    as={Link}
+                    to="/notifications" 
+                    className="position-relative me-2"
+                    onClick={handleDesktopNavClick}
+                  >
                     <Bell size={16} />
-                    <Badge 
-                      pill 
-                      bg="danger" 
-                      className="position-absolute top-0 start-100 translate-middle"
-                      style={{ fontSize: '0.6rem' }}
-                    >
-                      2
-                    </Badge>
+                    {unreadCount > 0 && (
+                      <Badge 
+                        pill 
+                        bg="danger" 
+                        className="position-absolute top-0 start-100 translate-middle"
+                        style={{ fontSize: '0.6rem' }}
+                      >
+                        {unreadCount}
+                      </Badge>
+                    )}
                   </Nav.Link>
 
                   {/* User Dropdown */}

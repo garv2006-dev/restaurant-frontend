@@ -104,8 +104,10 @@ const LoyaltyManagement: React.FC = () => {
     try {
       if (editingProgram) {
         await loyaltyAPI.updateProgram(editingProgram._id, formData);
+        toast.success('Loyalty program updated successfully');
       } else {
         await loyaltyAPI.createProgram(formData);
+        toast.success('Loyalty program created successfully');
       }
 
       setShowModal(false);
@@ -113,6 +115,7 @@ const LoyaltyManagement: React.FC = () => {
       fetchLoyaltyPrograms();
     } catch (error: any) {
       console.error('Error saving program:', error);
+      toast.error(error.response?.data?.message || 'Failed to save loyalty program');
     }
   };
 
@@ -134,9 +137,11 @@ const LoyaltyManagement: React.FC = () => {
 
     try {
       await loyaltyAPI.deleteProgram(id);
+      toast.success('Loyalty program deleted successfully');
       fetchLoyaltyPrograms();
     } catch (error: any) {
       console.error('Error deleting program:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete loyalty program');
     }
   };
 

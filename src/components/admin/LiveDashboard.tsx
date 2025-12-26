@@ -1,51 +1,86 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Badge, Table } from 'react-bootstrap';
+import { Card, Row, Col, Badge, Table, Spinner, Alert } from 'react-bootstrap';
 import { TrendingUp, ShoppingCart, DollarSign, Calendar } from 'lucide-react';
+import { bookingsAPI } from '../../services/api';
+
+interface RecentBooking {
+  _id: string;
+  bookingId: string;
+  guestDetails: {
+    primaryGuest: {
+      name: string;
+      email: string;
+      phone: string;
+    };
+  };
+  room: {
+    _id: string;
+    name: string;
+    roomNumber: string;
+    type: string;
+  };
+  bookingDates: {
+    checkInDate: string;
+    checkOutDate: string;
+  };
+  status: string;
+  pricing: {
+    totalAmount: number;
+  };
+}
 
 interface DashboardData {
   totalBookings: number;
   totalRevenue: number;
   occupancyRate: number;
   pendingCheckins: number;
-  recentBookings: Array<{
-    id: string;
-    guestName: string;
-    roomNumber: string;
-    checkIn: string;
-    status: string;
-  }>;
+  recentBookings: RecentBooking[];
 }
 
 const LiveDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Mock data for now
-    const mockData: DashboardData = {
-      totalBookings: 128,
-      totalRevenue: 245600,
-      occupancyRate: 78,
-      pendingCheckins: 12,
-      recentBookings: [
-        {
-          id: '1',
-          guestName: 'John Doe',
-          roomNumber: '101',
-          checkIn: '2024-01-15',
-          status: 'Confirmed'
-        },
-        {
-          id: '2',
-          guestName: 'Jane Smith',
-          roomNumber: '205',
-          checkIn: '2024-01-16',
-          status: 'Pending'
+    const fetchBookings = async () => {
+      try {
+        setLoading(true);
+        // Use admin endpoint to get all bookings
+        const response = await bookingsAPI.getAllBookings({ limit: 100 });
+        
+        if (response?.success && response?.data) {
+          let bookings: any[] = Array.isArray(response.data) ? response.data : [];
+          
+          // Get recent 5 bookings
+          const recentBookings = bookings.slice(0, 5) as RecentBooking[];
+          
+          // Calculate stats
+          const totalBookings = bookings.length;
+          const totalRevenue = bookings.reduce((sum: number, b: any) => sum + (b.pricing?.totalAmount || 0), 0);
+          const confirmedBookings = bookings.filter((b: any) => b.status === 'Confirmed').length;
+          const occupancyRate = totalBookings > 0 ? Math.round((confirmedBookings / totalBookings) * 100) : 0;
+          const pendingCheckins = bookings.filter((b: any) => b.status === 'Pending').length;
+          
+          setData({
+            totalBookings,
+            totalRevenue,
+            occupancyRate,
+            pendingCheckins,
+            recentBookings
+          });
+        } else {
+          setError('Failed to fetch booking data');
         }
-      ]
+      } catch (err: any) {
+        console.error('Error fetching bookings:', err);
+        setError(err?.response?.data?.message || 'Failed to load bookings');
+      } finally {
+        setLoading(false);
+      }
     };
-    setData(mockData);
-    setLoading(false);
+
+    fetchBookings();
   }, []);
 
   if (loading) {
@@ -53,13 +88,20 @@ const LiveDashboard: React.FC = () => {
       <Card>
         <Card.Body>
           <div className="text-center py-4">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
+            <Spinner animation="border" variant="primary" />
             <p className="mt-2">Loading dashboard data...</p>
           </div>
         </Card.Body>
       </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="danger">
+        <Alert.Heading>Error Loading Data</Alert.Heading>
+        <p>{error}</p>
+      </Alert>
     );
   }
 
@@ -143,33 +185,66 @@ const LiveDashboard: React.FC = () => {
                 <thead>
                   <tr>
                     <th>Guest Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
                     <th>Room</th>
-                    <th>Check-in Date</th>
+                    <th>Check-in</th>
+                    <th>Check-out</th>
+                    <th>Amount</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data?.recentBookings.map((booking) => (
-                    <tr key={booking.id}>
-                      <td>{booking.guestName}</td>
-                      <td>{booking.roomNumber}</td>
-                      <td>{booking.checkIn}</td>
-                      <td>
-                        <Badge bg={
-                          booking.status === 'Confirmed' ? 'success' : 
-                          booking.status === 'Pending' ? 'warning' : 'secondary'
-                        }>
-                          {booking.status}
-                        </Badge>
-                      </td>
-                      <td>
-                        <button className="btn btn-outline-primary btn-sm me-1">
-                          View
-                        </button>
+                  {data?.recentBookings && data.recentBookings.length > 0 ? (
+                    data.recentBookings.map((booking) => (
+                      <tr key={booking._id}>
+                        <td>
+                          <strong>{booking.guestDetails.primaryGuest.name}</strong>
+                        </td>
+                        <td>
+                          <small>{booking.guestDetails.primaryGuest.email}</small>
+                        </td>
+                        <td>
+                          <small>{booking.guestDetails.primaryGuest.phone}</small>
+                        </td>
+                        <td>
+                          {booking?.room?.name} #{booking?.room?.roomNumber}
+                        </td>
+                        <td>
+                          <small>{new Date(booking.bookingDates.checkInDate).toLocaleDateString()}</small>
+                        </td>
+                        <td>
+                          <small>{new Date(booking.bookingDates.checkOutDate).toLocaleDateString()}</small>
+                        </td>
+                        <td>
+                          <strong>₹{booking.pricing.totalAmount?.toFixed(2) || '0.00'}</strong>
+                        </td>
+                        <td>
+                          <Badge bg={
+                            booking.status === 'Confirmed' ? 'success' : 
+                            booking.status === 'Pending' ? 'warning' : 
+                            booking.status === 'CheckedIn' ? 'info' :
+                            booking.status === 'CheckedOut' ? 'secondary' :
+                            booking.status === 'Cancelled' ? 'danger' : 'secondary'
+                          }>
+                            {booking.status}
+                          </Badge>
+                        </td>
+                        <td>
+                          <button className="btn btn-outline-primary btn-sm">
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={9} className="text-center text-muted py-4">
+                        No bookings available
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </Table>
             </Card.Body>
