@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI } from '../services/api';
 import { differenceInDays } from 'date-fns';
 import type { Room, Booking as BookingType, BookingFormData } from '../types';
+import { triggerBookingNotification } from '../utils/bookingNotification';
 
 const Booking: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -317,6 +318,15 @@ const Booking: React.FC = () => {
         setSuccess(true);
         setShowPaymentModal(false);
         alert('Booking confirmed successfully!');
+        
+        // Trigger notification
+        if ((response.data as any)?.notificationTrigger) {
+          console.log('Triggering notification:', (response.data as any).notificationTrigger);
+          triggerBookingNotification((response.data as any).notificationTrigger);
+        } else {
+          console.log('No notification trigger in response');
+        }
+        
         navigate('/bookings');
       } else {
         throw new Error(response?.message || 'Failed to create booking');

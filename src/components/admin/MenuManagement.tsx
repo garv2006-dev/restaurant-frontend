@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Badge, Button, Alert, Spinner, Modal, Form, Row, Col } from 'react-bootstrap';
-import { Search, Plus, Edit, Trash2, X, Save } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, X, Save, Upload } from 'lucide-react';
 import api, { menuAPI, adminAPI } from '../../services/api';
+import ImageUploadModal from './ImageUploadModal';
+import ImageGallery from './ImageGallery';
 
 interface MenuItem {
   _id?: string;
@@ -46,8 +48,10 @@ const MenuManagement: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showImageUploadModal, setShowImageUploadModal] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [currentItem, setCurrentItem] = useState<MenuItem | null>(null);
+  const [itemForImageUpload, setItemForImageUpload] = useState<MenuItem | null>(null);
 
   const [formData, setFormData] = useState<MenuFormData>({
     name: '',
@@ -393,6 +397,18 @@ const MenuManagement: React.FC = () => {
                     </Button>
 
                     <Button
+                      variant="outline-success"
+                      size="sm"
+                      className="me-1"
+                      onClick={() => {
+                        setItemForImageUpload(item);
+                        setShowImageUploadModal(true);
+                      }}
+                      title="Upload image">
+                      <Upload size={14} />
+                    </Button>
+
+                    <Button
                       variant="outline-danger"
                       size="sm"
                       onClick={() => handleDelete(item._id!)}>
@@ -557,6 +573,26 @@ const MenuManagement: React.FC = () => {
           </Modal.Footer>
         </Form>
       </Modal>
+
+      {/* Image Upload Modal */}
+      {itemForImageUpload && (
+        <ImageUploadModal
+          show={showImageUploadModal}
+          onHide={() => {
+            setShowImageUploadModal(false);
+            setItemForImageUpload(null);
+          }}
+          type="menu"
+          itemId={itemForImageUpload._id!}
+          itemName={itemForImageUpload.name}
+          onUploadSuccess={() => {
+            fetchMenuItems();
+            setShowImageUploadModal(false);
+            setItemForImageUpload(null);
+          }}
+          maxFiles={1}
+        />
+      )}
     </Card>
   );
 };

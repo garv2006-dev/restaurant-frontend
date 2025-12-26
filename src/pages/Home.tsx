@@ -58,37 +58,37 @@ const Home: React.FC = () => {
     } catch (error) {
       // Fallback to mock data if API fails
       console.warn('API not available, using mock data', error);
-      const mockRooms: Room[] = [
-        {
-          _id: '1',
-          name: 'Deluxe Ocean View',
-          type: 'Deluxe',
-          description: 'Spacious room with stunning ocean views and modern amenities.',
-          price: {
-            basePrice: 200,
-            weekendPrice: 250
-          },
-          images: [{
-            url: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500',
-            altText: 'Deluxe Ocean View Room',
-            isPrimary: true
-          }],
-          features: {
-            airConditioning: true,
-            wifi: true,
-            television: true,
-            breakfast: true,
-            parkingIncluded: true
-          },
-          capacity: {
-            adults: 2,
-            children: 1
-          },
-          averageRating: 4.8,
-          totalReviews: 24
-        }
-      ];
-      setFeaturedRooms(mockRooms);
+      // const mockRooms: Room[] = [
+      //   {
+      //     _id: '1',
+      //     name: 'Deluxe Ocean View',
+      //     type: 'Deluxe',
+      //     description: 'Spacious room with stunning ocean views and modern amenities.',
+      //     price: {
+      //       basePrice: 200,
+      //       weekendPrice: 250
+      //     },
+      //     images: [{
+      //       url: 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500',
+      //       altText: 'Deluxe Ocean View Room',
+      //       isPrimary: true
+      //     }],
+      //     features: {
+      //       airConditioning: true,
+      //       wifi: true,
+      //       television: true,
+      //       breakfast: true,
+      //       parkingIncluded: true
+      //     },
+      //     capacity: {
+      //       adults: 2,
+      //       children: 1
+      //     },
+      //     averageRating: 4.8,
+      //     totalReviews: 24
+      //   }
+      // ];
+      // setFeaturedRooms(mockRooms);
     } finally {
       setLoading(false);
     }

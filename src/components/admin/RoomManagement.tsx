@@ -13,6 +13,8 @@ import {
 } from 'react-bootstrap';
 import { Plus, Edit2, Trash2, X, RefreshCw, ExternalLink, ChevronDown, Upload } from 'lucide-react';
 import api from '../../services/api';
+import ImageUploadModal from './ImageUploadModal';
+import ImageGallery from './ImageGallery';
 
 interface Room {
   _id: string;
@@ -51,13 +53,16 @@ const RoomManagement: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [showImageUploadModal, setShowImageUploadModal] = useState<boolean>(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
+  const [roomForImageUpload, setRoomForImageUpload] = useState<Room | null>(null);
   const [formData, setFormData] = useState<{
     roomNumber: string;
     name: string;
@@ -141,6 +146,16 @@ const RoomManagement: React.FC = () => {
     setImagePreview([]);
     setError('');
     setSuccess('');
+  };
+
+  const handleOpenImageUploadModal = (room: Room) => {
+    setRoomForImageUpload(room);
+    setShowImageUploadModal(true);
+  };
+
+  const handleCloseImageUploadModal = () => {
+    setShowImageUploadModal(false);
+    setRoomForImageUpload(null);
   };
 
   const handleEditRoom = (room: Room) => {
@@ -327,13 +342,40 @@ const RoomManagement: React.FC = () => {
 
   const handleDeleteRoom = async (roomId: string) => {
     if (!window.confirm('Are you sure you want to delete this room?')) return;
+    
     try {
-      await api.delete(`/rooms/${roomId}`);
+      setDeletingRoomId(roomId);
+      setError('');
+      
+      const response = await api.delete(`/rooms/${roomId}`);
+      
       setSuccess('Room deleted successfully!');
+      setDeletingRoomId(null);
       fetchRooms();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting room:', err);
-      setError('Failed to delete room');
+      
+      let errorMessage = 'Failed to delete room';
+      
+      if (err.response) {
+        if (err.response.status === 400) {
+          // This is likely "Cannot delete room with active bookings"
+          errorMessage = err.response.data?.message || 'Cannot delete this room. It may have active bookings.';
+        } else if (err.response.status === 404) {
+          errorMessage = 'Room not found';
+        } else if (err.response.status === 401 || err.response.status === 403) {
+          errorMessage = 'You do not have permission to delete this room.';
+        } else if (err.response.data?.message) {
+          errorMessage = err.response.data.message;
+        }
+      } else if (err.request) {
+        errorMessage = 'No response from server. Please check your connection.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+      setDeletingRoomId(null);
     }
   };
 
@@ -342,14 +384,34 @@ const RoomManagement: React.FC = () => {
     if (!window.confirm(`Are you sure you want to delete ${selectedRooms.length} selected rooms?`)) return;
 
     try {
-      // Use Promise.all to delete all selected rooms
-      await Promise.all(selectedRooms.map(roomId => api.delete(`/rooms/${roomId}`)));
-      setSuccess(`${selectedRooms.length} rooms deleted successfully!`);
+      setSubmitting(true);
+      setError('');
+      
+      const results = await Promise.allSettled(
+        selectedRooms.map(roomId => api.delete(`/rooms/${roomId}`))
+      );
+      
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      
+      if (failed > 0) {
+        const failedRoomIds = selectedRooms.filter((_, i) => results[i].status === 'rejected');
+        const failureReasons = results
+          .map((r, i) => r.status === 'rejected' ? r.reason?.response?.data?.message : null)
+          .filter(Boolean);
+        
+        setError(`Successfully deleted ${successful} room(s). Failed to delete ${failed} room(s): ${failureReasons.join(', ')}`);
+      } else {
+        setSuccess(`${successful} rooms deleted successfully!`);
+      }
+      
       setSelectedRooms([]);
       fetchRooms();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error bulk deleting rooms:', error);
-      setError('Failed to delete some rooms');
+      setError(error.response?.data?.message || 'Failed to delete some rooms');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -526,8 +588,29 @@ const RoomManagement: React.FC = () => {
                       <Button variant="outline-primary" size="sm" className="me-1" onClick={() => handleEditRoom(room)}>
                         <Edit2 size={14} />
                       </Button>
-                      <Button variant="outline-danger" size="sm" onClick={() => handleDeleteRoom(room._id)}>
-                        <Trash2 size={14} />
+                      <Button 
+                        variant="outline-success" 
+                        size="sm" 
+                        className="me-1"
+                        onClick={() => handleOpenImageUploadModal(room)}
+                        title="Upload images"
+                      >
+                        <Upload size={14} />
+                      </Button>
+                      <Button 
+                        variant="outline-danger" 
+                        size="sm" 
+                        onClick={() => handleDeleteRoom(room._id)}
+                        disabled={deletingRoomId === room._id}
+                      >
+                        {deletingRoomId === room._id ? (
+                          <>
+                            <Spinner animation="border" size="sm" className="me-1" />
+                            Deleting...
+                          </>
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
                       </Button>
                     </td>
                   </tr>
@@ -775,6 +858,22 @@ const RoomManagement: React.FC = () => {
     </Modal.Footer>
   </Form>
 </Modal>
+
+      {/* Image Upload Modal */}
+      {roomForImageUpload && (
+        <ImageUploadModal
+          show={showImageUploadModal}
+          onHide={handleCloseImageUploadModal}
+          type="room"
+          itemId={roomForImageUpload._id}
+          itemName={roomForImageUpload.name}
+          onUploadSuccess={() => {
+            fetchRooms();
+            handleCloseImageUploadModal();
+          }}
+          maxFiles={5}
+        />
+      )}
     </Card>
   );
 };

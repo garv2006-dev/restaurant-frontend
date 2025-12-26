@@ -17,6 +17,11 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // Disable caching for GET requests
+    // if (config.method?.toUpperCase() === 'GET') {
+    //   config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    //   config.headers['Pragma'] = 'no-cache';
+    // }
     return config;
   },
   (error) => {
@@ -204,6 +209,11 @@ export const bookingsAPI = {
     return response.data;
   },
 
+  getAllBookings: async (params?: any): Promise<ApiResponse<Booking[]>> => {
+    const response: AxiosResponse<ApiResponse<Booking[]>> = await api.get('/bookings/admin/all', { params });
+    return response.data;
+  },
+
   getBookingById: async (id: string): Promise<ApiResponse<Booking>> => {
     const response: AxiosResponse<ApiResponse<Booking>> = await api.get(`/bookings/${id}`);
     return response.data;
@@ -382,6 +392,12 @@ export const adminAPI = {
     } else if (Array.isArray(raw.bookings)) {
       bookings = raw.bookings as Booking[];
     }
+
+    // Map _id to id field for frontend compatibility
+    bookings = bookings.map(booking => ({
+      ...booking,
+      id: booking._id || booking.id
+    }));
 
     return {
       success: raw.success !== undefined ? raw.success : true,

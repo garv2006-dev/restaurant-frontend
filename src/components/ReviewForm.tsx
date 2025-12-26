@@ -13,11 +13,14 @@ interface ReviewFormProps {
 
 interface Booking {
   _id: string;
+  id?: string;
   bookingId: string;
   room: {
+    _id?: string;
+    id?: string;
     name: string;
     type: string;
-  };
+  } | string;
   status: string;
   createdAt: string;
 }
@@ -31,32 +34,107 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
 }) => {
   const [rating, setRating] = useState<number>(0);
   const [hover, setHover] = useState<number>(0);
+  const [title, setTitle] = useState<string>('');
   const [comment, setComment] = useState<string>('');
+  const [reviewType, setReviewType] = useState<string>('room');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
   const [completedBookings, setCompletedBookings] = useState<Booking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<string>('');
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('');
 
   useEffect(() => {
     if (show) {
-      fetchCompletedBookings();
+      if (bookingId) {
+        // If bookingId is provided, fetch that specific booking to get roomId
+        fetchBookingDetails();
+      } else {
+        // Otherwise fetch all completed bookings for selection
+        fetchCompletedBookings();
+      }
     }
-  }, [show]);
+  }, [show, bookingId]);
+
+  const fetchBookingDetails = async () => {
+    try {
+      if (!bookingId) return;
+      
+      const { data: response } = await api.get('/bookings');
+      
+      if (response.success) {
+        let bookings = response.data || [];
+        if (!Array.isArray(bookings)) {
+          bookings = [];
+        }
+        
+        const booking = bookings.find((b: any) => b._id === bookingId);
+        
+        if (booking && typeof booking.room === 'object' && booking.room !== null) {
+          const roomId = (booking.room._id || booking.room.id) as string;
+          setSelectedRoomId(roomId);
+          console.log('Booking details loaded, room ID set to:', roomId);
+        } else {
+          console.warn('Could not find booking or extract room ID:', booking);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching booking details:', error);
+    }
+  };
 
   const fetchCompletedBookings = async () => {
     try {
-      const { data } = await api.get('/bookings');
-      if (data.success) {
-        const bookings = data.data?.bookings || data.bookings || [];
-        const completed = bookings.filter(
-          (booking: Booking) => 
-            booking.status === 'CheckedOut' || booking.status === 'Completed'
-        );
+      const { data: response } = await api.get('/bookings?limit=100');
+      
+      console.log('Raw API response:', response);
+      
+      if (response.success) {
+        // Backend returns: { success, count, total, pagination, data: Booking[] }
+        // Not wrapped in bookings
+        let bookings = response.data || [];
+        
+        if (!Array.isArray(bookings)) {
+          console.warn('Unexpected bookings response format:', bookings);
+          bookings = [];
+        }
+        
+        console.log('All bookings fetched:', bookings);
+        
+        const completed = bookings.filter((booking: any) => {
+          console.log(`Checking booking ${booking.bookingId}: status = ${booking.status}`);
+          return booking.status === 'CheckedOut' || booking.status === 'Completed';
+        });
+        
+        console.log('Completed bookings filtered:', completed);
         setCompletedBookings(completed);
+        
+        if (completed.length === 0) {
+          console.warn('No completed bookings found. Available statuses:', 
+            bookings.map((b: any) => ({ id: b.bookingId, status: b.status }))
+          );
+        }
       }
     } catch (error) {
       console.error('Error fetching bookings:', error);
+    }
+  };
+
+  const handleBookingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const bookingId = e.target.value;
+    setSelectedBooking(bookingId);
+    
+    if (bookingId) {
+      const booking = completedBookings.find(b => b._id === bookingId);
+      if (booking && typeof booking.room === 'object' && booking.room !== null) {
+        const roomId = (booking.room._id || booking.room.id) as string;
+        setSelectedRoomId(roomId);
+        console.log('Booking selected, room ID set to:', roomId);
+      } else {
+        console.warn('Could not extract room ID from booking:', booking);
+      }
+    } else {
+      setSelectedRoomId('');
     }
   };
 
@@ -65,6 +143,11 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
     
     if (!rating) {
       setError('Please select a rating');
+      return;
+    }
+
+    if (!title.trim()) {
+      setError('Please add a review title');
       return;
     }
 
@@ -78,20 +161,28 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
       setError('');
       setSuccess('');
 
+      // Get room ID from state or prop
+      const finalRoomId = selectedRoomId || roomId;
+
       const reviewData = {
         booking: selectedBooking || bookingId,
-        room: roomId,
+        room: finalRoomId,
         rating,
-        comment: comment.trim()
+        title: title.trim(),
+        comment: comment.trim(),
+        reviewType: reviewType
       };
 
+      console.log('Review data being sent:', reviewData);
       const { data } = await api.post('/reviews', reviewData);
 
       if (data.success) {
         setSuccess('Review submitted successfully!');
         setRating(0);
+        setTitle('');
         setComment('');
         setSelectedBooking('');
+        setReviewType('room');
         
         setTimeout(() => {
           onHide();
@@ -141,15 +232,19 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
               <Form.Label>Select Booking</Form.Label>
               <Form.Select
                 value={selectedBooking}
-                onChange={(e) => setSelectedBooking(e.target.value)}
+                onChange={handleBookingChange}
                 required
               >
                 <option value="">Choose a completed booking...</option>
-                {completedBookings.map((booking) => (
-                  <option key={booking._id} value={booking._id}>
-                    {booking.bookingId} - {booking.room.name} ({booking.room.type})
-                  </option>
-                ))}
+                {completedBookings.map((booking) => {
+                  const roomName = typeof booking.room === 'object' && booking.room ? booking.room.name : 'Unknown';
+                  const roomType = typeof booking.room === 'object' && booking.room ? booking.room.type : 'Unknown';
+                  return (
+                    <option key={booking._id} value={booking._id}>
+                      {booking.bookingId} - {roomName} ({roomType})
+                    </option>
+                  );
+                })}
               </Form.Select>
               {completedBookings.length === 0 && (
                 <Form.Text className="text-muted">
@@ -158,6 +253,34 @@ const ReviewForm: React.FC<ReviewFormProps> = ({
               )}
             </Form.Group>
           )}
+
+          <Form.Group className="mb-3">
+            <Form.Label>Review Type</Form.Label>
+            <Form.Select
+              value={reviewType}
+              onChange={(e) => setReviewType(e.target.value)}
+              required
+            >
+              <option value="room">Room</option>
+              <option value="service">Service</option>
+              <option value="overall">Overall Experience</option>
+            </Form.Select>
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Review Title</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Give your review a short title..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+              maxLength={100}
+            />
+            <Form.Text className="text-muted">
+              {title.length}/100 characters
+            </Form.Text>
+          </Form.Group>
 
           <Form.Group className="mb-3">
             <Form.Label>Rating</Form.Label>
