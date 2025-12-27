@@ -133,7 +133,6 @@ const MyBookings: React.FC = () => {
               <th>Check-in</th>
               <th>Check-out</th>
               <th>Guests</th>
-              <th>Menu Items</th>
               <th>Status</th>
               <th>Total</th>
               <th>Actions</th>
@@ -155,26 +154,6 @@ const MyBookings: React.FC = () => {
                   <td>{ci}</td>
                   <td>{co}</td>
                   <td>{b.guestDetails.totalAdults + b.guestDetails.totalChildren} Guests</td>
-                  <td>
-                    {b.pricing?.menuItems && b.pricing.menuItems.length > 0 ? (
-                      <div className="small">
-                        {b.pricing.menuItems.map((item: any, idx: number) => {
-                          // Handle both direct item data and populated item references
-                          const itemName = item.item?.name || item.name || 'Unknown Item';
-                          const itemPrice = item.item?.price || item.price || 0;
-                          return (
-                            <div key={idx} className="mb-1">
-                              <span>{itemName} × {item.quantity}</span>
-                              <br />
-                              <span className="text-muted">₹{(itemPrice * item.quantity).toFixed(2)}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <span className="text-muted">-</span>
-                    )}
-                  </td>
                   <td>{b.status || 'Pending'}</td>
                   <td>{total}</td>
                   <td>
@@ -214,7 +193,7 @@ const MyBookings: React.FC = () => {
               );
             }) : (
               <tr>
-                <td colSpan={8} className="text-center">
+                <td colSpan={7} className="text-center">
                   No booking data available
                 </td>
               </tr>
@@ -251,22 +230,6 @@ const MyBookings: React.FC = () => {
                   : 'Unknown Room'}</li>
                 <li>Check-in: {new Date(selectedBooking.bookingDates.checkInDate).toLocaleDateString()}</li>
                 <li>Check-out: {new Date(selectedBooking.bookingDates.checkOutDate).toLocaleDateString()}</li>
-                {selectedBooking.pricing?.menuItems && selectedBooking.pricing.menuItems.length > 0 && (
-                  <li>
-                    Menu Items:
-                    <ul className="mt-2">
-                      {selectedBooking.pricing.menuItems.map((item: any, idx: number) => {
-                        const itemName = item.item?.name || item.name || 'Unknown Item';
-                        const itemPrice = item.item?.price || item.price || 0;
-                        return (
-                          <li key={idx}>
-                            {itemName} × {item.quantity} = ₹{(itemPrice * item.quantity).toFixed(2)}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </li>
-                )}
                 <li>Total: ₹{selectedBooking.pricing.totalAmount?.toFixed(2) || '0.00'}</li>
               </ul>
             </div>

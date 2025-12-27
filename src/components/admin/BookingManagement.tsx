@@ -521,22 +521,6 @@ const BookingManagement: React.FC = () => {
                           </tr>
                         ))}
                         
-                        {selectedBooking.pricing?.menuItems?.map((item, index) => (
-                          <tr key={`menu-${index}`}>
-                            <td>
-                              {item.item} (x{item.quantity})
-                              {item.scheduledFor && (
-                                <small className="d-block text-muted">
-                                  Scheduled for: {formatDate(item.scheduledFor)}
-                                </small>
-                              )}
-                            </td>
-                            <td className="text-end">
-                              ₹{(item.price * item.quantity).toFixed(2)}
-                            </td>
-                          </tr>
-                        ))}
-                        
                         {selectedBooking.pricing?.discount?.amount > 0 && (
                           <tr className="table-success">
                             <td>

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import '../styles/dark-mode-buttons.css';
 
 // Create a wrapper component for FontAwesome icons to ensure React 19 compatibility
 const IconWrapper = ({ icon: Icon, className, size, ...props }: { icon: any; className?: string; size?: number }) => {
@@ -53,9 +54,10 @@ const ForgotPassword: React.FC = () => {
 
   if (success) {
     return (
-      <Container className="py-5">
-        <Row className="justify-content-center">
-          <Col md={6} lg={5} xl={4}>
+      <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
+        <Container className="py-5">
+          <Row className="justify-content-center align-items-center min-vh-100">
+            <Col md={6} lg={5} xl={4}>
             <Card className="shadow-sm border-0">
               <Card.Body className="p-4">
                 <div className="text-center mb-4">
@@ -90,15 +92,17 @@ const ForgotPassword: React.FC = () => {
               </Card.Body>
             </Card>
           </Col>
-        </Row>
-      </Container>
+      </Row>
+    </Container>
+    </div>
     );
   }
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col md={6} lg={5} xl={4}>
+    <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
+      <Container className="py-5">
+        <Row className="justify-content-center align-items-center min-vh-100">
+          <Col md={6} lg={5} xl={4}>
           <Card className="shadow-sm border-0">
             <Card.Body className="p-4">
               <div className="text-center mb-4">
@@ -169,6 +173,7 @@ const ForgotPassword: React.FC = () => {
         </Col>
       </Row>
     </Container>
+    </div>
   );
 };
 

@@ -6,7 +6,6 @@ import { ToastContainer } from 'react-toastify';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
-import { CartProvider } from './context/CartContext';
 import { NotificationProvider } from './context/NotificationContext';
 
 // Layout
@@ -25,11 +24,8 @@ import Profile from './pages/Profile';
 import MyBookings from './pages/MyBookings';
 import MyReviews from './pages/MyReviews';
 import Home from './pages/Home';
-import Menu from './pages/Menu';
 import Booking from './pages/Booking';
 import Contact from './pages/Contact';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ReportsAnalytics from './components/admin/ReportsAnalytics';
@@ -68,7 +64,6 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <NotificationProvider>
-            <CartProvider>
               <Routes>
                 {/* Admin routes - outside Layout */}
                 <Route path="/admin" element={
@@ -98,21 +93,10 @@ function App() {
                       <Route path="/register" element={<Register />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
                       <Route path="/reset-password/:token" element={<ResetPassword />} />
-                      <Route path="/menu" element={<Menu />} />
                       <Route path="/booking" element={<Booking />} />
                       <Route path="/contact" element={<Contact />} />
                       
                       {/* Protected routes - require authentication */}
-                      <Route path="/cart" element={
-                        <ProtectedRoute>
-                          <Cart />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/checkout" element={
-                        <ProtectedRoute>
-                          <Checkout />
-                        </ProtectedRoute>
-                      } />
                       <Route path="/order-success" element={
                         <ProtectedRoute>
                           <OrderSuccess />
@@ -166,7 +150,6 @@ function App() {
                 theme="colored"
                 aria-live="polite"
               />
-            </CartProvider>
           </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>

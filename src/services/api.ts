@@ -1,5 +1,5 @@
 import axios, { AxiosResponse } from 'axios';
-import { ApiResponse, User, Room, Booking, MenuItem, Review, Payment, LoginCredentials, RegisterData } from '../types';
+import { ApiResponse, User, Room, Booking, Review, Payment, LoginCredentials, RegisterData } from '../types';
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -104,14 +104,6 @@ export const authAPI = {
   // Google OAuth login
   googleLogin: async (idToken: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
     const response = await api.post('/auth/google-login', { idToken });
-    return response.data;
-  },
-};
-
-// Orders API (cart / menu orders)
-export const ordersAPI = {
-  createOrder: async (orderData: any): Promise<ApiResponse<any>> => {
-    const response: AxiosResponse<ApiResponse<any>> = await api.post('/orders', orderData);
     return response.data;
   },
 };
@@ -226,32 +218,6 @@ export const bookingsAPI = {
 
   updateBooking: async (id: string, updateData: any): Promise<ApiResponse<Booking>> => {
     const response: AxiosResponse<ApiResponse<Booking>> = await api.put(`/bookings/${id}`, updateData);
-    return response.data;
-  },
-};
-
-// Menu API
-export const menuAPI = {
-  // Get public menu items list
-  getMenuItems: async (filters?: any): Promise<ApiResponse<MenuItem[]>> => {
-    const response: AxiosResponse<ApiResponse<MenuItem[]>> = await api.get('/menu', {
-      params: filters,
-    });
-    return response.data;
-  },
-
-  getMenuItemById: async (id: string): Promise<ApiResponse<MenuItem>> => {
-    const response: AxiosResponse<ApiResponse<MenuItem>> = await api.get(`/menu/${id}`);
-    return response.data;
-  },
-
-  getMenuCategories: async (): Promise<ApiResponse<string[]>> => {
-    const response: AxiosResponse<ApiResponse<string[]>> = await api.get('/menu/categories');
-    return response.data;
-  },
-
-  getFeaturedItems: async (): Promise<ApiResponse<MenuItem[]>> => {
-    const response: AxiosResponse<ApiResponse<MenuItem[]>> = await api.get('/menu?isFeatured=true');
     return response.data;
   },
 };
@@ -423,36 +389,6 @@ export const adminAPI = {
 
   updateUserStatus: async (id: string, isActive: boolean): Promise<ApiResponse<User>> => {
     const response: AxiosResponse<ApiResponse<User>> = await api.put(`/admin/users/${id}/status`, { isActive });
-    return response.data;
-  },
-
-  createRoom: async (roomData: any): Promise<ApiResponse<Room>> => {
-    const response: AxiosResponse<ApiResponse<Room>> = await api.post('/rooms', roomData);
-    return response.data;
-  },
-
-  updateRoom: async (id: string, roomData: any): Promise<ApiResponse<Room>> => {
-    const response: AxiosResponse<ApiResponse<Room>> = await api.put(`/rooms/${id}`, roomData);
-    return response.data;
-  },
-
-  deleteRoom: async (id: string): Promise<ApiResponse> => {
-    const response: AxiosResponse<ApiResponse> = await api.delete(`/rooms/${id}`);
-    return response.data;
-  },
-
-  createMenuItem: async (itemData: any): Promise<ApiResponse<MenuItem>> => {
-    const response: AxiosResponse<ApiResponse<MenuItem>> = await api.post('/menu', itemData);
-    return response.data;
-  },
-
-  updateMenuItem: async (id: string, itemData: any): Promise<ApiResponse<MenuItem>> => {
-    const response: AxiosResponse<ApiResponse<MenuItem>> = await api.put(`/menu/${id}`, itemData);
-    return response.data;
-  },
-
-  deleteMenuItem: async (id: string): Promise<ApiResponse> => {
-    const response: AxiosResponse<ApiResponse> = await api.delete(`/menu/${id}`);
     return response.data;
   },
 

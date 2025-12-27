@@ -105,12 +105,6 @@ export interface Booking {
       price: number;
       quantity: number;
     }>;
-    menuItems: Array<{
-      item: string;
-      quantity: number;
-      price: number;
-      scheduledFor?: string;
-    }>;
     subtotal: number;
     taxes: {
       gst: number;
@@ -131,64 +125,13 @@ export interface Booking {
   updatedAt: string;
 }
 
-// Menu Item types
-export interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  subcategory?: string;
-  price: number;
-  discountPrice?: number;
-  cuisine?: string;
-  dietaryInfo: {
-    isVegetarian: boolean;
-    isVegan: boolean;
-    isGlutenFree: boolean;
-    isDairyFree: boolean;
-    isKeto: boolean;
-    isSpicy: boolean;
-    spiceLevel: number;
-  };
-  ingredients: Array<{
-    name: string;
-    quantity?: string;
-    allergen: boolean;
-  }>;
-  allergens: string[];
-  preparationTime: number;
-  servingSize: string;
-  images: Array<{
-    url: string;
-    altText?: string;
-    isPrimary: boolean;
-  }>;
-  availability: {
-    isAvailable: boolean;
-    availableDays: string[];
-    availableHours: {
-      start: string;
-      end: string;
-    };
-  };
-  popularity: {
-    orderCount: number;
-    averageRating: number;
-    totalReviews: number;
-  };
-  isSignatureDish: boolean;
-  isFeatured: boolean;
-  isActive: boolean;
-}
-
 // Review types
 export interface Review {
   id: string;
   user: string | User;
   booking: string | Booking;
   room?: string | Room;
-  menuItem?: string | MenuItem;
-  reviewType: 'room' | 'menuItem' | 'service' | 'overall';
+  reviewType: 'room' | 'service' | 'overall';
   rating: number;
   title: string;
   comment: string;
@@ -199,9 +142,6 @@ export interface Review {
     value?: number;
     location?: number;
     amenities?: number;
-    taste?: number;
-    presentation?: number;
-    portion?: number;
   };
   pros: string[];
   cons: string[];
@@ -277,17 +217,6 @@ export interface RoomFilters {
   sortBy?: 'price_low' | 'price_high' | 'rating' | 'name';
 }
 
-export interface MenuFilters {
-  category?: string;
-  cuisine?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  isVegetarian?: boolean;
-  isVegan?: boolean;
-  isGlutenFree?: boolean;
-  sortBy?: 'price_low' | 'price_high' | 'rating' | 'name' | 'popularity';
-}
-
 // Booking form types
 export interface BookingFormData {
   roomId: string;
@@ -313,14 +242,8 @@ export interface BookingFormData {
     earlyCheckIn: boolean;
     lateCheckOut: boolean;
     floorPreference?: number;
-    dietaryRequirements?: string;
   };
   extraServices: string[];
-  menuItems: Array<{
-    itemId: string;
-    quantity: number;
-    scheduledFor?: string;
-  }>;
 }
 
 // Dashboard types

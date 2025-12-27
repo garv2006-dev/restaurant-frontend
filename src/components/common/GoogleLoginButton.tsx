@@ -3,12 +3,15 @@ import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { User } from '../../types';
 
 const GOOGLE_CLIENT_ID = '897986200614-2lbsiml3p06gou0jis1ndlldrd3um8ib.apps.googleusercontent.com';
 
 function GoogleLoginButton() {
     const { setAuthState } = useAuth()
+    const { theme } = useTheme()
+    
     const handleSuccess = async (credentialResponse: any) => {
         try {
             // credentialResponse.credential is the id_token
@@ -48,7 +51,7 @@ function GoogleLoginButton() {
                     onSuccess={handleSuccess}
                     onError={handleError}
                     width="100%"
-                    theme="outline"
+                    theme={theme === 'dark' ? 'filled_black' : 'outline'}
                     size="large"
                     text="signin_with"
                     shape="pill"

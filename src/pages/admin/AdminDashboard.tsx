@@ -8,7 +8,6 @@ import '../../styles/admin-panel.css';
 // Import actual admin components
 import RoomManagement from '../../components/admin/RoomManagement';
 import BookingManagement from '../../components/admin/BookingManagement';
-import MenuManagement from '../../components/admin/MenuManagement';
 import CustomerManagement from '../../components/admin/CustomerManagement';
 import ReportsAnalytics from '../../components/admin/ReportsAnalytics';
 import LoyaltyManagement from './LoyaltyManagement';
@@ -98,14 +97,6 @@ const AdminDashboard: React.FC = () => {
                 </a>
                 <a
                   href="#"
-                  className={`admin-nav-item ${activeTab === 'menu' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab('menu'); }}
-                >
-                  <Image size={16} className="admin-nav-icon" />
-                  Menu Management
-                </a>
-                <a
-                  href="#"
                   className={`admin-nav-item ${activeTab === 'customers' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setActiveTab('customers'); }}
                 >
@@ -145,7 +136,6 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'overview' && <LiveDashboard />}
               {activeTab === 'rooms' && <RoomManagement />}
               {activeTab === 'bookings' && <BookingManagement />}
-              {activeTab === 'menu' && <MenuManagement />}
               {activeTab === 'customers' && <CustomerManagement />}
               {activeTab === 'loyalty' && <LoyaltyManagement />}
               {activeTab === 'discounts' && <DiscountManagement />}

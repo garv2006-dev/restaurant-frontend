@@ -165,7 +165,7 @@ const Home: React.FC = () => {
           <div className="d-flex align-items-center">
             <IconWrapper icon={FaLock} className="me-2" />
             <div>
-              <strong>Welcome to our restaurant!</strong> To book rooms, access your cart, and enjoy personalized features, please
+              <strong>Welcome to our restaurant!</strong> To book rooms and enjoy personalized features, please
               <Button variant="link" className="p-0 ms-1" href="/login">login</Button> or
               <Button variant="link" className="p-0 ms-1" href="/register">register</Button>.
             </div>
@@ -199,9 +199,6 @@ const Home: React.FC = () => {
                 <div className="d-flex gap-4 justify-content-center">
                   <Button variant="primary" size="lg" href="/rooms" className="btn-hero">
                     Explore Rooms
-                  </Button>
-                  <Button variant="outline-light" size="lg" href="/menu" className="btn-hero">
-                    View Menu
                   </Button>
                 </div>
               </div>
@@ -307,13 +304,6 @@ const Home: React.FC = () => {
                 <p className="lead">20% off on weekend stays with complimentary breakfast</p>
                 <p className="text-muted">Starting from ₹4,000 per night</p>
                 <Button variant="outline-primary" onClick={handleWeekendGetaway}>Book Now</Button>
-              </div>
-            </Carousel.Item>
-            <Carousel.Item>
-              <div className="text-center p-4">
-                <h4 className="text-primary">Dining Experience</h4>
-                <p className="lead">Special menu packages for couples and families</p>
-                <Button variant="outline-primary" href="/menu">View Menu</Button>
               </div>
             </Carousel.Item>
             <Carousel.Item>
