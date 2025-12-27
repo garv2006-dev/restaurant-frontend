@@ -1,7 +1,7 @@
 /* Custom Restaurant Theme Styles */
 
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Poppins:wght@300;400;500;600&display=swap');
+/* Import Russisch Sans Font */
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap');
 
 /* Primary brand colors */
 :root {
@@ -29,8 +29,8 @@
   --color-cream: #f5f0e6;
   
   /* Typography */
-  --font-primary: 'Playfair Display', serif;
-  --font-secondary: 'Poppins', sans-serif;
+  --font-primary: 'Jost', sans-serif;
+  --font-secondary: 'Jost', sans-serif;
   
   /* Transitions */
   --transition-fast: 0.2s ease;
@@ -823,11 +823,11 @@ p {
 }
 
 /* Professional typography and responsive improvements */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bs-body-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --bs-primary-font-family: 'Playfair Display', Georgia, serif;
+  --bs-body-font-family: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --bs-primary-font-family: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
 /* Professional typography */
@@ -976,7 +976,7 @@ h6 {
   font-weight: 700;
   color: var(--bs-primary);
   margin-bottom: 1.5rem;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Jost', sans-serif;
 }
 
 /* Responsive card improvements */
