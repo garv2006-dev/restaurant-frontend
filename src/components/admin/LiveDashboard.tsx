@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Badge, Table, Spinner, Alert } from 'react-bootstrap';
 import { TrendingUp, ShoppingCart, DollarSign, Calendar } from 'lucide-react';
 import { bookingsAPI } from '../../services/api';
+import '../../styles/admin-panel.css';
 
 interface RecentBooking {
   _id: string;

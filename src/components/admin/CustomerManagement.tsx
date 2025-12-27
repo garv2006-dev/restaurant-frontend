@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Badge, Button, Alert, Spinner, Modal, Form } from 'react-bootstrap';
-import { Search, UserPlus, Edit, Trash2 } from 'lucide-react';
+import { Search, UserPlus, Edit, Trash2, User } from 'lucide-react';
 import { adminAPI } from '../../services/api';
-import { User } from '../../types';
+import { User as UserType } from '../../types';
+import '../../styles/admin-panel.css';
 
 // Extend the User type with additional customer statistics
-interface Customer extends User {
+interface Customer extends UserType {
   totalBookings?: number;
   totalSpent?: number;
 }
@@ -104,181 +105,221 @@ const CustomerManagement: React.FC = () => {
 
   if (loading) {
     return (
-      <Card>
-        <Card.Header>
-          <h5 className="mb-0">Customer Management</h5>
-        </Card.Header>
-        <Card.Body>
-          <div className="text-center py-4">
-            <Spinner animation="border" />
-            <p className="mt-2">Loading customers...</p>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h3 className="admin-card-title">Customer Management</h3>
+        </div>
+        <div className="admin-card-body">
+          <div className="admin-loading">
+            <div className="admin-spinner"></div>
+            Loading customers...
           </div>
-        </Card.Body>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card>
-      <Card.Header className="d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">Customer Management</h5>
-        <div className="d-flex gap-2">
-          <div className="position-relative">
-            <Search size={16} className="position-absolute top-50 start-0 translate-middle-y ms-2 text-muted" />
-            <input
-              type="text"
-              className="form-control ps-5"
-              placeholder="Search customers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+    <div className="admin-card">
+      <div className="admin-card-header">
+        <div className="d-flex justify-content-between align-items-center">
+          <div>
+            <h3 className="admin-card-title">Customer Management</h3>
+            <p className="admin-card-subtitle">Manage your restaurant customers</p>
           </div>
-          <Button variant="primary" onClick={() => setShowAddModal(true)}>
-            <UserPlus size={16} className="me-1" />
-            Add Customer
-          </Button>
+          <div className="d-flex gap-3 align-items-center">
+            <div className="admin-search">
+              <Search size={16} className="admin-search-icon" />
+              <input
+                type="text"
+                className="admin-search-input"
+                placeholder="Search customers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <button
+              className="admin-btn admin-btn-primary"
+              onClick={() => setShowAddModal(true)}
+            >
+              <UserPlus size={16} />
+              Add Customer
+            </button>
+          </div>
         </div>
-      </Card.Header>
+      </div>
 
-      <Card.Body>
+      <div className="admin-card-body">
         {error && (
-          <Alert variant="danger" dismissible onClose={() => setError('')}>
+          <div className="admin-alert admin-alert-danger" role="alert">
             {error}
-          </Alert>
+          </div>
         )}
 
         {filteredCustomers.length === 0 ? (
-          <div className="text-center py-4">
-            <p className="text-muted">
-              {searchTerm ? 'No customers found matching your search.' : 'No customers found.'}
+          <div className="admin-empty">
+            <div className="admin-empty-icon">
+              <User size={48} />
+            </div>
+            <h4 className="admin-empty-title">
+              {searchTerm ? 'No customers found' : 'No customers yet'}
+            </h4>
+            <p className="admin-empty-description">
+              {searchTerm ? 'Try adjusting your search terms.' : 'Start by adding your first customer.'}
             </p>
           </div>
         ) : (
-          <Table responsive hover>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Total Bookings</th>
-                <th>Total Spent</th>
-                <th>Joined</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCustomers.map((customer) => (
-                <tr key={customer.id}>
-                  <td>
-                    <div>
-                      <strong>{customer.name || 'N/A'}</strong>
-                    </div>
-                  </td>
-                  <td>{customer.email || 'N/A'}</td>
-                  <td>{customer.phone || '-'}</td>
-                  <td>
-                    <Badge bg={getRoleBadgeVariant(customer.role)}>
-                      {customer.role || 'customer'}
-                    </Badge>
-                  </td>
-                  <td>
-                    <Badge bg={getStatusBadgeVariant(customer.isEmailVerified !== undefined ? customer.isEmailVerified : true)}>
-                      {customer.isEmailVerified !== undefined ? (customer.isEmailVerified ? 'Active' : 'Inactive') : 'Active'}
-                    </Badge>
-                  </td>
-                  <td>
-                    <Badge bg="info">{customer.totalBookings || 0}</Badge>
-                  </td>
-                  <td>
-                    <Badge bg="success">{formatCurrency(customer.totalSpent || 0)}</Badge>
-                  </td>
-                  <td>{formatDate(customer.createdAt)}</td>
-                  <td>
-                    <Button variant="outline-primary" size="sm" className="me-1">
-                      <Edit size={14} />
-                    </Button>
-                    <Button variant="outline-danger" size="sm">
-                      <Trash2 size={14} />
-                    </Button>
-                  </td>
+          <div className="admin-table-responsive">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Total Bookings</th>
+                  <th>Total Spent</th>
+                  <th>Joined</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </Table>
+              </thead>
+              <tbody>
+                {filteredCustomers.map((customer) => (
+                  <tr key={customer.id}>
+                    <td>
+                      <strong>{customer.name || 'N/A'}</strong>
+                    </td>
+                    <td>{customer.email || 'N/A'}</td>
+                    <td>{customer.phone || '-'}</td>
+                    <td>
+                      <span className={`admin-badge admin-badge-${getRoleBadgeVariant(customer.role)}`}>
+                        {customer.role || 'user'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="admin-status">
+                        <span className={`admin-status-dot ${customer.isEmailVerified !== undefined ? (customer.isEmailVerified ? 'active' : 'inactive') : 'active'}`}></span>
+                        {customer.isEmailVerified !== undefined ? (customer.isEmailVerified ? 'Active' : 'Inactive') : 'Active'}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="admin-badge admin-badge-info">
+                        {customer.totalBookings || 0}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="admin-badge admin-badge-success">
+                        {formatCurrency(customer.totalSpent || 0)}
+                      </span>
+                    </td>
+                    <td>{formatDate(customer.createdAt)}</td>
+                    <td>
+                      <div className="admin-action-buttons">
+                        <button className="admin-action-btn edit" title="Edit">
+                          <Edit size={14} />
+                        </button>
+                        <button className="admin-action-btn delete" title="Delete">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </Card.Body>
+      </div>
       
       {/* Add Customer Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Add New Customer</Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleAddCustomer}>
-          <Modal.Body>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                placeholder="Enter customer name"
-                required
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                placeholder="Enter customer email"
-                required
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Phone</Form.Label>
-              <Form.Control
-                type="tel"
-                name="phone"
-                placeholder="Enter customer phone"
-                required
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type="password"
-                name="password"
-                placeholder="Enter temporary password"
-                required
-                minLength={6}
-              />
-              <Form.Text className="text-muted">
-                Minimum 6 characters. Customer can change this later.
-              </Form.Text>
-            </Form.Group>
-          </Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit" disabled={addLoading}>
-              {addLoading ? (
-                <>
-                  <Spinner animation="border" size="sm" className="me-2" />
-                  Adding...
-                </>
-              ) : (
-                'Add Customer'
-              )}
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
-    </Card>
+      <div className="admin-modal-dialog" style={{ display: showAddModal ? 'block' : 'none' }}>
+        <div className="admin-modal">
+          <div className="admin-modal-header">
+            <h3 className="admin-modal-title">Add New Customer</h3>
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setShowAddModal(false)}
+            />
+          </div>
+          <form onSubmit={handleAddCustomer}>
+            <div className="admin-modal-body">
+              <div className="admin-form-group">
+                <label className="admin-form-label">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  className="admin-form-control"
+                  placeholder="Enter customer name"
+                  required
+                />
+              </div>
+              
+              <div className="admin-form-group">
+                <label className="admin-form-label">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  className="admin-form-control"
+                  placeholder="Enter customer email"
+                  required
+                />
+              </div>
+              
+              <div className="admin-form-group">
+                <label className="admin-form-label">Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  className="admin-form-control"
+                  placeholder="Enter customer phone"
+                  required
+                />
+              </div>
+              
+              <div className="admin-form-group">
+                <label className="admin-form-label">Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  className="admin-form-control"
+                  placeholder="Enter temporary password"
+                  required
+                  minLength={6}
+                />
+                <small className="text-muted">
+                  Minimum 6 characters. Customer can change this later.
+                </small>
+              </div>
+            </div>
+            <div className="admin-modal-footer">
+              <button
+                type="button"
+                className="admin-btn admin-btn-outline"
+                onClick={() => setShowAddModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="admin-btn admin-btn-primary"
+                disabled={addLoading}
+              >
+                {addLoading ? (
+                  <>
+                    <div className="admin-spinner"></div>
+                    Adding...
+                  </>
+                ) : (
+                  'Add Customer'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 };
 

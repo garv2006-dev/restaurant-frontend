@@ -32,6 +32,7 @@ import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import ReportsAnalytics from './components/admin/ReportsAnalytics';
 import LoyaltyDashboard from './pages/LoyaltyDashboard';
 import Dashboard from './pages/Dashboard';
 import NotificationsPage from './pages/NotificationsPage';
@@ -78,6 +79,11 @@ function App() {
                 <Route path="/admin/dashboard" element={
                   <ProtectedRoute requiredRole="admin">
                     <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/admin/reports" element={
+                  <ProtectedRoute requiredRole="admin">
+                    <ReportsAnalytics />
                   </ProtectedRoute>
                 } />
                 <Route path="/admin-test" element={<AdminTest />} />
