@@ -1,24 +1,34 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Calendar, Star, MessageSquare, ShoppingBag, Clock } from 'lucide-react';
+import axios from 'axios';
 
 interface Notification {
   id: string;
-  type: 'booking' | 'review' | 'promotion' | 'order' | 'system';
+  type: 'room_booking' | 'promotion' | 'system' | 'payment';
   title: string;
   message: string;
   timestamp: Date;
   read: boolean;
   icon: React.ReactNode;
+  relatedRoomBookingId?: string;
+  roomId?: string;
+  bookingStatus?: string;
 }
 
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  deleteNotification: (id: string) => void;
-  clearAllNotifications: () => void;
+  loading: boolean;
+  error: string | null;
+  fetchNotifications: (type?: string, isRead?: boolean) => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
+  // New counting functions
+  getNotificationCount: (type?: string, isRead?: boolean) => number;
+  getUnreadCountByType: (type: string) => number;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -37,80 +47,187 @@ interface NotificationProviderProps {
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Initialize with mock data and connect to socket
-  useEffect(() => {
-    // Initialize socket connection
-    // socketService.connect();
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'booking',
-        title: 'Booking Confirmed',
-        message: 'Your table reservation for 2 people on Dec 25, 2025 at 7:00 PM has been confirmed.',
-        timestamp: new Date('2025-12-25T10:00:00'),
-        read: false,
-        icon: <Calendar size={16} className="text-primary" />
-      },
-      {
-        id: '2',
-        type: 'promotion',
-        title: 'Special Holiday Offer!',
-        message: 'Get 20% off on all main courses this Christmas weekend. Use code: HOLIDAY20',
-        timestamp: new Date('2025-12-25T09:00:00'),
-        read: false,
-        icon: <Star size={16} className="text-warning" />
-      },
-      {
-        id: '3',
-        type: 'review',
-        title: 'Review Response',
-        message: 'The chef has responded to your recent review about the pasta dish.',
-        timestamp: new Date('2025-12-24T18:30:00'),
-        read: true,
-        icon: <MessageSquare size={16} className="text-info" />
-      },
-      {
-        id: '4',
-        type: 'order',
-        title: 'Order Delivered',
-        message: 'Your online order #1234 has been successfully delivered. Enjoy your meal!',
-        timestamp: new Date('2025-12-24T15:45:00'),
-        read: true,
-        icon: <ShoppingBag size={16} className="text-success" />
-      },
-      {
-        id: '5',
-        type: 'system',
-        title: 'System Maintenance',
-        message: 'Our system will undergo maintenance on Dec 26, 2025 from 2:00 AM to 4:00 AM.',
-        timestamp: new Date('2025-12-24T12:00:00'),
-        read: true,
-        icon: <Clock size={16} className="text-secondary" />
+  const getAuthConfig = () => {
+    const token = localStorage.getItem('token');
+    return {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
-    ];
-    setNotifications(mockNotifications);
+    };
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'room_booking':
+        return <Calendar size={16} className="text-primary" />;
+      case 'promotion':
+        return <Star size={16} className="text-warning" />;
+      case 'system':
+        return <Clock size={16} className="text-secondary" />;
+      case 'payment':
+        return <ShoppingBag size={16} className="text-success" />;
+      default:
+        return <Clock size={16} className="text-secondary" />;
+    }
+  };
+
+  const fetchNotifications = async (type?: string, isRead?: boolean) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (type) params.append('type', type);
+      if (typeof isRead === 'boolean') params.append('isRead', isRead.toString());
+
+      const response = await axios.get(`${API_URL}/notifications?${params}`, getAuthConfig());
+      
+      const notificationsData = response.data.data.map((notif: any) => ({
+        id: notif._id,
+        type: notif.type,
+        title: notif.title,
+        message: notif.message,
+        timestamp: new Date(notif.createdAt),
+        read: notif.isRead,
+        icon: getNotificationIcon(notif.type),
+        relatedRoomBookingId: notif.relatedRoomBookingId?._id,
+        roomId: notif.roomId?._id,
+        bookingStatus: notif.bookingStatus
+      }));
+
+      setNotifications(notificationsData);
+    } catch (err: any) {
+      console.error('Error fetching notifications:', err);
+      setError(err.response?.data?.message || 'Failed to fetch notifications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/notifications/unread-count`, getAuthConfig());
+      setUnreadCount(response.data.data.unreadCount);
+    } catch (err: any) {
+      console.error('Error fetching unread count:', err);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      await axios.put(`${API_URL}/notifications/${id}/read`, {}, getAuthConfig());
+      
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === id ? { ...notif, read: true } : notif
+        )
+      );
+      
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (err: any) {
+      console.error('Error marking notification as read:', err);
+      setError(err.response?.data?.message || 'Failed to mark notification as read');
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await axios.put(`${API_URL}/notifications/mark-all-read`, {}, getAuthConfig());
+      
+      setNotifications(prev => 
+        prev.map(notif => ({ ...notif, read: true }))
+      );
+      
+      setUnreadCount(0);
+    } catch (err: any) {
+      console.error('Error marking all notifications as read:', err);
+      setError(err.response?.data?.message || 'Failed to mark all notifications as read');
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    try {
+      await axios.delete(`${API_URL}/notifications/${id}`, getAuthConfig());
+      
+      const deletedNotif = notifications.find(n => n.id === id);
+      setNotifications(prev => prev.filter(notif => notif.id !== id));
+      
+      if (deletedNotif && !deletedNotif.read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (err: any) {
+      console.error('Error deleting notification:', err);
+      setError(err.response?.data?.message || 'Failed to delete notification');
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    try {
+      await axios.delete(`${API_URL}/notifications/clear-all`, getAuthConfig());
+      
+      setNotifications([]);
+      setUnreadCount(0);
+    } catch (err: any) {
+      console.error('Error clearing all notifications:', err);
+      setError(err.response?.data?.message || 'Failed to clear notifications');
+    }
+  };
+
+  const refreshNotifications = async () => {
+    await fetchNotifications();
+    await fetchUnreadCount();
+  };
+
+  // New counting functions
+  const getNotificationCount = (type?: string, isRead?: boolean) => {
+    let filtered = notifications;
+    
+    if (type) {
+      filtered = filtered.filter(notif => notif.type === type);
+    }
+    
+    if (typeof isRead === 'boolean') {
+      filtered = filtered.filter(notif => notif.read === isRead);
+    }
+    
+    return filtered.length;
+  };
+
+  const getUnreadCountByType = (type: string) => {
+    return notifications.filter(notif => notif.type === type && !notif.read).length;
+  };
+
+  // Initialize notifications on mount
+  useEffect(() => {
+    refreshNotifications();
   }, []);
 
   // Listen for real-time socket notifications
   useEffect(() => {
     const handleSocketNotification = (event: CustomEvent) => {
       console.log('Socket notification received:', event.detail);
-      const notification = event.detail;
+      const socketNotif = event.detail;
       
       const newNotification: Notification = {
-        id: Date.now().toString(),
-        type: notification.type,
-        title: notification.title,
-        message: notification.message,
-        timestamp: notification.timestamp,
+        id: socketNotif.notificationId || Date.now().toString(),
+        type: socketNotif.type,
+        title: socketNotif.title,
+        message: socketNotif.message,
+        timestamp: new Date(),
         read: false,
-        icon: getNotificationIcon(notification.type)
+        icon: getNotificationIcon(socketNotif.type)
       };
       
-      console.log('Adding notification to list:', newNotification);
+      console.log('Adding real-time notification:', newNotification);
       setNotifications(prev => [newNotification, ...prev]);
+      setUnreadCount(prev => prev + 1);
     };
 
     // Listen for socket notifications
@@ -121,65 +238,20 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     };
   }, []);
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'booking':
-        return <Calendar size={16} className="text-primary" />;
-      case 'promotion':
-        return <Star size={16} className="text-warning" />;
-      case 'review':
-        return <MessageSquare size={16} className="text-info" />;
-      case 'order':
-        return <ShoppingBag size={16} className="text-success" />;
-      case 'system':
-        return <Clock size={16} className="text-secondary" />;
-      default:
-        return <Clock size={16} className="text-secondary" />;
-    }
-  };
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: Date.now().toString(),
-      timestamp: new Date(),
-    };
-    setNotifications(prev => [newNotification, ...prev]);
-  };
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, read: true } : notif
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(notif => ({ ...notif, read: true }))
-    );
-  };
-
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
-  };
-
-  const clearAllNotifications = () => {
-    setNotifications([]);
-  };
-
   return (
     <NotificationContext.Provider value={{
       notifications,
       unreadCount,
-      addNotification,
+      loading,
+      error,
+      fetchNotifications,
       markAsRead,
       markAllAsRead,
       deleteNotification,
-      clearAllNotifications
+      clearAllNotifications,
+      refreshNotifications,
+      getNotificationCount,
+      getUnreadCountByType
     }}>
       {children}
     </NotificationContext.Provider>

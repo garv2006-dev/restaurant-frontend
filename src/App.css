@@ -112,12 +112,12 @@ p {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Card hover effects */
-.card:hover {
+/* Card hover effects - REMOVED per requirements */
+/* .card:hover {
   transform: translateY(-2px);
   transition: transform 0.3s ease;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
+} */
 
 /* Button hover effects */
 .btn {
@@ -186,10 +186,11 @@ p {
   transition: all 0.3s ease;
 }
 
-.room-card:hover {
+/* Room card hover effects - REMOVED per requirements */
+/* .room-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
+} */
 
 /* Price tag styles */
 .price-tag {
@@ -933,10 +934,11 @@ h6 {
   height: 100%;
 }
 
-.card:hover {
+/* Professional card hover effects - REMOVED per requirements */
+/* .card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-}
+} */
 
 .card-img-top {
   height: 240px;
@@ -944,9 +946,10 @@ h6 {
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card:hover .card-img-top {
+/* Card image hover effects - REMOVED per requirements */
+/* .card:hover .card-img-top {
   transform: scale(1.08);
-}
+} */
 
 .card-body {
   padding: 2rem;

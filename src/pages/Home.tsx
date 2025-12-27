@@ -110,6 +110,31 @@ const Home: React.FC = () => {
     return stars;
   };
 
+  const getRoomPrimaryImageUrl = (room: Room): string => {
+    const fallbackUrl = 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500';
+
+    if (!room || !Array.isArray(room.images) || room.images.length === 0) {
+      return fallbackUrl;
+    }
+
+    const isCloudinaryUrl = (url?: string) => !!url && url.includes('res.cloudinary.com');
+
+    const cloudImages = room.images.filter((img) => isCloudinaryUrl(img.url));
+    const primaryCloud = cloudImages.find((img) => img.isPrimary);
+    if (primaryCloud?.url) return primaryCloud.url;
+
+    if (cloudImages.length > 0) {
+      const lastCloud = cloudImages[cloudImages.length - 1];
+      if (lastCloud?.url) return lastCloud.url;
+    }
+
+    const primaryAny = room.images.find((img) => img.isPrimary && !!img.url);
+    if (primaryAny?.url) return primaryAny.url;
+
+    const lastAny = room.images[room.images.length - 1];
+    return lastAny?.url || fallbackUrl;
+  };
+
   const getFeatureIcon = (feature: string) => {
     switch (feature) {
       case 'airConditioning':
@@ -209,7 +234,7 @@ const Home: React.FC = () => {
                     <div className="room-image-wrapper">
                       <Card.Img
                         variant="top"
-                        src={room.images[0]?.url || 'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=500'}
+                        src={getRoomPrimaryImageUrl(room)}
                         alt={room.images[0]?.altText || room.name}
                         className="room-image"
                       />
