@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, Nav, NavDropdown, Container, Button, Badge } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { User, Sun, Moon, Bell, LogIn, UserPlus, ShoppingCart } from 'lucide-react';
+import { User, Sun, Moon, Bell, LogIn, UserPlus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { useCart } from '../../context/CartContext';
 import { useNotifications } from '../../context/NotificationContext';
 
 const Header: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const { totalQuantity } = useCart();
   const { unreadCount } = useNotifications();
   const [expanded, setExpanded] = useState(false);
   const location = useLocation();
@@ -132,14 +130,6 @@ const Header: React.FC = () => {
               </Nav.Link>
               <Nav.Link 
                 as={Link} 
-                to="/menu" 
-                className={`fw-medium ${isActive('/menu') ? 'active' : ''}`}
-                onClick={() => handleNavLinkClick()}
-              >
-                Menu
-              </Nav.Link>
-              <Nav.Link 
-                as={Link} 
                 to="/booking" 
                 className={`fw-medium ${isActive('/booking') ? 'active' : ''}`}
                 onClick={() => handleNavLinkClick()}
@@ -169,27 +159,6 @@ const Header: React.FC = () => {
                 {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
               </Button>
 
-              {/* Cart */}
-              <Button
-                as={Link as any}
-                to="/cart"
-                variant="outline-primary"
-                className="w-100 d-flex align-items-center justify-content-center position-relative"
-                onClick={() => handleNavLinkClick()}
-              >
-                <ShoppingCart size={16} className="me-2" />
-                Cart
-                {totalQuantity > 0 && (
-                  <Badge
-                    pill
-                    bg="danger"
-                    className="position-absolute top-0 start-100 translate-middle"
-                    style={{ fontSize: '0.6rem' }}
-                  >
-                    {totalQuantity}
-                  </Badge>
-                )}
-              </Button>
 
               {isAuthenticated && user ? (
                 <>
@@ -277,28 +246,6 @@ const Header: React.FC = () => {
                 {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
               </Button>
 
-              {/* Cart */}
-              <Button
-                as={Link as any}
-                to="/cart"
-                variant="outline-primary"
-                size="sm"
-                className="me-2 d-flex align-items-center position-relative"
-                onClick={handleDesktopNavClick}
-              >
-                <ShoppingCart size={16} className="me-1" />
-                Cart
-                {totalQuantity > 0 && (
-                  <Badge
-                    pill
-                    bg="danger"
-                    className="position-absolute top-0 start-100 translate-middle"
-                    style={{ fontSize: '0.6rem' }}
-                  >
-                    {totalQuantity}
-                  </Badge>
-                )}
-              </Button>
 
               {isAuthenticated && user ? (
                 <>

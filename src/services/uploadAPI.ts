@@ -37,18 +37,6 @@ export const uploadAPI = {
     return response.data;
   },
 
-  // Upload menu image
-  uploadMenuImage: async (menuItemId: string, file: File): Promise<any> => {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const response = await api.post(`/upload/menu/${menuItemId}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  },
 
   // Delete room image
   deleteRoomImage: async (roomId: string, imageId: string): Promise<any> => {
@@ -56,11 +44,6 @@ export const uploadAPI = {
     return response.data;
   },
 
-  // Delete menu image
-  deleteMenuImage: async (menuItemId: string): Promise<any> => {
-    const response = await api.delete(`/upload/menu/${menuItemId}/image`);
-    return response.data;
-  },
 
   // Set primary room image
   setPrimaryRoomImage: async (roomId: string, imageId: string): Promise<any> => {

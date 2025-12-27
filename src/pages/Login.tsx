@@ -7,6 +7,7 @@ import { LoginCredentials } from '../types';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import SocialLogin from '../components/auth/SocialLogin';
 import { GoogleLoginButton } from '../components/common/GoogleLoginButton';
+import '../styles/dark-mode-buttons.css';
 
 // Create a wrapper component for FontAwesome icons to ensure React 19 compatibility
 const IconWrapper = ({ icon: Icon, className, ...props }: { icon: any; className?: string }) => {
@@ -84,9 +85,9 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-vh-100 bg-light">
+    <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
       <Container className="py-5">
-        <Row className="justify-content-center">
+        <Row className="justify-content-center align-items-center min-vh-100">
           <Col md={6} lg={5} xl={4}>
             <Card className="shadow-lg border-0 rounded-3">
               <Card.Body className="p-5">
@@ -107,7 +108,7 @@ const Login: React.FC = () => {
 
               <div className="position-relative mb-4">
                 <hr />
-                <span className="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">
+                <span className="position-absolute top-50 start-50 translate-middle px-3 text-muted small" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
                   OR
                 </span>
               </div>

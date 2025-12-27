@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Row, Col, Badge, Table, Spinner, Alert } from 'react-bootstrap';
-import { TrendingUp, ShoppingCart, DollarSign, Calendar } from 'lucide-react';
+import { TrendingUp, Book, DollarSign, Calendar } from 'lucide-react';
 import { bookingsAPI } from '../../services/api';
 import '../../styles/admin-panel.css';
 
@@ -114,7 +114,7 @@ const LiveDashboard: React.FC = () => {
             <Card.Body>
               <div className="d-flex align-items-center">
                 <div className="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded">
-                  <ShoppingCart size={24} className="text-primary" />
+                  <Book size={24} className="text-primary" />
                 </div>
                 <div className="flex-grow-1 ms-3">
                   <h5 className="mb-1">{data?.totalBookings || 0}</h5>

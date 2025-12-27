@@ -12,7 +12,7 @@ interface ImageGalleryProps {
     isPrimary?: boolean;
   }>;
   itemId: string;
-  type: 'room' | 'menu';
+  type: 'room';
   loading?: boolean;
   onImageDeleted: () => void;
   onImageUpdate: () => void;
@@ -22,7 +22,6 @@ interface ImageGalleryProps {
 const ImageGallery: React.FC<ImageGalleryProps> = ({
   images,
   itemId,
-  type,
   loading = false,
   onImageDeleted,
   onImageUpdate,
@@ -37,11 +36,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
 
     try {
       setDeletingId(imageId);
-      if (type === 'room') {
-        await uploadAPI.deleteRoomImage(itemId, imageId);
-      } else {
-        await uploadAPI.deleteMenuImage(itemId);
-      }
+      await uploadAPI.deleteRoomImage(itemId, imageId);
       onImageDeleted();
     } catch (err: any) {
       console.error('Error deleting image:', err);
@@ -52,7 +47,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   };
 
   const handleSetPrimary = async (imageId: string) => {
-    if (type !== 'room') return;
 
     try {
       setSettingPrimaryId(imageId);
@@ -81,7 +75,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
         {onUploadClick && (
           <Button variant="primary" size="sm" onClick={onUploadClick}>
             <Upload size={14} className="me-2" />
-            Upload Image{type === 'room' ? 's' : ''}
+            Upload Images
           </Button>
         )}
       </div>
@@ -100,7 +94,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
             </Button>
           )}
         </div>
-        <Row xs={1} sm={2} md={type === 'room' ? 3 : 2} className="g-2">
+        <Row xs={1} sm={2} md={3} className="g-2">
           {images.map((image, idx) => (
             <Col key={image._id || idx}>
               <Card className="h-100 position-relative overflow-hidden">
@@ -131,7 +125,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                     }}
                   />
 
-                  {image.isPrimary && type === 'room' && (
+                  {image.isPrimary && (
                     <Badge
                       bg="warning"
                       className="position-absolute"
@@ -154,7 +148,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
                       <Eye size={14} />
                     </Button>
 
-                    {type === 'room' && !image.isPrimary && (
+                    {!image.isPrimary && (
                       <Button
                         variant="outline-warning"
                         size="sm"

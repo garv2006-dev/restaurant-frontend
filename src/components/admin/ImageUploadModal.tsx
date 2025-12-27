@@ -6,7 +6,7 @@ import { uploadAPI } from '../../services/uploadAPI';
 interface ImageUploadModalProps {
   show: boolean;
   onHide: () => void;
-  type: 'room' | 'menu' | 'avatar';
+  type: 'room' | 'avatar';
   itemId: string;
   itemName: string;
   onUploadSuccess: () => void;
@@ -71,8 +71,6 @@ const ImageUploadModal: React.FC<ImageUploadModalProps> = ({
 
       if (type === 'room') {
         await uploadAPI.uploadRoomImages(itemId, selectedFiles);
-      } else if (type === 'menu') {
-        await uploadAPI.uploadMenuImage(itemId, selectedFiles[0]);
       } else if (type === 'avatar') {
         await uploadAPI.uploadAvatar(selectedFiles[0]);
       }

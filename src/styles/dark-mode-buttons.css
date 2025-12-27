@@ -1,0 +1,158 @@
+/* Dark mode button improvements */
+[data-bs-theme="dark"] .btn-outline-primary {
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] .btn-outline-primary:hover {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: var(--bs-dark);
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary {
+  border-color: var(--bs-secondary-color);
+  color: var(--bs-secondary-color);
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+  background-color: var(--bs-secondary-color);
+  color: var(--bs-body-bg);
+}
+
+[data-bs-theme="dark"] .form-control {
+  background-color: var(--bs-secondary-bg);
+  border-color: var(--bs-border-color);
+  color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .form-control:focus {
+  background-color: var(--bs-secondary-bg);
+  border-color: var(--bs-primary);
+  color: var(--bs-body-color);
+  box-shadow: 0 0 0 0.2rem rgba(200, 164, 86, 0.25);
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+  color: var(--bs-tertiary-color);
+}
+
+[data-bs-theme="dark"] .form-label {
+  color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .alert {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .alert-info {
+  background-color: rgba(23, 162, 184, 0.15);
+  border-color: rgba(23, 162, 184, 0.3);
+  color: #87ceeb;
+}
+
+[data-bs-theme="dark"] .alert-danger {
+  background-color: rgba(220, 53, 69, 0.15);
+  border-color: rgba(220, 53, 69, 0.3);
+  color: #ff6b6b;
+}
+
+/* Dark mode link improvements */
+[data-bs-theme="dark"] .text-decoration-none {
+  color: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] .text-decoration-none:hover {
+  color: var(--color-gold-light);
+}
+
+/* Dark mode icon fixes */
+[data-bs-theme="dark"] .fa-eye,
+[data-bs-theme="dark"] .fa-eye-slash,
+[data-bs-theme="dark"] .fa-sign-in-alt,
+[data-bs-theme="dark"] .fa-envelope,
+[data-bs-theme="dark"] .fa-arrow-left,
+[data-bs-theme="dark"] .fa-user,
+[data-bs-theme="dark"] .fa-lock,
+[data-bs-theme="dark"] .fa-phone {
+  color: var(--bs-body-color) !important;
+}
+
+[data-bs-theme="dark"] .btn .fa-eye,
+[data-bs-theme="dark"] .btn .fa-eye-slash,
+[data-bs-theme="dark"] .btn .fa-sign-in-alt,
+[data-bs-theme="dark"] .btn .fa-envelope,
+[data-bs-theme="dark"] .btn .fa-arrow-left,
+[data-bs-theme="dark"] .btn .fa-user,
+[data-bs-theme="dark"] .btn .fa-lock,
+[data-bs-theme="dark"] .btn .fa-phone {
+  color: inherit !important;
+}
+
+/* Lucide icons dark mode */
+[data-bs-theme="dark"] .lucide-eye,
+[data-bs-theme="dark"] .lucide-eye-off,
+[data-bs-theme="dark"] .lucide-user,
+[data-bs-theme="dark"] .lucide-mail,
+[data-bs-theme="dark"] .lucide-phone,
+[data-bs-theme="dark"] .lucide-lock {
+  color: var(--bs-body-color) !important;
+}
+
+[data-bs-theme="dark"] .btn .lucide-eye,
+[data-bs-theme="dark"] .btn .lucide-eye-off,
+[data-bs-theme="dark"] .btn .lucide-user,
+[data-bs-theme="dark"] .btn .lucide-mail,
+[data-bs-theme="dark"] .btn .lucide-phone,
+[data-bs-theme="dark"] .btn .lucide-lock {
+  color: inherit !important;
+}
+
+/* Password visibility button */
+[data-bs-theme="dark"] .btn-link.text-muted {
+  color: var(--bs-secondary-color) !important;
+}
+
+[data-bs-theme="dark"] .btn-link.text-muted:hover {
+  color: var(--bs-primary) !important;
+}
+
+/* Icon wrapper and general icon fixes */
+[data-bs-theme="dark"] .icon-wrapper,
+[data-bs-theme="dark"] [class*="fa-"],
+[data-bs-theme="dark"] [class*="lucide-"] {
+  color: var(--bs-body-color) !important;
+}
+
+[data-bs-theme="dark"] .btn .icon-wrapper,
+[data-bs-theme="dark"] .btn [class*="fa-"],
+[data-bs-theme="dark"] .btn [class*="lucide-"] {
+  color: currentColor !important;
+}
+
+/* Form label icons */
+[data-bs-theme="dark"] .form-label [class*="fa-"],
+[data-bs-theme="dark"] .form-label [class*="lucide-"] {
+  color: var(--bs-body-color) !important;
+  margin-right: 0.5rem;
+}
+
+/* Alert icons */
+[data-bs-theme="dark"] .alert [class*="fa-"],
+[data-bs-theme="dark"] .alert [class*="lucide-"] {
+  color: inherit !important;
+}
+
+/* Text muted icons */
+[data-bs-theme="dark"] .text-muted [class*="fa-"],
+[data-bs-theme="dark"] .text-muted [class*="lucide-"] {
+  color: var(--bs-secondary-color) !important;
+}
+
+/* Button with icons */
+[data-bs-theme="dark"] .btn [class*="fa-"] + span,
+[data-bs-theme="dark"] .btn [class*="lucide-"] + span,
+[data-bs-theme="dark"] .btn span + [class*="fa-"],
+[data-bs-theme="dark"] .btn span + [class*="lucide-"] {
+  color: inherit !important;
+}

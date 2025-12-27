@@ -95,9 +95,6 @@ const Footer: React.FC = () => {
               <Nav.Link as={Link} to="/rooms" className="footer-link p-0 mb-2">
                 Rooms
               </Nav.Link>
-              <Nav.Link as={Link} to="/menu" className="footer-link p-0 mb-2">
-                Menu
-              </Nav.Link>
               <Nav.Link as={Link} to="/booking" className="footer-link p-0 mb-2">
                 Booking
               </Nav.Link>

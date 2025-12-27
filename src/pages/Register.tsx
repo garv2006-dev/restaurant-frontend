@@ -5,6 +5,7 @@ import { Eye, EyeOff, User, Mail, Phone, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { RegisterData } from '../types';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import '../styles/dark-mode-buttons.css';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState<RegisterData>({
@@ -195,9 +196,10 @@ const Register: React.FC = () => {
   const passwordStrength = getPasswordStrength(formData.password);
 
   return (
-    <Container className="py-5">
-      <Row className="justify-content-center">
-        <Col md={8} lg={6} xl={5}>
+    <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
+      <Container className="py-5">
+        <Row className="justify-content-center align-items-center min-vh-100">
+          <Col md={8} lg={6} xl={5}>
           <Card className="shadow-sm border-0">
             <Card.Body className="p-4">
               <div className="text-center mb-4">
@@ -425,6 +427,7 @@ const Register: React.FC = () => {
         </Col>
       </Row>
     </Container>
+    </div>
   );
 };
 

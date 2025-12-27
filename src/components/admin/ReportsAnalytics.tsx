@@ -58,13 +58,11 @@ interface ReportData {
   revenue: {
     totalRevenue: number;
     roomRevenue: number;
-    menuRevenue: number;
     extraServicesRevenue: number;
     monthlyRevenue: Array<{ month: string; revenue: number; bookings: number }>;
   };
   performance: {
     topRooms: Array<{ roomName: string; bookings: number; revenue: number }>;
-    topMenuItems: Array<{ itemName: string; orders: number; revenue: number }>;
     customerSatisfaction: number;
     averageRating: number;
   };
@@ -208,7 +206,7 @@ const ReportsAnalytics: React.FC = () => {
               <Card className="text-center border-0 shadow-sm">
                 <Card.Body>
                   <h6 className="text-muted">Total Revenue</h6>
-                  <h3 className="text-success">₹{reportData.revenue.totalRevenue.toLocaleString()}</h3>
+                  <h3 className="text-success">₹{(reportData.revenue?.totalRevenue || 0).toLocaleString()}</h3>
                   <small className="text-muted">Selected Period</small>
                 </Card.Body>
               </Card>
@@ -217,8 +215,8 @@ const ReportsAnalytics: React.FC = () => {
               <Card className="text-center border-0 shadow-sm">
                 <Card.Body>
                   <h6 className="text-muted">Total Bookings</h6>
-                  <h3 className="text-primary">{reportData.bookings.total}</h3>
-                  <small className="text-muted">{reportData.bookings.confirmed} Confirmed</small>
+                  <h3 className="text-primary">{reportData.bookings?.total || 0}</h3>
+                  <small className="text-muted">{reportData.bookings?.confirmed || 0} Confirmed</small>
                 </Card.Body>
               </Card>
             </Col>
@@ -226,7 +224,7 @@ const ReportsAnalytics: React.FC = () => {
               <Card className="text-center border-0 shadow-sm">
                 <Card.Body>
                   <h6 className="text-muted">Occupancy Rate</h6>
-                  <h3 className="text-warning">{reportData.bookings.occupancyRate}%</h3>
+                  <h3 className="text-warning">{reportData.bookings?.occupancyRate || 0}%</h3>
                   <small className="text-muted">Current Period</small>
                 </Card.Body>
               </Card>
@@ -235,7 +233,7 @@ const ReportsAnalytics: React.FC = () => {
               <Card className="text-center border-0 shadow-sm">
                 <Card.Body>
                   <h6 className="text-muted">Avg. Rating</h6>
-                  <h3 className="text-info">{reportData.performance.averageRating.toFixed(1)}</h3>
+                  <h3 className="text-info">{(reportData.performance?.averageRating || 0).toFixed(1)}</h3>
                   <small className="text-muted">Customer Satisfaction</small>
                 </Card.Body>
               </Card>
@@ -251,7 +249,7 @@ const ReportsAnalytics: React.FC = () => {
                 </Card.Header>
                 <Card.Body>
                   <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={reportData.revenue.monthlyRevenue}>
+                    <LineChart data={reportData.revenue?.monthlyRevenue || []}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -272,7 +270,7 @@ const ReportsAnalytics: React.FC = () => {
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={reportData.rooms.roomTypeDistribution}
+                        data={reportData.rooms?.roomTypeDistribution || []}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -281,7 +279,7 @@ const ReportsAnalytics: React.FC = () => {
                         fill="#8884d8"
                         dataKey="count"
                       >
-                        {reportData.rooms.roomTypeDistribution.map((entry, index) => (
+                        {(reportData.rooms?.roomTypeDistribution || []).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -306,19 +304,19 @@ const ReportsAnalytics: React.FC = () => {
                     <tbody>
                       <tr>
                         <td>Total Bookings</td>
-                        <td><Badge bg="primary">{reportData.bookings.total}</Badge></td>
+                        <td><Badge bg="primary">{reportData.bookings?.total || 0}</Badge></td>
                       </tr>
                       <tr>
                         <td>Confirmed</td>
-                        <td><Badge bg="success">{reportData.bookings.confirmed}</Badge></td>
+                        <td><Badge bg="success">{reportData.bookings?.confirmed || 0}</Badge></td>
                       </tr>
                       <tr>
                         <td>Cancelled</td>
-                        <td><Badge bg="danger">{reportData.bookings.cancelled}</Badge></td>
+                        <td><Badge bg="danger">{reportData.bookings?.cancelled || 0}</Badge></td>
                       </tr>
                       <tr>
                         <td>Completed</td>
-                        <td><Badge bg="info">{reportData.bookings.completed}</Badge></td>
+                        <td><Badge bg="info">{reportData.bookings?.completed || 0}</Badge></td>
                       </tr>
                     </tbody>
                   </Table>
@@ -340,7 +338,7 @@ const ReportsAnalytics: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {reportData.performance.topRooms.map((room, index) => (
+                      {(reportData.performance?.topRooms || []).map((room, index) => (
                         <tr key={index}>
                           <td>{room.roomName}</td>
                           <td>{room.bookings}</td>
@@ -364,7 +362,7 @@ const ReportsAnalytics: React.FC = () => {
                 </Card.Header>
                 <Card.Body>
                   <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={reportData.revenue.monthlyRevenue}>
+                    <BarChart data={reportData.revenue?.monthlyRevenue || []}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -386,19 +384,15 @@ const ReportsAnalytics: React.FC = () => {
                     <tbody>
                       <tr>
                         <td>Room Bookings</td>
-                        <td>₹{reportData.revenue.roomRevenue.toLocaleString()}</td>
-                      </tr>
-                      <tr>
-                        <td>Menu Items</td>
-                        <td>₹{reportData.revenue.menuRevenue.toLocaleString()}</td>
+                        <td>₹{(reportData.revenue?.roomRevenue || 0).toLocaleString()}</td>
                       </tr>
                       <tr>
                         <td>Extra Services</td>
-                        <td>₹{reportData.revenue.extraServicesRevenue.toLocaleString()}</td>
+                        <td>₹{(reportData.revenue?.extraServicesRevenue || 0).toLocaleString()}</td>
                       </tr>
                       <tr className="table-active">
                         <td><strong>Total</strong></td>
-                        <td><strong>₹{reportData.revenue.totalRevenue.toLocaleString()}</strong></td>
+                        <td><strong>₹{(reportData.revenue?.totalRevenue || 0).toLocaleString()}</strong></td>
                       </tr>
                     </tbody>
                   </Table>
@@ -420,51 +414,24 @@ const ReportsAnalytics: React.FC = () => {
                     <tbody>
                       <tr>
                         <td>Total Customers</td>
-                        <td><Badge bg="primary">{reportData.customers.totalCustomers}</Badge></td>
+                        <td><Badge bg="primary">{reportData.customers?.totalCustomers || 0}</Badge></td>
                       </tr>
                       <tr>
                         <td>New Customers</td>
-                        <td><Badge bg="success">{reportData.customers.newCustomers}</Badge></td>
+                        <td><Badge bg="success">{reportData.customers?.newCustomers || 0}</Badge></td>
                       </tr>
                       <tr>
                         <td>Returning Customers</td>
-                        <td><Badge bg="info">{reportData.customers.returningCustomers}</Badge></td>
+                        <td><Badge bg="info">{reportData.customers?.returningCustomers || 0}</Badge></td>
                       </tr>
                       <tr>
                         <td>Loyalty Members</td>
-                        <td><Badge bg="warning">{reportData.customers.loyaltyMembers}</Badge></td>
+                        <td><Badge bg="warning">{reportData.customers?.loyaltyMembers || 0}</Badge></td>
                       </tr>
                       <tr>
                         <td>Avg. Loyalty Points</td>
-                        <td>{reportData.customers.averageLoyaltyPoints}</td>
+                        <td>{reportData.customers?.averageLoyaltyPoints || 0}</td>
                       </tr>
-                    </tbody>
-                  </Table>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={6}>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Top Menu Items</h5>
-                </Card.Header>
-                <Card.Body>
-                  <Table striped>
-                    <thead>
-                      <tr>
-                        <th>Item</th>
-                        <th>Orders</th>
-                        <th>Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reportData.performance.topMenuItems.map((item, index) => (
-                        <tr key={index}>
-                          <td>{item.itemName}</td>
-                          <td>{item.orders}</td>
-                          <td>₹{item.revenue.toLocaleString()}</td>
-                        </tr>
-                      ))}
                     </tbody>
                   </Table>
                 </Card.Body>

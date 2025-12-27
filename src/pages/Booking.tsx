@@ -48,8 +48,7 @@ const Booking: React.FC = () => {
       earlyCheckIn: false,
       lateCheckOut: false
     },
-    extraServices: [],
-    menuItems: []
+    extraServices: []
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -129,8 +128,7 @@ const Booking: React.FC = () => {
         earlyCheckIn: false,
         lateCheckOut: false
       },
-      extraServices: [],
-      menuItems: []
+      extraServices: []
     };
     
     console.log('Updated booking form:', newForm);
@@ -279,11 +277,7 @@ const Booking: React.FC = () => {
           totalAdults: bookingForm.guests.adults,
           totalChildren: bookingForm.guests.children,
           additionalGuests: bookingForm.additionalGuests || []
-        },
-        specialRequests: bookingForm.specialRequests || '',
-        preferences: bookingForm.preferences || {},
-        extraServices: bookingForm.extraServices || [],
-        menuItems: bookingForm.menuItems || []
+        }
       };
 
       setPendingBookingPayload(bookingData);
