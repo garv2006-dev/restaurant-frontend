@@ -365,6 +365,31 @@ const Booking: React.FC = () => {
     }
   }, [bookingForm.checkInDate, bookingForm.checkOutDate, selectedRoom]);
 
+  const getRoomPrimaryImageUrl = (room: Room): string => {
+    const fallbackUrl = 'https://via.placeholder.com/400x250?text=Room+Image';
+
+    if (!room || !Array.isArray(room.images) || room.images.length === 0) {
+      return fallbackUrl;
+    }
+
+    const isCloudinaryUrl = (url?: string) => !!url && url.includes('res.cloudinary.com');
+
+    const cloudImages = room.images.filter((img) => isCloudinaryUrl(img.url));
+    const primaryCloud = cloudImages.find((img) => img.isPrimary);
+    if (primaryCloud?.url) return primaryCloud.url;
+
+    if (cloudImages.length > 0) {
+      const lastCloud = cloudImages[cloudImages.length - 1];
+      if (lastCloud?.url) return lastCloud.url;
+    }
+
+    const primaryAny = room.images.find((img) => img.isPrimary && !!img.url);
+    if (primaryAny?.url) return primaryAny.url;
+
+    const lastAny = room.images[room.images.length - 1];
+    return lastAny?.url || fallbackUrl;
+  };
+
   return (
     <Container className="py-5">
       {/* Header */}
@@ -386,7 +411,7 @@ const Booking: React.FC = () => {
                 <div className="position-relative">
                   <Card.Img 
                     variant="top" 
-                    src={room.images?.[0]?.url || 'https://via.placeholder.com/400x250?text=Room+Image'}
+                    src={getRoomPrimaryImageUrl(room)}
                     alt={room.name}
                     style={{ height: '250px', objectFit: 'cover' }}
                   />

@@ -73,9 +73,10 @@
   transition: transform 0.6s ease;
 }
 
-.room-card:hover .room-image {
+/* Room card hover effects - REMOVED per requirements */
+/*.room-card:hover .room-image {
   transform: scale(1.1);
-}
+}*/
 
 .room-price {
   position: absolute;

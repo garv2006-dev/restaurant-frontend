@@ -35,6 +35,87 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.navbar-custom .navbar-brand:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.navbar-custom .navbar-brand:hover {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+.navbar-custom .navbar-brand:active {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+}
+
+/* Navigation links styling - remove blue underline */
+.navbar-custom .nav-link {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+.navbar-custom .nav-link:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+.navbar-custom .nav-link:hover {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+.navbar-custom .nav-link:active {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+/* Theme toggle button styling - remove blue border */
+.navbar-custom .navbar-icons .btn,
+.navbar-custom .navbar-icons button {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
+}
+
+.navbar-custom .navbar-icons .btn:focus,
+.navbar-custom .navbar-icons .btn:active,
+.navbar-custom .navbar-icons .btn:hover,
+.navbar-custom .navbar-icons button:focus,
+.navbar-custom .navbar-icons button:active,
+.navbar-custom .navbar-icons button:hover {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  border-bottom: none !important;
 }
 
 /* Right side icons container */
@@ -58,18 +139,56 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease-in-out;
-  background-color: rgba(212, 175, 55, 0.1);
-  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 0;
+  transition: color 0.2s ease-in-out;
+  background-color: transparent;
+  border: none;
+  border-bottom: none !important;
+  text-decoration: none !important;
+  outline: none;
+  box-shadow: none;
   min-width: 44px;
   min-height: 44px;
+  position: relative;
 }
 
 .mobile-notification-bell:hover {
-  background-color: rgba(212, 175, 55, 0.2);
   color: var(--bs-primary);
-  transform: scale(1.05);
+  background-color: transparent;
+  transform: none;
+  border-bottom: none !important;
+  text-decoration: none !important;
+  box-shadow: none;
+}
+
+.mobile-notification-bell:focus {
+  color: var(--bs-primary) !important;
+  background-color: transparent !important;
+  border-bottom: none !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+.mobile-notification-bell:active {
+  color: var(--bs-primary) !important;
+  background-color: transparent !important;
+  border-bottom: none !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+.mobile-notification-bell::after {
+  display: none !important;
+}
+
+.mobile-notification-bell::before {
+  display: none !important;
 }
 
 .mobile-notification-bell svg {
@@ -79,15 +198,109 @@
   min-height: 20px;
 }
 
+/* Consistent badge styling for all notification icons */
+.navbar-custom .navbar-icons .nav-link .badge,
 .mobile-notification-badge {
-  font-size: 0.65rem !important;
-  min-width: 18px;
-  height: 18px;
+  font-size: 0.6rem !important;
+  min-width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 3px;
   font-weight: 600;
+  border-radius: 50%;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  transform: translate(50%, -50%);
+  z-index: 10;
+  line-height: 1;
+}
+
+/* Desktop notification badge specific styling */
+.navbar-custom .navbar-icons .nav-link .badge {
+  font-size: 0.65rem !important;
+  min-width: 18px;
+  height: 18px;
+  top: 0px !important;
+  right: 0px !important;
+  transform: translate(50%, -50%);
+  z-index: 10;
+  line-height: 1;
+}
+
+.mobile-notification-badge {
+  font-size: 0.6rem !important;
+  min-width: 16px;
+  height: 16px;
+  top: 0px !important;
+  right: 0px !important;
+}
+
+/* Desktop notification icon styling - remove underline */
+.navbar-custom .navbar-icons .nav-link {
+  border-bottom: none !important;
+  text-decoration: none !important;
+  outline: none;
+  box-shadow: none;
+  position: relative;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--bs-navbar-color);
+  transition: color 0.2s ease-in-out;
+  background-color: transparent;
+  border: none;
+}
+
+.navbar-custom .navbar-icons .nav-link svg {
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px;
+  min-height: 20px;
+}
+
+.navbar-custom .navbar-icons .nav-link:hover {
+  border-bottom: none !important;
+  text-decoration: none !important;
+  box-shadow: none;
+  color: var(--bs-primary);
+  background-color: transparent;
+}
+
+.navbar-custom .navbar-icons .nav-link:focus {
+  border-bottom: none !important;
+  text-decoration: none !important;
+  box-shadow: none;
+  color: var(--bs-primary);
+  background-color: transparent;
+  box-shadow: none !important;
+  outline: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+.navbar-custom .navbar-icons .nav-link:active {
+  border-bottom: none !important;
+  text-decoration: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+}
+
+.navbar-custom .navbar-icons .nav-link::after {
+  display: none !important;
+}
+
+.navbar-custom .navbar-icons .nav-link::before {
+  display: none !important;
 }
 
 /* Hamburger menu styling */
@@ -168,8 +381,8 @@
   }
   
   .mobile-notification-bell svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 20px !important;
+    height: 20px !important;
   }
   
   .mobile-notification-badge {
@@ -206,8 +419,8 @@
   }
   
   .mobile-notification-bell svg {
-    width: 19px !important;
-    height: 19px !important;
+    width: 20px !important;
+    height: 20px !important;
   }
   
   .navbar-custom .navbar-toggler {
@@ -253,8 +466,8 @@
 }
 
 [data-bs-theme="dark"] .mobile-notification-bell {
-  background-color: rgba(212, 175, 55, 0.15);
-  border-color: rgba(212, 175, 55, 0.3);
+  background-color: transparent;
+  border: none;
 }
 
 /* Hide mobile notification on desktop and show desktop version */

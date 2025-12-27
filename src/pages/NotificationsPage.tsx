@@ -1,27 +1,43 @@
-import React, { useState } from 'react';
-import { Container, Card, Badge, Button, Nav, Tab, Row, Col, Dropdown } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Card, Badge, Button, Nav, Tab, Row, Col, Dropdown, Spinner, Alert } from 'react-bootstrap';
 import { Bell, Check, CheckCircle, Clock, Calendar, Star, MessageSquare, ShoppingBag, ChevronDown } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import '../styles/notifications-responsive.css';
 
-interface Notification {
-  id: string;
-  type: 'booking' | 'review' | 'promotion' | 'order' | 'system';
-  title: string;
-  message: string;
-  timestamp: Date;
-  read: boolean;
-  icon: React.ReactNode;
-}
-
 const NotificationsPage: React.FC = () => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAllNotifications } = useNotifications();
+  const { 
+    notifications, 
+    unreadCount, 
+    loading, 
+    error, 
+    fetchNotifications, 
+    markAsRead, 
+    markAllAsRead, 
+    deleteNotification, 
+    clearAllNotifications,
+    getNotificationCount,
+    getUnreadCountByType
+  } = useNotifications();
+  
   const [activeTab, setActiveTab] = useState('all');
+
+  // Fetch notifications based on active tab
+  useEffect(() => {
+    if (activeTab === 'all') {
+      fetchNotifications();
+    } else if (activeTab === 'unread') {
+      fetchNotifications(undefined, false);
+    } else {
+      fetchNotifications(activeTab === 'booking' ? 'room_booking' : activeTab);
+    }
+  }, [activeTab]);
 
   const filteredNotifications = notifications.filter(notif => {
     if (activeTab === 'all') return true;
     if (activeTab === 'unread') return !notif.read;
-    return notif.type === activeTab;
+    if (activeTab === 'booking') return notif.type === 'room_booking';
+    if (activeTab === 'promotion') return notif.type === 'promotion';
+    return false;
   });
 
   const formatTimestamp = (date: Date) => {
@@ -36,11 +52,10 @@ const NotificationsPage: React.FC = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'booking': return 'primary';
+      case 'room_booking': return 'primary';
       case 'promotion': return 'warning';
-      case 'review': return 'info';
-      case 'order': return 'success';
       case 'system': return 'secondary';
+      case 'payment': return 'success';
       default: return 'primary';
     }
   };
@@ -49,7 +64,7 @@ const NotificationsPage: React.FC = () => {
     switch (tabKey) {
       case 'all': return 'All';
       case 'unread': return 'Unread';
-      case 'booking': return 'Bookings';
+      case 'booking': return 'Room Bookings';
       case 'promotion': return 'Promotions';
       default: return tabKey;
     }
@@ -57,10 +72,10 @@ const NotificationsPage: React.FC = () => {
 
   const getTabCount = (tabKey: string) => {
     switch (tabKey) {
-      case 'all': return notifications.length;
-      case 'unread': return unreadCount;
-      case 'booking': return notifications.filter(n => n.type === 'booking').length;
-      case 'promotion': return notifications.filter(n => n.type === 'promotion').length;
+      case 'all': return getNotificationCount(); // All notifications
+      case 'unread': return unreadCount; // All unread notifications
+      case 'booking': return getNotificationCount('room_booking'); // All room booking notifications
+      case 'promotion': return getNotificationCount('promotion'); // All promotion notifications
       default: return 0;
     }
   };
@@ -75,9 +90,31 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
+  if (loading && notifications.length === 0) {
+    return (
+      <div className="notifications-page">
+        <Container fluid>
+          <div className="text-center py-5">
+            <Spinner animation="border" role="status">
+              <span className="visually-hidden">Loading notifications...</span>
+            </Spinner>
+            <p className="mt-3">Loading your notifications...</p>
+          </div>
+        </Container>
+      </div>
+    );
+  }
+
   return (
     <div className="notifications-page">
       <Container fluid>
+        {error && (
+          <Alert variant="danger" dismissible onClose={() => window.location.reload()}>
+            <Alert.Heading>Error</Alert.Heading>
+            <p>{error}</p>
+          </Alert>
+        )}
+        
         <div className="notifications-header">
           <div className="notifications-title">
             <h2>Notifications</h2>
@@ -133,7 +170,7 @@ const NotificationsPage: React.FC = () => {
             <Nav.Item>
               <Nav.Link eventKey="all">
                 All
-                <Badge bg="secondary">{notifications.length}</Badge>
+                <Badge bg="secondary">{getNotificationCount()}</Badge>
               </Nav.Link>
             </Nav.Item>
             <Nav.Item>
@@ -144,9 +181,9 @@ const NotificationsPage: React.FC = () => {
             </Nav.Item>
             <Nav.Item>
               <Nav.Link eventKey="booking">
-                Bookings
+                Room Bookings
                 <Badge bg="light" text="dark">
-                  {notifications.filter(n => n.type === 'booking').length}
+                  {getNotificationCount('room_booking')}
                 </Badge>
               </Nav.Link>
             </Nav.Item>
@@ -154,7 +191,7 @@ const NotificationsPage: React.FC = () => {
               <Nav.Link eventKey="promotion">
                 Promotions
                 <Badge bg="light" text="dark">
-                  {notifications.filter(n => n.type === 'promotion').length}
+                  {getNotificationCount('promotion')}
                 </Badge>
               </Nav.Link>
             </Nav.Item>
@@ -171,7 +208,7 @@ const NotificationsPage: React.FC = () => {
                   <p>
                     {activeTab === 'unread' 
                       ? "You don't have any unread notifications." 
-                      : `No ${activeTab} notifications found.`}
+                      : `No ${getTabLabel(activeTab).toLowerCase()} notifications found.`}
                   </p>
                 </div>
               ) : (
@@ -197,7 +234,8 @@ const NotificationsPage: React.FC = () => {
                                   )}
                                 </h6>
                                 <Badge bg={getTypeColor(notification.type)}>
-                                  {notification.type}
+                                  {notification.type === 'room_booking' ? 'Room Booking' : 
+                                   notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
                                 </Badge>
                               </div>
                               <div className="notification-meta">
