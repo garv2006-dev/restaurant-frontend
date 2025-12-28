@@ -34,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
       
       <main 
         id="main-content"
-        className="flex-grow-1" 
+        className="flex-grow-1 main-content-mobile" 
         style={{ paddingTop: '80px' }}
         tabIndex={-1}
       >
@@ -46,13 +46,13 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
       {/* Floating Accessibility Button */}
       <Button
         variant="primary"
-        className="position-fixed rounded-circle d-flex align-items-center justify-content-center no-print"
+        className="position-fixed rounded-circle d-flex align-items-center justify-content-center no-print accessibility-button"
         style={{
           bottom: '20px',
           right: '20px',
           width: '56px',
           height: '56px',
-        
+          zIndex: 1030,
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
         }}
         onClick={openAccessibilitySettings}
