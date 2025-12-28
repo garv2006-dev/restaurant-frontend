@@ -190,6 +190,13 @@ p {
   height: 100%;
 }
 
+/* Ensure room card images display properly */
+.room-card .card-img-top {
+  width: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 /* Featured Rooms Section */
 .featured-rooms-section {
   padding: 4rem 0;
@@ -542,6 +549,69 @@ p {
   display: inline-block;
   width: 20px;
   height: 20px;
+}
+
+/* Mobile Footer Styles */
+@media (max-width: 768px) {
+  /* Hide all footer content except copyright on mobile */
+  .footer-desktop-content {
+    display: none !important;
+  }
+  
+  /* Mobile sticky footer */
+  .footer-mobile {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1010 !important;
+    background-color: var(--bs-dark) !important;
+    padding: 0.75rem 1rem !important;
+    margin: 0 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .footer-mobile .copyright-text {
+    color: rgba(255, 255, 255, 0.75) !important;
+    font-size: 0.8rem !important;
+    margin: 0 !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+  }
+  
+  /* Add bottom padding to main content to prevent footer overlap */
+  .main-content-mobile {
+    padding-bottom: 60px !important;
+  }
+  
+  /* Adjust accessibility button position to avoid footer overlap */
+  .accessibility-button {
+    bottom: 80px !important;
+  }
+}
+
+/* Ensure desktop footer remains unchanged */
+@media (min-width: 769px) {
+  .footer-mobile {
+    display: none !important;
+  }
+  
+  .footer-desktop-content {
+    display: block !important;
+  }
+  
+  /* Reset main content padding on desktop */
+  .main-content-mobile {
+    padding-bottom: 0 !important;
+  }
+}
+
+/* Dark theme mobile footer */
+[data-bs-theme="dark"] .footer-mobile {
+  background-color: var(--bs-dark) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Hamburger menu animations and styling */

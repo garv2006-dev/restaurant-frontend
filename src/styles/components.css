@@ -68,9 +68,10 @@
 }
 
 .room-image {
-  height: 280px;
+  height: 300px;
   width: 100%;
   object-fit: cover;
+  object-position: center;
   transition: transform 0.6s ease;
 }
 
@@ -93,6 +94,7 @@
   line-height: 1.2;
   backdrop-filter: blur(10px);
   min-width: 80px;
+  z-index: 10;
 }
 
 .price-amount {
@@ -124,6 +126,65 @@
 .feature-badge:hover {
   background-color: var(--color-gold-light);
   transform: translateY(-2px);
+}
+
+/* Room Card Grid Layout Improvements */
+.featured-rooms-section .row {
+  margin: 0 -0.5rem;
+}
+
+.featured-rooms-section .row > [class*="col-"] {
+  padding: 0 0.5rem;
+}
+
+/* Ensure consistent card heights */
+.room-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.room-card .card-text {
+  flex-grow: 1;
+}
+
+/* Mobile-first responsive grid improvements */
+@media (max-width: 575.98px) {
+  .featured-rooms-section .row {
+    margin: 0 -0.25rem;
+  }
+  
+  .featured-rooms-section .row > [class*="col-"] {
+    padding: 0 0.25rem;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .featured-rooms-section .row {
+    margin: 0 -0.375rem;
+  }
+  
+  .featured-rooms-section .row > [class*="col-"] {
+    padding: 0 0.375rem;
+    margin-bottom: 1.25rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .featured-rooms-section .row {
+    margin: 0 -0.5rem;
+  }
+  
+  .featured-rooms-section .row > [class*="col-"] {
+    padding: 0 0.5rem;
+    margin-bottom: 1.5rem;
+  }
 }
 
 /* Badge responsive improvements */
@@ -210,7 +271,7 @@
 /* Responsive Adjustments */
 @media (max-width: 1200px) {
   .room-image {
-    height: 260px;
+    height: 280px;
   }
   
   .room-price {
@@ -230,7 +291,7 @@
 
 @media (max-width: 992px) {
   .room-image {
-    height: 240px;
+    height: 260px;
   }
   
   .section-title {
@@ -244,13 +305,13 @@
   }
   
   .room-image {
-    height: 220px;
+    height: 250px;
   }
   
   .room-price {
     padding: 0.4rem 0.7rem;
-    top: 0.5rem;
-    right: 0.5rem;
+    top: 0.75rem;
+    right: 0.75rem;
     border-radius: 1.2rem;
   }
   
@@ -282,15 +343,15 @@
   }
   
   .room-image {
-    height: 200px;
+    height: 240px;
   }
   
   .room-price {
-    padding: 0.3rem 0.6rem;
-    top: 0.5rem;
-    right: 0.5rem;
+    padding: 0.35rem 0.65rem;
+    top: 0.75rem;
+    right: 0.75rem;
     border-radius: 1rem;
-    min-width: 70px;
+    min-width: 75px;
   }
   
   .price-amount {
@@ -312,15 +373,15 @@
 
 @media (max-width: 480px) {
   .room-image {
-    height: 180px;
+    height: 220px;
   }
   
   .room-price {
-    padding: 0.25rem 0.5rem;
-    top: 0.4rem;
-    right: 0.4rem;
+    padding: 0.3rem 0.6rem;
+    top: 0.5rem;
+    right: 0.5rem;
     border-radius: 0.8rem;
-    min-width: 65px;
+    min-width: 70px;
   }
   
   .price-amount {
@@ -338,15 +399,15 @@
 
 @media (max-width: 400px) {
   .room-image {
-    height: 160px;
+    height: 200px;
   }
   
   .room-price {
-    padding: 0.2rem 0.4rem;
-    top: 0.3rem;
-    right: 0.3rem;
+    padding: 0.25rem 0.5rem;
+    top: 0.5rem;
+    right: 0.5rem;
     border-radius: 0.7rem;
-    min-width: 60px;
+    min-width: 65px;
   }
   
   .price-amount {
