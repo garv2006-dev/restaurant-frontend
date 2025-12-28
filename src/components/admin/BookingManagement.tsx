@@ -4,6 +4,17 @@ import { adminAPI } from '../../services/api';
 import { Booking, BookingFormData } from '../../types';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
+import { 
+  Eye, 
+  CheckCircle, 
+  XCircle, 
+  LogIn, 
+  LogOut, 
+  Printer, 
+  ChevronLeft, 
+  ChevronRight,
+  Loader2
+} from 'lucide-react';
 
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -32,6 +43,10 @@ const BookingManagement: React.FC = () => {
     const fetchBookings = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
+        console.log('Fetching bookings with filters:', filters); // Debug log
+        
         const response = await adminAPI.getAllBookings({
           status: filters.status !== 'all' ? filters.status : undefined,
           date: filters.date || undefined,
@@ -39,16 +54,27 @@ const BookingManagement: React.FC = () => {
           page: pagination.page,
           limit: pagination.limit
         });
-        setBookings(response.data?.bookings || []);
-        setPagination(prev => ({
-          ...prev,
-          total: response.data?.pagination?.total || 0,
-          pages: response.data?.pagination?.pages || 0
-        }));
+        
+        console.log('Bookings API response:', response); // Debug log
+        
+        if (response.success && response.data) {
+          const bookingsData = response.data.bookings || [];
+          console.log('Processed bookings data:', bookingsData); // Debug log
+          
+          setBookings(bookingsData);
+          setPagination(prev => ({
+            ...prev,
+            total: response.data?.pagination?.total || 0,
+            pages: response.data?.pagination?.pages || 0
+          }));
+        } else {
+          throw new Error(response.message || 'Failed to fetch bookings');
+        }
       } catch (err: any) {
-        setError(
-          err?.response?.data?.message || err?.message || 'Failed to load bookings'
-        );
+        console.error('Error fetching bookings:', err); // Debug log
+        const errorMessage = err?.response?.data?.message || err?.message || 'Failed to load bookings';
+        setError(errorMessage);
+        setBookings([]);
       } finally {
         setLoading(false);
       }
@@ -79,23 +105,55 @@ const BookingManagement: React.FC = () => {
   };
 
   const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
+    // Add confirmation for destructive actions
+    if (status === 'Cancelled' || status === 'NoShow') {
+      const confirmMessage = status === 'Cancelled' 
+        ? 'Are you sure you want to cancel this booking?' 
+        : 'Are you sure you want to mark this booking as No Show?';
+      
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+    }
+    
     try {
       setActionLoading(prev => ({ ...prev, [bookingId]: true }));
-      await adminAPI.updateBookingStatus(bookingId, status);
+      setError(null); // Clear any previous errors
       
-      // Update local state
-      setBookings(prev => prev.map(booking => 
-        booking.id === bookingId 
-          ? { ...booking, status } 
-          : booking
-      ));
+      console.log('Updating booking status:', { bookingId, status }); // Debug log
       
-      if (selectedBooking?.id === bookingId) {
-        setSelectedBooking(prev => prev ? { ...prev, status } : null);
+      const response = await adminAPI.updateBookingStatus(bookingId, status);
+      
+      console.log('Status update response:', response); // Debug log
+      
+      if (response.success) {
+        // Update local state
+        setBookings(prev => prev.map(booking => 
+          (booking.id === bookingId || booking._id === bookingId)
+            ? { ...booking, status } 
+            : booking
+        ));
+        
+        // Update selected booking if it's the same one
+        if (selectedBooking && (selectedBooking.id === bookingId || selectedBooking._id === bookingId)) {
+          setSelectedBooking(prev => prev ? { ...prev, status } : null);
+        }
+        
+        // Show success message
+        console.log('Booking status updated successfully');
+        
+        // Optional: Show a success toast instead of console.log
+        // toast.success(`Booking status updated to ${status}`);
+      } else {
+        throw new Error(response.message || 'Failed to update booking status');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to update booking status:', err);
-      // Handle error (e.g., show toast)
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update booking status';
+      setError(errorMessage);
+      
+      // Show error to user (you can replace this with a toast notification)
+      alert(`Error: ${errorMessage}`);
     } finally {
       setActionLoading(prev => ({ ...prev, [bookingId]: false }));
     }
@@ -113,6 +171,26 @@ const BookingManagement: React.FC = () => {
 
   const getTotalPrice = (booking: Booking) => {
     return booking.pricing?.totalAmount?.toFixed(2) || '0.00';
+  };
+
+  const handlePrintBooking = () => {
+    // Store original title
+    const originalTitle = document.title;
+    
+    // Set print-friendly title
+    if (selectedBooking) {
+      document.title = `Booking Details - ${selectedBooking.bookingId}`;
+    }
+    
+    // Add a small delay to ensure modal is fully rendered
+    setTimeout(() => {
+      window.print();
+      
+      // Restore original title after print dialog
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    }, 100);
   };
 
   
@@ -155,11 +233,22 @@ const BookingManagement: React.FC = () => {
           <h5 className="mb-0">Booking Management</h5>
           <div>
             <Button variant="primary" size="sm" onClick={() => window.print()}>
-              <i className="bi bi-printer me-1"></i> Print
+              <Printer size={16} className="me-1" /> Print
             </Button>
           </div>
         </Card.Header>
         <Card.Body>
+          {error && (
+            <div className="alert alert-danger alert-dismissible fade show" role="alert">
+              <strong>Error:</strong> {error}
+              <button 
+                type="button" 
+                className="btn-close" 
+                onClick={() => setError(null)}
+                aria-label="Close"
+              ></button>
+            </div>
+          )}
           <Row className="mb-3 g-3">
             <Col md={3}>
               <Form.Select 
@@ -219,7 +308,7 @@ const BookingManagement: React.FC = () => {
                     const roomLabel = room ? `${room.name || ''} ${room.roomNumber ? `#${room.roomNumber}` : ''}`.trim() : '-';
                     
                     return (
-                      <tr key={booking.id}>
+                      <tr key={booking.id || booking._id}>
                         <td>
                           <div className="fw-semibold">{booking.bookingId}</div>
                           <small className="text-muted">
@@ -249,22 +338,24 @@ const BookingManagement: React.FC = () => {
                               size="sm" 
                               onClick={() => handleViewDetails(booking)}
                               title="View Details"
+                              disabled={actionLoading[booking.id] || actionLoading[booking._id]}
                             >
-                              <i className="bi bi-eye"></i>
+                              <Eye size={16} />
                             </Button>
                             
                             {booking.status === 'Pending' && (
                               <Button 
                                 variant="outline-success" 
                                 size="sm"
-                                onClick={() => handleStatusUpdate(booking.id, 'Confirmed')}
-                                disabled={actionLoading[booking.id]}
-                                title="Confirm Booking"
+                                onClick={() => handleStatusUpdate(booking.id || booking._id, 'Confirmed')}
+                                disabled={actionLoading[booking.id] || actionLoading[booking._id]}
+                                title="Confirm this booking"
+                                className="d-flex align-items-center"
                               >
-                                {actionLoading[booking.id] ? (
-                                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
+                                  <Loader2 size={16} className="animate-spin" />
                                 ) : (
-                                  <i className="bi bi-check-lg"></i>
+                                  <CheckCircle size={16} />
                                 )}
                               </Button>
                             )}
@@ -273,14 +364,15 @@ const BookingManagement: React.FC = () => {
                               <Button 
                                 variant="outline-danger" 
                                 size="sm"
-                                onClick={() => handleStatusUpdate(booking.id, 'Cancelled')}
-                                disabled={actionLoading[booking.id]}
-                                title="Cancel Booking"
+                                onClick={() => handleStatusUpdate(booking.id || booking._id, 'Cancelled')}
+                                disabled={actionLoading[booking.id] || actionLoading[booking._id]}
+                                title="Cancel this booking"
+                                className="d-flex align-items-center"
                               >
-                                {actionLoading[booking.id] ? (
-                                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
+                                  <Loader2 size={16} className="animate-spin" />
                                 ) : (
-                                  <i className="bi bi-x-lg"></i>
+                                  <XCircle size={16} />
                                 )}
                               </Button>
                             )}
@@ -289,14 +381,15 @@ const BookingManagement: React.FC = () => {
                               <Button 
                                 variant="outline-info" 
                                 size="sm"
-                                onClick={() => handleStatusUpdate(booking.id, 'CheckedIn')}
-                                disabled={actionLoading[booking.id]}
-                                title="Check In"
+                                onClick={() => handleStatusUpdate(booking.id || booking._id, 'CheckedIn')}
+                                disabled={actionLoading[booking.id] || actionLoading[booking._id]}
+                                title="Check in guest"
+                                className="d-flex align-items-center"
                               >
-                                {actionLoading[booking.id] ? (
-                                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
+                                  <Loader2 size={16} className="animate-spin" />
                                 ) : (
-                                  <i className="bi bi-box-arrow-in-right"></i>
+                                  <LogIn size={16} />
                                 )}
                               </Button>
                             )}
@@ -305,14 +398,15 @@ const BookingManagement: React.FC = () => {
                               <Button 
                                 variant="outline-secondary" 
                                 size="sm"
-                                onClick={() => handleStatusUpdate(booking.id, 'CheckedOut')}
-                                disabled={actionLoading[booking.id]}
-                                title="Check Out"
+                                onClick={() => handleStatusUpdate(booking.id || booking._id, 'CheckedOut')}
+                                disabled={actionLoading[booking.id] || actionLoading[booking._id]}
+                                title="Check out guest"
+                                className="d-flex align-items-center"
                               >
-                                {actionLoading[booking.id] ? (
-                                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
+                                  <Loader2 size={16} className="animate-spin" />
                                 ) : (
-                                  <i className="bi bi-box-arrow-right"></i>
+                                  <LogOut size={16} />
                                 )}
                               </Button>
                             )}
@@ -370,7 +464,7 @@ const BookingManagement: React.FC = () => {
                   disabled={pagination.page === 1}
                   onClick={() => handlePageChange(pagination.page - 1)}
                 >
-                  <i className="bi bi-chevron-left"></i> Previous
+                  <ChevronLeft size={16} /> Previous
                 </Button>
                 
                 {/* Page Numbers */}
@@ -404,7 +498,7 @@ const BookingManagement: React.FC = () => {
                   disabled={pagination.page === pagination.pages}
                   onClick={() => handlePageChange(pagination.page + 1)}
                 >
-                  Next <i className="bi bi-chevron-right"></i>
+                  Next <ChevronRight size={16} />
                 </Button>
               </div>
             </div>
@@ -417,6 +511,7 @@ const BookingManagement: React.FC = () => {
         show={showDetailsModal} 
         onHide={() => setShowDetailsModal(false)}
         size="lg"
+        className="booking-details-modal"
       >
         <Modal.Header closeButton>
           <Modal.Title>Booking Details</Modal.Title>
@@ -424,41 +519,65 @@ const BookingManagement: React.FC = () => {
         <Modal.Body>
           {selectedBooking ? (
             <div>
-              <div className="d-flex justify-content-between align-items-start mb-4">
-                <div>
-                  <h5>Booking #{selectedBooking.bookingId}</h5>
-                  <div className="text-muted">
-                    Created on {formatDate(selectedBooking.createdAt)}
-                  </div>
-                </div>
-                <div className="text-end">
-                  <div className="h4 mb-0">
-                    ₹{getTotalPrice(selectedBooking)}
-                  </div>
+              {/* Print-only header */}
+              <div className="d-none d-print-block text-center mb-4">
+                <h1 style={{ fontSize: '24pt', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                  Hotel Booking Receipt
+                </h1>
+                <p style={{ fontSize: '12pt', color: '#666', margin: '0' }}>
+                  Generated on {new Date().toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+
+              {/* Booking Header */}
+              <div className="booking-header">
+                <div className="d-flex justify-content-between align-items-start">
                   <div>
-                    {getStatusBadge(selectedBooking.status)}
+                    <h5>
+                      Booking <span className="booking-id">#{selectedBooking.bookingId}</span>
+                    </h5>
+                    <div className="booking-date">
+                      Created on {formatDate(selectedBooking.createdAt)}
+                    </div>
+                  </div>
+                  <div className="text-end">
+                    <div className="booking-amount">
+                      ₹{getTotalPrice(selectedBooking)}
+                    </div>
+                    <div className="booking-status">
+                      {getStatusBadge(selectedBooking.status)}
+                    </div>
                   </div>
                 </div>
               </div>
 
               <Row className="g-3 mb-4">
                 <Col md={6}>
-                  <Card>
+                  <Card className="info-card">
                     <Card.Body>
-                      <h6 className="mb-3">Guest Information</h6>
-                      <div className="mb-2">
-                        <strong>Name:</strong> {selectedBooking.guestDetails?.primaryGuest?.name}
+                      <h6>Guest Information</h6>
+                      <div className="info-item">
+                        <span className="info-label">Name:</span>
+                        <span className="info-value">{selectedBooking.guestDetails?.primaryGuest?.name}</span>
                       </div>
-                      <div className="mb-2">
-                        <strong>Email:</strong> {selectedBooking.guestDetails?.primaryGuest?.email}
+                      <div className="info-item">
+                        <span className="info-label">Email:</span>
+                        <span className="info-value">{selectedBooking.guestDetails?.primaryGuest?.email}</span>
                       </div>
-                      <div className="mb-2">
-                        <strong>Phone:</strong> {selectedBooking.guestDetails?.primaryGuest?.phone}
+                      <div className="info-item">
+                        <span className="info-label">Phone:</span>
+                        <span className="info-value">{selectedBooking.guestDetails?.primaryGuest?.phone}</span>
                       </div>
                       {selectedBooking.guestDetails?.additionalGuests?.length > 0 && (
-                        <div className="mt-3">
+                        <div className="additional-guests">
                           <strong>Additional Guests:</strong>
-                          <ul className="mb-0 mt-2">
+                          <ul>
                             {selectedBooking.guestDetails.additionalGuests.map((guest, index) => (
                               <li key={index}>
                                 {guest.name} {guest.relation && `(${guest.relation})`}
@@ -471,27 +590,29 @@ const BookingManagement: React.FC = () => {
                   </Card>
                 </Col>
                 <Col md={6}>
-                  <Card>
+                  <Card className="info-card">
                     <Card.Body>
-                      <h6 className="mb-3">Booking Details</h6>
-                      <div className="mb-2">
-                        <strong>Check-in:</strong> {formatDate(selectedBooking.bookingDates.checkInDate)}
+                      <h6>Booking Details</h6>
+                      <div className="info-item">
+                        <span className="info-label">Check-in:</span>
+                        <span className="info-value">{formatDate(selectedBooking.bookingDates.checkInDate)}</span>
                       </div>
-                      <div className="mb-2">
-                        <strong>Check-out:</strong> {formatDate(selectedBooking.bookingDates.checkOutDate)}
+                      <div className="info-item">
+                        <span className="info-label">Check-out:</span>
+                        <span className="info-value">{formatDate(selectedBooking.bookingDates.checkOutDate)}</span>
                       </div>
-                      <div className="mb-2">
-                        <strong>Nights:</strong> {selectedBooking.bookingDates.nights}
+                      <div className="info-item">
+                        <span className="info-label">Nights:</span>
+                        <span className="info-value">{selectedBooking.bookingDates.nights}</span>
                       </div>
-                      <div className="mb-2">
-                        <strong>Guests:</strong> {selectedBooking.guestDetails?.totalAdults || 1} Adults, {selectedBooking.guestDetails?.totalChildren || 0} Children
+                      <div className="info-item">
+                        <span className="info-label">Guests:</span>
+                        <span className="info-value">{selectedBooking.guestDetails?.totalAdults || 1} Adults, {selectedBooking.guestDetails?.totalChildren || 0} Children</span>
                       </div>
                       {selectedBooking.specialRequests && (
-                        <div className="mt-3">
+                        <div className="special-requests">
                           <strong>Special Requests:</strong>
-                          <div className="text-muted">
-                            {selectedBooking.specialRequests}
-                          </div>
+                          <div>{selectedBooking.specialRequests}</div>
                         </div>
                       )}
                     </Card.Body>
@@ -499,9 +620,9 @@ const BookingManagement: React.FC = () => {
                 </Col>
               </Row>
 
-              <Card className="mb-4">
+              <Card className="pricing-breakdown">
                 <Card.Body>
-                  <h6 className="mb-3">Pricing Breakdown</h6>
+                  <h6>Pricing Breakdown</h6>
                   <div className="table-responsive">
                     <Table borderless className="mb-0">
                       <tbody>
@@ -522,21 +643,21 @@ const BookingManagement: React.FC = () => {
                         ))}
                         
                         {selectedBooking.pricing?.discount?.amount > 0 && (
-                          <tr className="table-success">
+                          <tr className="discount-row">
                             <td>
                               Discount {selectedBooking.pricing.discount.couponCode && `(${selectedBooking.pricing.discount.couponCode})`}
                             </td>
-                            <td className="text-end text-danger">
+                            <td className="text-end">
                               -₹{selectedBooking.pricing.discount.amount.toFixed(2)}
                             </td>
                           </tr>
                         )}
                         
-                        <tr className="border-top">
-                          <td className="pt-2">
+                        <tr className="total-row">
+                          <td>
                             <strong>Total Amount</strong>
                           </td>
-                          <td className="text-end pt-2">
+                          <td className="text-end">
                             <strong>₹{getTotalPrice(selectedBooking)}</strong>
                           </td>
                         </tr>
@@ -547,15 +668,19 @@ const BookingManagement: React.FC = () => {
               </Card>
             </div>
           ) : (
-            <div>Loading booking details...</div>
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading booking details...</span>
+              </div>
+            </div>
           )}
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-print-none">
           <Button variant="secondary" onClick={() => setShowDetailsModal(false)}>
             Close
           </Button>
-          <Button variant="primary" onClick={() => window.print()}>
-            <i className="bi bi-printer me-1"></i> Print
+          <Button variant="primary" onClick={handlePrintBooking}>
+            <Printer size={16} className="me-1" /> Print
           </Button>
         </Modal.Footer>
       </Modal>

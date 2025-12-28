@@ -165,7 +165,7 @@ const Home: React.FC = () => {
           <div className="d-flex align-items-center">
             <IconWrapper icon={FaLock} className="me-2" />
             <div>
-              <strong>Welcome to our restaurant!</strong> To book rooms and enjoy personalized features, please
+              <strong>Welcome to our hotel!</strong> To book rooms and enjoy personalized features, please
               <Button variant="link" className="p-0 ms-1" href="/login">login</Button> or
               <Button variant="link" className="p-0 ms-1" href="/register">register</Button>.
             </div>
@@ -190,7 +190,7 @@ const Home: React.FC = () => {
               <div className="hero-content fade-in-up">
                 <span className="text-gold text-uppercase tracking-wider mb-3 d-block">Welcome to</span>
                 <h1 className="hero-title mb-4">
-                  Luxury Restaurant & Rooms
+                  Luxury Hotel & Rooms
                 </h1>
                 <p className="hero-description mb-5">
                   Experience fine dining and luxurious accommodation in the heart of the city.
@@ -224,9 +224,9 @@ const Home: React.FC = () => {
               <p className="mt-2">Loading featured rooms...</p>
             </div>
           ) : (
-            <Row>
+            <Row className="g-3 g-lg-4">
               {featuredRooms.map((room) => (
-                <Col key={room._id} md={6} lg={4} className="mb-4">
+                <Col key={room._id} xs={12} sm={6} xl={4} className="mb-3 mb-lg-4">
                   <Card className="room-card h-100">
                     <div className="room-image-wrapper">
                       <Card.Img
@@ -241,12 +241,14 @@ const Home: React.FC = () => {
                       </div>
                     </div>
                     <Card.Body className="d-flex flex-column">
-                      <div className="d-flex justify-content-between align-items-start mb-2">
-                        <Card.Title className="mb-0">{room.name}</Card.Title>
+                      <div className="d-flex justify-content-between align-items-start mb-2 flex-wrap">
+                        <Card.Title className="mb-1 flex-grow-1 pe-2">{room.name}</Card.Title>
                         <div className="text-end">
-                          <div className="d-flex align-items-center">
-                            {renderStars(room.averageRating)}
-                            <span className="ms-1 small text-muted">
+                          <div className="d-flex align-items-center justify-content-end mb-1">
+                            <div className="rating-stars me-1">
+                              {renderStars(room.averageRating)}
+                            </div>
+                            <span className="small text-muted">
                               {room.averageRating} ({room.totalReviews})
                             </span>
                           </div>
@@ -254,15 +256,15 @@ const Home: React.FC = () => {
                         </div>
                       </div>
 
-                      <Card.Text className="text-muted flex-grow-1">
+                      <Card.Text className="text-muted flex-grow-1 mb-3">
                         {room.description}
                       </Card.Text>
 
                       <div className="mb-3">
-                        <div className="d-flex flex-wrap gap-2">
+                        <div className="d-flex flex-wrap gap-1 gap-sm-2">
                           {Object.entries(room.features).map(([key, value]) =>
                             value ? (
-                              <span key={key} className="badge bg-light text-dark" title={key.replace(/([A-Z])/g, ' $1')}>
+                              <span key={key} className="badge bg-light text-dark feature-badge" title={key.replace(/([A-Z])/g, ' $1')}>
                                 {getFeatureIcon(key)}
                               </span>
                             ) : null
@@ -271,7 +273,7 @@ const Home: React.FC = () => {
                       </div>
 
                       <div className="mt-auto">
-                        <Link to="/booking" className="btn btn-primary w-100">
+                        <Link to="/booking" className="btn btn-primary w-100 btn-sm">
                           Book Now
                         </Link>
                       </div>

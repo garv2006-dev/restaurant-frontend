@@ -1,7 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Badge, Table, Spinner, Alert } from 'react-bootstrap';
-import { TrendingUp, Book, DollarSign, Calendar } from 'lucide-react';
-import { bookingsAPI } from '../../services/api';
+import { Card, Row, Col, Badge, Table, Spinner, Alert, Button } from 'react-bootstrap';
+import { 
+  TrendingUp, 
+  Book, 
+  DollarSign, 
+  Calendar,
+  Eye, 
+  CheckCircle, 
+  XCircle, 
+  LogIn, 
+  LogOut,
+  Loader2
+} from 'lucide-react';
+import { adminAPI } from '../../services/api';
 import '../../styles/admin-panel.css';
 
 interface RecentBooking {
@@ -42,16 +53,82 @@ const LiveDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+
+  const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
+    // Add confirmation for destructive actions
+    if (status === 'Cancelled' || status === 'NoShow') {
+      const confirmMessage = status === 'Cancelled' 
+        ? 'Are you sure you want to cancel this booking?' 
+        : 'Are you sure you want to mark this booking as No Show?';
+      
+      if (!window.confirm(confirmMessage)) {
+        return;
+      }
+    }
+    
+    try {
+      setActionLoading(prev => ({ ...prev, [bookingId]: true }));
+      
+      console.log('Updating booking status:', { bookingId, status });
+      
+      const response = await adminAPI.updateBookingStatus(bookingId, status);
+      
+      if (response.success) {
+        // Update local state
+        setData(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            recentBookings: prev.recentBookings.map(booking => 
+              booking._id === bookingId 
+                ? { ...booking, status } 
+                : booking
+            )
+          };
+        });
+        
+        console.log('Booking status updated successfully');
+      } else {
+        throw new Error(response.message || 'Failed to update booking status');
+      }
+    } catch (err: any) {
+      console.error('Failed to update booking status:', err);
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update booking status';
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setActionLoading(prev => ({ ...prev, [bookingId]: false }));
+    }
+  };
+
+  const handleViewDetails = (booking: RecentBooking) => {
+    // For now, just show an alert with booking details
+    // You can implement a proper modal later
+    alert(`Booking Details:\nID: ${booking.bookingId}\nGuest: ${booking.guestDetails.primaryGuest.name}\nRoom: ${booking.room.name} #${booking.room.roomNumber}\nStatus: ${booking.status}`);
+  };
 
   useEffect(() => {
     const fetchBookings = async () => {
       try {
         setLoading(true);
         // Use admin endpoint to get all bookings
-        const response = await bookingsAPI.getAllBookings({ limit: 100 });
+        const response = await adminAPI.getAllBookings({ limit: 100 });
+        
+        console.log('Dashboard API response:', response);
         
         if (response?.success && response?.data) {
-          let bookings: any[] = Array.isArray(response.data) ? response.data : [];
+          let bookings: any[] = [];
+          
+          // Handle different response structures
+          if (Array.isArray(response.data)) {
+            bookings = response.data;
+          } else if (response.data.bookings && Array.isArray(response.data.bookings)) {
+            bookings = response.data.bookings;
+          } else if (response.data && Array.isArray((response.data as any).data)) {
+            bookings = (response.data as any).data;
+          }
+          
+          console.log('Processed bookings:', bookings);
           
           // Get recent 5 bookings
           const recentBookings = bookings.slice(0, 5) as RecentBooking[];
@@ -182,6 +259,11 @@ const LiveDashboard: React.FC = () => {
               <Badge bg="secondary">Live</Badge>
             </Card.Header>
             <Card.Body>
+              {error && (
+                <Alert variant="danger" dismissible onClose={() => setError(null)}>
+                  <strong>Error:</strong> {error}
+                </Alert>
+              )}
               <Table responsive hover>
                 <thead>
                   <tr>
@@ -233,9 +315,85 @@ const LiveDashboard: React.FC = () => {
                           </Badge>
                         </td>
                         <td>
-                          <button className="btn btn-outline-primary btn-sm">
-                            View
-                          </button>
+                          <div className="d-flex justify-content-end gap-1">
+                            <Button 
+                              variant="outline-primary" 
+                              size="sm" 
+                              onClick={() => handleViewDetails(booking)}
+                              title="View booking details"
+                              disabled={actionLoading[booking._id]}
+                            >
+                              <Eye size={16} />
+                            </Button>
+                            
+                            {booking.status === 'Pending' && (
+                              <Button 
+                                variant="outline-success" 
+                                size="sm"
+                                onClick={() => handleStatusUpdate(booking._id, 'Confirmed')}
+                                disabled={actionLoading[booking._id]}
+                                title="Confirm this booking"
+                                className="d-flex align-items-center"
+                              >
+                                {actionLoading[booking._id] ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <CheckCircle size={16} />
+                                )}
+                              </Button>
+                            )}
+                            
+                            {['Pending', 'Confirmed'].includes(booking.status) && (
+                              <Button 
+                                variant="outline-danger" 
+                                size="sm"
+                                onClick={() => handleStatusUpdate(booking._id, 'Cancelled')}
+                                disabled={actionLoading[booking._id]}
+                                title="Cancel this booking"
+                                className="d-flex align-items-center"
+                              >
+                                {actionLoading[booking._id] ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <XCircle size={16} />
+                                )}
+                              </Button>
+                            )}
+                            
+                            {booking.status === 'Confirmed' && (
+                              <Button 
+                                variant="outline-info" 
+                                size="sm"
+                                onClick={() => handleStatusUpdate(booking._id, 'CheckedIn')}
+                                disabled={actionLoading[booking._id]}
+                                title="Check in guest"
+                                className="d-flex align-items-center"
+                              >
+                                {actionLoading[booking._id] ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <LogIn size={16} />
+                                )}
+                              </Button>
+                            )}
+                            
+                            {booking.status === 'CheckedIn' && (
+                              <Button 
+                                variant="outline-secondary" 
+                                size="sm"
+                                onClick={() => handleStatusUpdate(booking._id, 'CheckedOut')}
+                                disabled={actionLoading[booking._id]}
+                                title="Check out guest"
+                                className="d-flex align-items-center"
+                              >
+                                {actionLoading[booking._id] ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <LogOut size={16} />
+                                )}
+                              </Button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))

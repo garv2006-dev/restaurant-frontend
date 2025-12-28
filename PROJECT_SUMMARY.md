@@ -1,4 +1,4 @@
-# Restaurant Booking System - Frontend
+# Hotel Booking System - Frontend
 
 ## Project Status Summary
 
@@ -49,7 +49,7 @@
 
 3. **Frontend Development**
    - Authentication pages (Login, Register, Reset Password)
-   - Homepage with restaurant showcase
+   - Homepage with hotel showcase
    - Room browsing and filtering
    - Booking flow
    - User dashboard
@@ -100,12 +100,12 @@
 1. **User**: Authentication, profiles, loyalty points
 2. **Room**: Room types, pricing, amenities, availability
 3. **Booking**: Complete booking lifecycle with payment integration
-4. **MenuItem**: Restaurant menu with dietary info
+4. **MenuItem**: Hotel menu with dietary info
 5. **Review**: Customer feedback system
 6. **Payment**: Transaction management with refunds
 
 ## Current Working Directory
-`D:\rajgodaliya\restaurant-booking-system\frontend`
+`D:\rajgodaliya\hotel-booking-system\frontend`
 
 ## How to Continue Development
 
