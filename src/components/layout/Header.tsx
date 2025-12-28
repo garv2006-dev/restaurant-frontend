@@ -61,7 +61,7 @@ const Header: React.FC = () => {
       >
         <Container>
           <Navbar.Brand as={Link} to="/" className="fw-bold" onClick={() => handleNavLinkClick()}>
-            <span className="text-primary">Luxury</span> Restaurant
+            <span className="text-primary">Luxury</span> Hotel
           </Navbar.Brand>
 
           <div className="navbar-icons">
@@ -107,7 +107,7 @@ const Header: React.FC = () => {
                 }}
                 style={{ cursor: 'pointer' }}
               >
-                Luxury Restaurant
+                Luxury Hotel
               </span>
               <button 
                 className="navbar-close"

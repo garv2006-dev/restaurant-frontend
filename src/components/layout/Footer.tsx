@@ -41,9 +41,9 @@ const Footer: React.FC = () => {
     <footer className="bg-dark text-light py-5 mt-5">
       <Container>
         <Row>
-          {/* Restaurant Info */}
+          {/* Hotel Info */}
           <Col md={3} className="mb-4">
-            <h5 className="text-gold fw-bold mb-3">Luxury Restaurant</h5>
+            <h5 className="text-gold fw-bold mb-3">Luxury Hotel</h5>
             <p className="footer-link">
               Experience the finest dining and accommodation with our luxury rooms and world-class service.
             </p>
@@ -147,7 +147,7 @@ const Footer: React.FC = () => {
               </div>
               <div className="mb-2">
                 <IconWrapper icon={FaEnvelope} className="me-2" />
-                info@luxuryrestaurant.com
+                info@luxuryhotel.com
               </div>
               <div className="mb-2">
                 <IconWrapper icon={FaClock} className="me-2" />
@@ -191,7 +191,7 @@ const Footer: React.FC = () => {
         <Row className="align-items-center">
           <Col md={6}>
             <p className="footer-link small mb-0">
-              &copy; {new Date().getFullYear()} Luxury Restaurant. All rights reserved.
+              &copy; {new Date().getFullYear()} Luxury Hotel. All rights reserved.
             </p>
           </Col>
           <Col md={6}>

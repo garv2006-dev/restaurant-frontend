@@ -122,9 +122,9 @@ const Contact: React.FC = () => {
       icon: <Mail size={24} className="text-primary" />,
       title: 'Email',
       details: [
-        'info@luxuryrestaurant.com',
-        'bookings@luxuryrestaurant.com',
-        'support@luxuryrestaurant.com'
+        'info@luxuryhotel.com',
+        'bookings@luxuryhotel.com',
+        'support@luxuryhotel.com'
       ]
     },
     {

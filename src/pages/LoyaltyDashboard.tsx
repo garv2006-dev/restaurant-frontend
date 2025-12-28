@@ -68,7 +68,7 @@ const LoyaltyDashboard: React.FC = () => {
         // Create a default loyalty program if API fails
         setLoyaltyProgram({
           _id: 'default',
-          name: 'Restaurant Loyalty Program',
+          name: 'Hotel Loyalty Program',
           description: 'Earn points with every booking and unlock exclusive rewards!',
           pointsPerRupee: 1,
           rewards: [],
@@ -111,7 +111,7 @@ const LoyaltyDashboard: React.FC = () => {
       // Set default program on error to prevent page from breaking
       setLoyaltyProgram({
         _id: 'default',
-        name: 'Restaurant Loyalty Program',
+        name: 'Hotel Loyalty Program',
         description: 'Earn points with every booking and unlock exclusive rewards!',
         pointsPerRupee: 1,
         rewards: [],
