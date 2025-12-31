@@ -7,9 +7,16 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { AccessibilityProvider } from './context/AccessibilityContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { SocketProvider } from './contexts/SocketContext';
 
 // Layout
 import Layout from './components/layout/Layout';
+
+// Notification Components
+import NotificationDisplay from './components/notifications/NotificationDisplay';
+
+// Services
+import './services/RealTimeNotificationService'; // Initialize real-time notifications
 
 // Styles
 import './App.css';
@@ -45,8 +52,17 @@ import './styles/responsive.css';
 import './styles/mobile-menu-fix.css';
 
 import { useAuth } from './context/AuthContext';
+import { useEffect } from 'react';
 
 function App() {
+  // Load test utilities in development mode
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      import('./utils/testNotificationSound').catch(err => 
+        console.warn('Failed to load test utilities:', err)
+      );
+    }
+  }, []);
   // Placeholder components for routes
   const AdminTest = () => {
     const { user, isAuthenticated } = useAuth();
@@ -63,7 +79,8 @@ function App() {
     <AccessibilityProvider>
       <ThemeProvider>
         <AuthProvider>
-          <NotificationProvider>
+          <SocketProvider>
+            <NotificationProvider>
               <Routes>
                 {/* Admin routes - outside Layout */}
                 <Route path="/admin" element={
@@ -150,7 +167,14 @@ function App() {
                 theme="colored"
                 aria-live="polite"
               />
-          </NotificationProvider>
+              
+              {/* Enhanced Notification Display */}
+              <NotificationDisplay 
+                position="top-end" 
+                maxNotifications={5} 
+              />
+            </NotificationProvider>
+          </SocketProvider>
         </AuthProvider>
       </ThemeProvider>
     </AccessibilityProvider>

@@ -153,14 +153,14 @@ const ReportsAnalytics: React.FC = () => {
         <Col>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h2>Reports & Analytics</h2>
-            <div className="d-flex gap-2">
+            {/* <div className="d-flex gap-2">
               <Button variant="outline-primary" onClick={() => exportReport('excel')}>
                 Export Excel
               </Button>
               <Button variant="outline-secondary" onClick={() => exportReport('pdf')}>
                 Export PDF
               </Button>
-            </div>
+            </div> */}
           </div>
           
           {/* Date Range Filter */}

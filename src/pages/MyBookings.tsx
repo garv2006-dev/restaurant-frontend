@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Alert, Spinner, Button, Modal, Form } from 'react-bootstrap';
+import { Table, Alert, Spinner, Button, Modal, Form, Toast, ToastContainer } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { bookingsAPI } from '../services/api';
 import { Booking } from '../types';
 import ReviewForm from '../components/ReviewForm';
+import { useNotifications } from '../context/NotificationContext';
 
 const MyBookings: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -15,6 +16,10 @@ const MyBookings: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedBookingForReview, setSelectedBookingForReview] = useState<string>('');
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  
+  const { refreshNotifications } = useNotifications();
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -55,19 +60,26 @@ const MyBookings: React.FC = () => {
   }, []);
 
   const handleCancelClick = (booking: Booking) => {
+    console.log('Cancel button clicked for booking:', booking._id);
+    console.log('Booking details:', booking);
     setSelectedBooking(booking);
     setShowCancelModal(true);
     setCancelReason('');
+    setError(null); // Clear any previous errors
   };
 
   const handleCancelConfirm = async () => {
     if (!selectedBooking) return;
 
     try {
+      console.log('Attempting to cancel booking:', selectedBooking._id);
       setCancelLoading(selectedBooking._id);
+      
       const response = await bookingsAPI.cancelBooking(selectedBooking._id, cancelReason || 'Customer cancellation');
+      console.log('Cancel booking response:', response);
       
       if (response?.success) {
+        console.log('Booking cancelled successfully');
         // Update the booking in the local state
         setBookings(prevBookings => 
           prevBookings.map(booking => 
@@ -79,11 +91,25 @@ const MyBookings: React.FC = () => {
         setShowCancelModal(false);
         setSelectedBooking(null);
         setCancelReason('');
+        setError(null); // Clear any previous errors
+        
+        // Show success message
+        setSuccessMessage(`Booking ${selectedBooking.bookingId} has been cancelled successfully!`);
+        setShowSuccessToast(true);
+        
+        // Refresh notifications to show the cancellation notification
+        refreshNotifications();
+        
+        // Auto-hide success toast after 5 seconds
+        setTimeout(() => setShowSuccessToast(false), 5000);
       } else {
+        console.error('Cancel booking failed:', response?.message);
         setError(response?.message || 'Failed to cancel booking');
       }
     } catch (err: any) {
       console.error('Error cancelling booking:', err);
+      console.error('Error response:', err?.response);
+      console.error('Error data:', err?.response?.data);
       setError(err?.response?.data?.message || err?.message || 'Failed to cancel booking');
     } finally {
       setCancelLoading(null);
@@ -119,6 +145,13 @@ const MyBookings: React.FC = () => {
   return (
     <div className="container py-5">
       <h2 className="mb-4">My Bookings</h2>
+      
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      
       {bookings && bookings.length === 0 ? (
         <Alert variant="info" className="d-flex align-items-center justify-content-between">
           <span>You have no bookings yet.</span>
@@ -265,6 +298,18 @@ const MyBookings: React.FC = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Success Toast */}
+      <ToastContainer position="top-end" className="p-3">
+        <Toast show={showSuccessToast} onClose={() => setShowSuccessToast(false)} bg="success">
+          <Toast.Header>
+            <strong className="me-auto">✅ Success</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">
+            {successMessage}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 };

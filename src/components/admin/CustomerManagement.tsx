@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Table, Badge, Button, Alert, Spinner, Modal, Form } from 'react-bootstrap';
-import { Search, UserPlus, Edit, Trash2, User } from 'lucide-react';
+import { Search, UserPlus, Trash2, User } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { User as UserType } from '../../types';
+import { toast } from 'react-toastify';
 import '../../styles/admin-panel.css';
 
 // Extend the User type with additional customer statistics
 interface Customer extends UserType {
+  _id?: string; // MongoDB ID field
   totalBookings?: number;
   totalSpent?: number;
 }
@@ -18,6 +20,9 @@ const CustomerManagement: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [addLoading, setAddLoading] = useState<boolean>(false);
+  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -65,16 +70,72 @@ const CustomerManagement: React.FC = () => {
       if (response.success) {
         setShowAddModal(false);
         fetchCustomers(); // Refresh customer list
+        toast.success('Customer added successfully!');
         // Reset form
         e.currentTarget.reset();
       } else {
         setError(response.message || 'Failed to add customer');
+        toast.error(response.message || 'Failed to add customer');
       }
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to add customer');
+      const errorMessage = error.response?.data?.message || 'Failed to add customer';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setAddLoading(false);
     }
+  };
+
+  const handleDeleteClick = (customer: Customer) => {
+    console.log('DELETE BUTTON CLICKED!', customer);
+    alert('Delete button clicked for: ' + customer.name);
+    setCustomerToDelete(customer);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!customerToDelete) return;
+
+    console.log('Deleting customer:', customerToDelete);
+    
+    try {
+      setDeleteLoading(true);
+      setError(''); // Clear any previous errors
+      
+      // Use id first, then _id as fallback (MongoDB uses _id)
+      const customerId = customerToDelete.id || customerToDelete._id;
+      console.log('Customer ID to delete:', customerId);
+      
+      if (!customerId) {
+        throw new Error('Customer ID not found');
+      }
+      
+      const response = await adminAPI.deleteCustomer(customerId);
+      console.log('Delete response:', response);
+      
+      if (response && response.success) {
+        setShowDeleteModal(false);
+        setCustomerToDelete(null);
+        toast.success('Customer deleted successfully!');
+        await fetchCustomers(); // Refresh customer list
+      } else {
+        const errorMessage = response?.message || 'Failed to delete customer';
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to delete customer';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setCustomerToDelete(null);
   };
 
   const filteredCustomers = customers.filter(customer =>
@@ -88,10 +149,6 @@ const CustomerManagement: React.FC = () => {
       case 'staff': return 'warning';
       default: return 'primary';
     }
-  };
-
-  const getStatusBadgeVariant = (isActive: boolean = true) => {
-    return isActive ? 'success' : 'secondary';
   };
 
   const formatDate = (dateString: string) => {
@@ -173,55 +230,65 @@ const CustomerManagement: React.FC = () => {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Total Bookings</th>
-                  <th>Total Spent</th>
-                  <th>Joined</th>
-                  <th>Actions</th>
+                  <th>EMAIL</th>
+                  <th>PHONE</th>
+                  <th>ROLE</th>
+                  <th>STATUS</th>
+                  <th>TOTAL BOOKINGS</th>
+                  <th>TOTAL SPENT</th>
+                  <th>JOINED</th>
+                  <th>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCustomers.map((customer) => (
-                  <tr key={customer.id}>
+                  <tr key={customer.id || customer._id}>
                     <td>
-                      <strong>{customer.name || 'N/A'}</strong>
+                      <div>
+                        <strong>{customer.name || 'N/A'}</strong>
+                        <br />
+                        <small style={{ color: '#64748b' }}>{customer.email || 'N/A'}</small>
+                      </div>
                     </td>
-                    <td>{customer.email || 'N/A'}</td>
                     <td>{customer.phone || '-'}</td>
                     <td>
-                      <span className={`admin-badge admin-badge-${getRoleBadgeVariant(customer.role)}`}>
-                        {customer.role || 'user'}
-                      </span>
+                      <Badge bg={getRoleBadgeVariant(customer.role)}>
+                        {customer.role || 'customer'}
+                      </Badge>
                     </td>
                     <td>
                       <div className="admin-status">
-                        <span className={`admin-status-dot ${customer.isEmailVerified !== undefined ? (customer.isEmailVerified ? 'active' : 'inactive') : 'active'}`}></span>
-                        {customer.isEmailVerified !== undefined ? (customer.isEmailVerified ? 'Active' : 'Inactive') : 'Active'}
+                        <span className={`admin-status-dot ${customer.isEmailVerified !== false ? 'active' : 'inactive'}`}></span>
+                        {customer.isEmailVerified !== false ? 'Active' : 'Inactive'}
                       </div>
                     </td>
                     <td>
-                      <span className="admin-badge admin-badge-info">
+                      <Badge bg="info">
                         {customer.totalBookings || 0}
-                      </span>
+                      </Badge>
                     </td>
                     <td>
-                      <span className="admin-badge admin-badge-success">
+                      <Badge bg="success">
                         {formatCurrency(customer.totalSpent || 0)}
-                      </span>
+                      </Badge>
                     </td>
                     <td>{formatDate(customer.createdAt)}</td>
                     <td>
                       <div className="admin-action-buttons">
-                        <button className="admin-action-btn edit" title="Edit">
-                          <Edit size={14} />
-                        </button>
-                        <button className="admin-action-btn delete" title="Delete">
+                        <Button 
+                          variant="outline-danger"
+                          size="sm"
+                          title="Delete Customer"
+                          onClick={() => handleDeleteClick(customer)}
+                          style={{ 
+                            padding: '0.25rem 0.5rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
                           <Trash2 size={14} />
-                        </button>
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -233,92 +300,111 @@ const CustomerManagement: React.FC = () => {
       </div>
       
       {/* Add Customer Modal */}
-      <div className="admin-modal-dialog" style={{ display: showAddModal ? 'block' : 'none' }}>
-        <div className="admin-modal">
-          <div className="admin-modal-header">
-            <h3 className="admin-modal-title">Add New Customer</h3>
-            <button
-              type="button"
-              className="btn-close"
-              onClick={() => setShowAddModal(false)}
-            />
-          </div>
-          <form onSubmit={handleAddCustomer}>
-            <div className="admin-modal-body">
-              <div className="admin-form-group">
-                <label className="admin-form-label">Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  className="admin-form-control"
-                  placeholder="Enter customer name"
-                  required
-                />
-              </div>
-              
-              <div className="admin-form-group">
-                <label className="admin-form-label">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  className="admin-form-control"
-                  placeholder="Enter customer email"
-                  required
-                />
-              </div>
-              
-              <div className="admin-form-group">
-                <label className="admin-form-label">Phone</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  className="admin-form-control"
-                  placeholder="Enter customer phone"
-                  required
-                />
-              </div>
-              
-              <div className="admin-form-group">
-                <label className="admin-form-label">Password</label>
-                <input
-                  type="password"
-                  name="password"
-                  className="admin-form-control"
-                  placeholder="Enter temporary password"
-                  required
-                  minLength={6}
-                />
-                <small className="text-muted">
-                  Minimum 6 characters. Customer can change this later.
-                </small>
-              </div>
-            </div>
-            <div className="admin-modal-footer">
-              <button
-                type="button"
-                className="admin-btn admin-btn-outline"
-                onClick={() => setShowAddModal(false)}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="admin-btn admin-btn-primary"
-                disabled={addLoading}
-              >
-                {addLoading ? (
-                  <>
-                    <div className="admin-spinner"></div>
-                    Adding...
-                  </>
-                ) : (
-                  'Add Customer'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Add New Customer</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleAddCustomer}>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="text"
+                name="name"
+                placeholder="Enter customer name"
+                required
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                placeholder="Enter customer email"
+                required
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Phone</Form.Label>
+              <Form.Control
+                type="tel"
+                name="phone"
+                placeholder="Enter customer phone"
+                required
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="password"
+                placeholder="Enter temporary password"
+                required
+                minLength={6}
+              />
+              <Form.Text className="text-muted">
+                Minimum 6 characters. Customer can change this later.
+              </Form.Text>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" disabled={addLoading}>
+              {addLoading ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Adding...
+                </>
+              ) : (
+                'Add Customer'
+              )}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal show={showDeleteModal} onHide={handleDeleteCancel}>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Customer</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to delete this customer?</p>
+          {customerToDelete && (
+            <Alert variant="warning">
+              <strong>{customerToDelete.name}</strong><br />
+              <small>{customerToDelete.email}</small>
+            </Alert>
+          )}
+          <p className="text-muted">
+            This action cannot be undone. The customer will be permanently removed from the system.
+          </p>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleDeleteCancel}>
+            Cancel
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteConfirm}
+            disabled={deleteLoading}
+          >
+            {deleteLoading ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                Deleting...
+              </>
+            ) : (
+              'Delete Customer'
+            )}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 };

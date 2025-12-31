@@ -1,0 +1,732 @@
+/* Professional Notification Sound Control */
+.notification-sound-control {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+}
+
+/* Sound Toggle Button */
+.sound-toggle-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  background: #6c757d;
+  color: white;
+  outline: none;
+  overflow: hidden;
+}
+
+/* Enabled State */
+.sound-toggle-button.enabled {
+  background: #007bff;
+  color: white;
+}
+
+/* Disabled State */
+.sound-toggle-button.disabled {
+  background: #6c757d;
+  color: white;
+}
+
+/* Hover Effects */
+.sound-toggle-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+}
+
+.sound-toggle-button.enabled:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.sound-toggle-button.disabled:hover:not(:disabled) {
+  background: #545b62;
+}
+
+/* Active State */
+.sound-toggle-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+/* Focus State */
+.sound-toggle-button:focus {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.sound-toggle-button.disabled:focus {
+  box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.25);
+}
+
+/* Loading State */
+.sound-toggle-button.loading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.sound-toggle-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Icon Container */
+.sound-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.sound-toggle-button:hover:not(:disabled) .sound-icon-container {
+  transform: scale(1.1);
+}
+
+.sound-toggle-button:active:not(:disabled) .sound-icon-container {
+  transform: scale(0.95);
+}
+
+/* Sound Icon */
+.sound-icon {
+  transition: all 0.2s ease;
+  width: 16px;
+  height: 16px;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin: -10px 0 0 -10px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.sound-toggle-button.loading .sound-icon-container {
+  opacity: 0;
+}
+
+/* Status Text */
+.sound-status-text {
+  text-align: center;
+  margin-top: 2px;
+}
+
+.status-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: #6c757d;
+  transition: color 0.2s ease;
+}
+
+.status-label.enabled {
+  color: #007bff;
+}
+
+.status-label.disabled {
+  color: #6c757d;
+}
+
+/* Ripple Effect */
+.sound-toggle-button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+}
+
+.sound-toggle-button:active:not(:disabled)::before {
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .sound-toggle-button {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .sound-icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .status-label {
+    font-size: 11px;
+  }
+  
+  .notification-sound-control {
+    margin: 0.5rem 0;
+  }
+}
+
+/* Extra small screens (phones) */
+@media (max-width: 576px) {
+  .sound-toggle-button {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .sound-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .status-label {
+    font-size: 10px;
+  }
+  
+  .notification-sound-control {
+    margin: 0.25rem 0;
+  }
+  
+  .sound-status-text {
+    margin-top: 3px;
+  }
+}
+
+/* Large screens - slightly bigger for better visibility */
+@media (min-width: 1200px) {
+  .sound-toggle-button {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .sound-icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .status-label {
+    font-size: 11px;
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .sound-toggle-button {
+    border: 2px solid currentColor;
+  }
+  
+  .sound-toggle-button.enabled {
+    background: #0056b3;
+  }
+  
+  .sound-toggle-button.disabled {
+    background: #495057;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .sound-toggle-button,
+  .sound-icon-container,
+  .sound-icon,
+  .status-label {
+    transition: none;
+  }
+  
+  .sound-toggle-button:hover:not(:disabled) {
+    transform: none;
+  }
+  
+  .loading-spinner {
+    animation: none;
+  }
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  .sound-toggle-button {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+  
+  .sound-toggle-button:hover:not(:disabled) {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4), 0 3px 6px rgba(0, 0, 0, 0.5);
+  }
+  
+  .status-label {
+    color: #adb5bd;
+  }
+  
+  .status-label.enabled {
+    color: #66b3ff;
+  }
+}
+
+/* Animation for state changes */
+.sound-toggle-button {
+  animation: none;
+}
+
+.sound-toggle-button.enabled {
+  animation: enablePulse 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sound-toggle-button.disabled {
+  animation: disablePulse 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes enablePulse {
+  0% {
+    transform: scale(1);
+    background: #6c757d;
+  }
+  50% {
+    transform: scale(1.05);
+    background: #007bff;
+  }
+  100% {
+    transform: scale(1);
+    background: #007bff;
+  }
+}
+
+@keyframes disablePulse {
+  0% {
+    transform: scale(1);
+    background: #007bff;
+  }
+  50% {
+    transform: scale(0.95);
+    background: #6c757d;
+  }
+  100% {
+    transform: scale(1);
+    background: #6c757d;
+  }
+}
+
+/* Integration with notifications page */
+.notifications-page .notification-sound-control {
+  margin: 16px 0;
+}
+
+/* Ensure proper positioning in the notifications header */
+.notifications-header .notification-sound-control {
+  margin: 0;
+  align-self: center;
+}
+
+/* Notifications Page Integration - Override existing styles */
+.notifications-header .notifications-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.notifications-header .notifications-actions .notification-sound-control {
+  margin: 0;
+  flex-shrink: 0;
+  order: 1;
+}
+
+.notifications-header .notifications-actions .btn {
+  order: 2;
+}
+
+/* Mobile layout improvements - Keep row direction */
+@media (max-width: 768px) {
+  .notifications-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .notifications-title {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .notifications-actions {
+    width: 100%;
+    justify-content: center;
+    flex-direction: row;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  
+  .notifications-actions .notification-sound-control {
+    order: 1;
+    margin: 0;
+  }
+  
+  /* Button group for action buttons */
+  .notifications-actions .btn {
+    order: 2;
+    min-width: 100px;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+  }
+  
+  /* Test button gets special order */
+  .notifications-actions .btn:first-of-type {
+    order: 1.5;
+    min-width: 90px;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .notifications-header .notifications-actions {
+    gap: 1rem;
+  }
+  
+  .notifications-actions .notification-sound-control {
+    margin-right: 0.5rem;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 1025px) {
+  .notifications-header .notifications-actions {
+    gap: 1.25rem;
+  }
+  
+  .notifications-actions .notification-sound-control {
+    margin-right: 0.75rem;
+  }
+}
+
+/* Mobile dropdown styling improvements */
+@media (max-width: 768px) {
+  .notifications-dropdown {
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+  
+  .notifications-dropdown .dropdown-toggle {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+  
+  .notifications-dropdown .dropdown-menu {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  .notifications-dropdown .dropdown-item {
+    padding: 0.75rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* Notification cards mobile improvements */
+@media (max-width: 768px) {
+  .notifications-container {
+    padding: 0 0.5rem;
+  }
+  
+  .notification-card {
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+  }
+  
+  .notification-card .card-body {
+    padding: 1rem;
+  }
+  
+  .notification-content {
+    gap: 0.75rem;
+  }
+  
+  .notification-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .notification-title {
+    width: 100%;
+  }
+  
+  .notification-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Empty state mobile styling */
+@media (max-width: 768px) {
+  .notifications-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+  }
+  
+  .notifications-empty .icon {
+    margin-bottom: 1rem;
+  }
+  
+  .notifications-empty h5 {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .notifications-empty p {
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+}
+
+/* Additional responsive improvements */
+
+/* Tablet portrait */
+@media (max-width: 992px) and (min-width: 769px) {
+  .notifications-header {
+    gap: 1.25rem;
+    
+  }
+  
+  .notifications-actions {
+    gap: 1rem;
+  }
+  
+  .sound-toggle-button {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .sound-icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+  .sound-toggle-button {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+  
+  /* Increase tap area without changing visual size */
+  .sound-toggle-button::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    z-index: -1;
+  }
+}
+
+/* Ensure proper spacing in container */
+.notifications-page .container-fluid {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (max-width: 576px) {
+  .notifications-page .container-fluid {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Fix button group spacing on mobile */
+@media (max-width: 768px) {
+  .notifications-actions {
+    width: 100%;
+  }
+  
+  .notifications-actions .btn-group {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .notifications-actions .btn-group .btn {
+    flex: 1;
+    max-width: 150px;
+  }
+}
+
+/* Improve visual hierarchy on mobile */
+@media (max-width: 768px) {
+  .notifications-title h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #212529;
+  }
+  
+  .notifications-title p {
+    font-size: 0.95rem;
+    color: #6c757d;
+    margin-bottom: 0;
+  }
+}
+
+/* Loading state improvements */
+.sound-toggle-button.loading {
+  pointer-events: none;
+}
+
+.sound-toggle-button.loading .loading-spinner {
+  border-width: 2px;
+}
+
+@media (max-width: 576px) {
+  .sound-toggle-button.loading .loading-spinner {
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border-width: 1.5px;
+  }
+}
+
+/* Accessibility improvements for mobile */
+@media (max-width: 768px) {
+  .sound-toggle-button:focus {
+    box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.25);
+  }
+  
+  .sound-toggle-button.disabled:focus {
+    box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.25);
+  }
+}
+
+/* Prevent layout shift during loading */
+.notification-sound-control {
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 576px) {
+  .notification-sound-control {
+    min-height: 64px;
+  }
+}
+
+/* Smooth transitions for responsive changes */
+.sound-toggle-button,
+.sound-icon,
+.status-label {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* High DPI display improvements */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .sound-toggle-button {
+    box-shadow: 0 0.5px 1.5px rgba(0, 0, 0, 0.12), 0 0.5px 1px rgba(0, 0, 0, 0.24);
+  }
+  
+  .sound-toggle-button:hover:not(:disabled) {
+    box-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.16), 0 1.5px 3px rgba(0, 0, 0, 0.23);
+  }
+}
+/* Integration with existing notifications-responsive.css */
+@media (max-width: 640px) {
+  /* Override the existing mobile styles to include sound control */
+  .notifications-page .notifications-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .notifications-page .notifications-actions {
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  
+  .notifications-page .notification-sound-control {
+    order: -1;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Ensure sound control appears between title and dropdown */
+  .notifications-page .notifications-dropdown {
+    order: 1;
+  }
+  
+  .notifications-page .notifications-actions .btn {
+    order: 2;
+  }
+}
+
+/* Very small screens - make sound control more compact */
+@media (max-width: 480px) {
+  .notification-sound-control {
+    transform: scale(0.9);
+  }
+  
+  .sound-toggle-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .sound-icon {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .status-label {
+    font-size: 9px;
+  }
+}
+
+/* Ensure proper stacking order on mobile */
+@media (max-width: 640px) {
+  .notifications-header > * {
+    z-index: 1;
+  }
+  
+  .notifications-title {
+    order: 1;
+  }
+  
+  .notifications-actions {
+    order: 2;
+  }
+  
+  .notifications-actions .notification-sound-control {
+    order: 1;
+  }
+  
+  .notifications-actions .btn {
+    order: 2;
+  }
+}

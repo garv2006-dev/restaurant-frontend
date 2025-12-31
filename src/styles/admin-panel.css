@@ -231,6 +231,19 @@
   color: var(--admin-gray-700);
 }
 
+.admin-btn-danger {
+  background-color: var(--admin-danger);
+  border-color: var(--admin-danger);
+  color: white;
+}
+
+.admin-btn-danger:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: var(--admin-shadow-md);
+}
+
 .admin-btn-sm {
   padding: var(--admin-space-2) var(--admin-space-3);
   font-size: var(--admin-font-size-small);

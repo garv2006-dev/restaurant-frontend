@@ -191,6 +191,35 @@ export const roomsAPI = {
 
 // Bookings API
 export const bookingsAPI = {
+  validateDiscount: async (discountCode: string, subtotal: number): Promise<ApiResponse<{
+    discount: {
+      id: string;
+      code: string;
+      name: string;
+      description: string;
+      type: string;
+      value: number;
+    };
+    discountAmount: number;
+    finalAmount: number;
+    savings: number;
+  }>> => {
+    const response: AxiosResponse<ApiResponse<{
+      discount: {
+        id: string;
+        code: string;
+        name: string;
+        description: string;
+        type: string;
+        value: number;
+      };
+      discountAmount: number;
+      finalAmount: number;
+      savings: number;
+    }>> = await api.post('/bookings/validate-discount', { discountCode, subtotal });
+    return response.data;
+  },
+
   createBooking: async (bookingData: any): Promise<ApiResponse<Booking>> => {
     const response: AxiosResponse<ApiResponse<Booking>> = await api.post('/bookings', bookingData);
     return response.data;
@@ -212,8 +241,15 @@ export const bookingsAPI = {
   },
 
   cancelBooking: async (id: string, reason?: string): Promise<ApiResponse<Booking>> => {
-    const response: AxiosResponse<ApiResponse<Booking>> = await api.put(`/bookings/${id}/cancel`, { reason });
-    return response.data;
+    console.log('API: Cancelling booking with ID:', id, 'Reason:', reason);
+    try {
+      const response: AxiosResponse<ApiResponse<Booking>> = await api.put(`/bookings/${id}/cancel`, { reason });
+      console.log('API: Cancel booking response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('API: Cancel booking error:', error);
+      throw error;
+    }
   },
 
   updateBooking: async (id: string, updateData: any): Promise<ApiResponse<Booking>> => {
@@ -402,6 +438,11 @@ export const adminAPI = {
 
   addCustomer: async (customerData: any): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.post('/customers', customerData);
+    return response.data;
+  },
+
+  deleteCustomer: async (id: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.delete(`/customers/${id}`);
     return response.data;
   },
 

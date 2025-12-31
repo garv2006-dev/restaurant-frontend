@@ -211,6 +211,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Call logout API (don't wait for response)
     authAPI.logout().catch(error => console.error('Logout API error:', error));
 
+    // Disconnect socket on logout
+    try {
+      const { disconnectSocket } = require('../contexts/SocketContext');
+      disconnectSocket();
+      console.log('Socket disconnected on logout');
+    } catch (error) {
+      console.warn('Failed to disconnect socket on logout:', error);
+    }
+
     // Clear localStorage
     localStorage.removeItem('token');
     localStorage.removeItem('user');

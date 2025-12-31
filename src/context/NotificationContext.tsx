@@ -1,6 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Calendar, Star, MessageSquare, ShoppingBag, Clock } from 'lucide-react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef, useCallback } from 'react';
+import { Calendar, Star, ShoppingBag, Clock } from 'lucide-react';
 import axios from 'axios';
+import { useSocket } from '../contexts/SocketContext';
+import { useAuth } from './AuthContext';
+import { notificationSoundService } from '../services/NotificationSoundService';
 
 interface Notification {
   id: string;
@@ -29,6 +32,10 @@ interface NotificationContextType {
   // New counting functions
   getNotificationCount: (type?: string, isRead?: boolean) => number;
   getUnreadCountByType: (type: string) => number;
+  // Sound control functions
+  isSoundEnabled: () => boolean;
+  setSoundEnabled: (enabled: boolean) => void;
+  testNotificationSound: () => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -51,7 +58,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { socket, isConnected, connectionTimestamp } = useSocket();
+  const { user, isAuthenticated } = useAuth();
   const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
+  // Track processed notification IDs to prevent duplicates across reconnects/refreshes
+  const processedNotificationIds = useRef<Set<string>>(new Set());
+  // Track if initial fetch has completed (to distinguish between initial load and real-time)
+  const initialFetchComplete = useRef<boolean>(false);
 
   const getAuthConfig = () => {
     const token = localStorage.getItem('token');
@@ -102,7 +116,13 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         bookingStatus: notif.bookingStatus
       }));
 
+      // Mark all fetched notifications as processed to prevent sound on reconnect
+      notificationsData.forEach((notif: Notification) => {
+        processedNotificationIds.current.add(notif.id);
+      });
+
       setNotifications(notificationsData);
+      initialFetchComplete.current = true;
     } catch (err: any) {
       console.error('Error fetching notifications:', err);
       setError(err.response?.data?.message || 'Failed to fetch notifications');
@@ -204,30 +224,208 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     return notifications.filter(notif => notif.type === type && !notif.read).length;
   };
 
+  // Sound control functions
+  const isSoundEnabled = () => {
+    return notificationSoundService.isSoundEnabled();
+  };
+
+  const setSoundEnabled = (enabled: boolean) => {
+    notificationSoundService.setSoundEnabled(enabled);
+  };
+
+  const testNotificationSound = () => {
+    notificationSoundService.testSound();
+  };
+
+  // Handle new real-time notifications
+  const handleNewNotification = useCallback((socketNotif: any) => {
+    console.log('📬 Processing socket notification:', socketNotif);
+    
+    const notificationId = socketNotif.notificationId || socketNotif._id;
+    
+    // CRITICAL: Check if we've already processed this notification ID
+    // This prevents duplicates on socket reconnect and page refresh
+    if (notificationId && processedNotificationIds.current.has(notificationId)) {
+      console.log('⚠️ Notification already processed, skipping:', notificationId);
+      return;
+    }
+
+    // Calculate notification age
+    const notificationCreatedAt = socketNotif.createdAt 
+      ? new Date(socketNotif.createdAt).getTime()
+      : Date.now();
+    const notificationAge = Date.now() - notificationCreatedAt;
+    
+    // CRITICAL: Only play sound for truly NEW notifications
+    // Must be: created within last 10 seconds AND after socket connected AND after initial fetch
+    const isRealTimeNotification = 
+      notificationAge < 10000 && // Created within last 10 seconds
+      notificationCreatedAt > connectionTimestamp && // Created after socket connected
+      initialFetchComplete.current; // Initial fetch has completed
+    
+    console.log('📊 Notification timing analysis:', {
+      notificationId,
+      createdAt: socketNotif.createdAt,
+      age: notificationAge,
+      connectionTimestamp,
+      initialFetchComplete: initialFetchComplete.current,
+      isRealTime: isRealTimeNotification
+    });
+
+    // Mark as processed
+    if (notificationId) {
+      processedNotificationIds.current.add(notificationId);
+    }
+    
+    const newNotification: Notification = {
+      id: notificationId || Date.now().toString(),
+      type: socketNotif.type,
+      title: socketNotif.title,
+      message: socketNotif.message,
+      timestamp: new Date(socketNotif.createdAt || Date.now()),
+      read: false,
+      icon: getNotificationIcon(socketNotif.type),
+      relatedRoomBookingId: socketNotif.relatedRoomBookingId,
+      roomId: socketNotif.roomId,
+      bookingStatus: socketNotif.bookingStatus
+    };
+    
+    // Add notification to state (check for duplicates in state as well)
+    setNotifications(prev => {
+      const exists = prev.some(n => n.id === newNotification.id);
+      if (exists) {
+        console.log('⚠️ Notification already in state, skipping add:', newNotification.id);
+        return prev;
+      }
+      return [newNotification, ...prev];
+    });
+    
+    setUnreadCount(prev => prev + 1);
+    
+    // Play sound ONLY for real-time notifications
+    if (isRealTimeNotification) {
+      const soundEnabledTypes = ['promotion', 'room_booking', 'payment', 'system'];
+      if (soundEnabledTypes.includes(socketNotif.type)) {
+        console.log('🔊 Playing sound for real-time notification:', socketNotif.type);
+        
+        // Use requestAnimationFrame to ensure we're not in a suspended state
+        requestAnimationFrame(() => {
+          notificationSoundService.playNotificationSound(socketNotif.type)
+            .then(() => console.log('✅ Sound played successfully'))
+            .catch((error) => console.error('❌ Error playing notification sound:', error));
+        });
+      }
+      console.log('✅ New REAL-TIME notification processed:', newNotification.id);
+    } else {
+      console.log('⏰ Old/reconnect notification received (no sound):', newNotification.id);
+    }
+  }, [connectionTimestamp]);
+
   // Initialize notifications on mount
   useEffect(() => {
-    refreshNotifications();
+    // Only fetch notifications if user is authenticated
+    if (isAuthenticated && user) {
+      refreshNotifications();
+    }
+  }, [isAuthenticated, user]);
+
+  // Initialize audio context on user interaction
+  useEffect(() => {
+    let isInitialized = false;
+    let initializationAttempts = 0;
+    const maxAttempts = 3;
+
+    const initializeAudio = async () => {
+      if (isInitialized) return;
+      
+      initializationAttempts++;
+      console.log(`🎬 User interaction detected - initializing audio (attempt ${initializationAttempts})...`);
+      
+      try {
+        await notificationSoundService.initializeOnUserInteraction();
+        isInitialized = true;
+        console.log('✅ Audio initialized successfully on user interaction');
+        
+        // Remove listeners after successful initialization
+        document.removeEventListener('click', initializeAudio);
+        document.removeEventListener('keydown', initializeAudio);
+        document.removeEventListener('touchstart', initializeAudio);
+        document.removeEventListener('mousedown', initializeAudio);
+      } catch (error) {
+        console.error('❌ Failed to initialize audio:', error);
+        
+        // Retry if not exceeded max attempts
+        if (initializationAttempts >= maxAttempts) {
+          console.error('❌ Max initialization attempts reached, giving up');
+          document.removeEventListener('click', initializeAudio);
+          document.removeEventListener('keydown', initializeAudio);
+          document.removeEventListener('touchstart', initializeAudio);
+          document.removeEventListener('mousedown', initializeAudio);
+        }
+      }
+    };
+
+    // Listen for multiple interaction types
+    document.addEventListener('click', initializeAudio, { passive: true });
+    document.addEventListener('keydown', initializeAudio, { passive: true });
+    document.addEventListener('touchstart', initializeAudio, { passive: true });
+    document.addEventListener('mousedown', initializeAudio, { passive: true });
+
+    return () => {
+      document.removeEventListener('click', initializeAudio);
+      document.removeEventListener('keydown', initializeAudio);
+      document.removeEventListener('touchstart', initializeAudio);
+      document.removeEventListener('mousedown', initializeAudio);
+    };
   }, []);
 
-  // Listen for real-time socket notifications
+  // Socket.io real-time notification listener
+  useEffect(() => {
+    if (!socket || !isAuthenticated || !user) {
+      console.log('Socket listener not ready:', { 
+        hasSocket: !!socket, 
+        isConnected, 
+        isAuthenticated, 
+        hasUser: !!user 
+      });
+      return;
+    }
+
+    if (!isConnected) {
+      console.log('Socket not connected yet, waiting...');
+      return;
+    }
+
+    console.log('✅ Setting up socket notification listeners for user:', user.id);
+    console.log('📅 Socket connection timestamp:', new Date(connectionTimestamp).toISOString());
+
+    // Join user-specific room for notifications
+    socket.emit('join-user-room', user.id);
+
+    // Listen for real-time notifications
+    const handleNotification = (data: any) => {
+      console.log('📬 Socket notification received:', data);
+      handleNewNotification(data);
+    };
+
+    // Listen for various notification events
+    socket.on('notification', handleNotification);
+    socket.on('new_notification', handleNotification);
+    socket.on('user_notification', handleNotification);
+
+    return () => {
+      console.log('Cleaning up notification listeners (socket remains connected)');
+      socket.off('notification', handleNotification);
+      socket.off('new_notification', handleNotification);
+      socket.off('user_notification', handleNotification);
+    };
+  }, [socket, isConnected, isAuthenticated, user, handleNewNotification]); // Added handleNewNotification to deps
+
+  // Legacy: Listen for custom events (backward compatibility)
   useEffect(() => {
     const handleSocketNotification = (event: CustomEvent) => {
-      console.log('Socket notification received:', event.detail);
-      const socketNotif = event.detail;
-      
-      const newNotification: Notification = {
-        id: socketNotif.notificationId || Date.now().toString(),
-        type: socketNotif.type,
-        title: socketNotif.title,
-        message: socketNotif.message,
-        timestamp: new Date(),
-        read: false,
-        icon: getNotificationIcon(socketNotif.type)
-      };
-      
-      console.log('Adding real-time notification:', newNotification);
-      setNotifications(prev => [newNotification, ...prev]);
-      setUnreadCount(prev => prev + 1);
+      console.log('Legacy socket notification received:', event.detail);
+      handleNewNotification(event.detail);
     };
 
     // Listen for socket notifications
@@ -236,7 +434,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     return () => {
       window.removeEventListener('socketNotification', handleSocketNotification as EventListener);
     };
-  }, []);
+  }, [handleNewNotification]);
 
   return (
     <NotificationContext.Provider value={{
@@ -251,7 +449,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       clearAllNotifications,
       refreshNotifications,
       getNotificationCount,
-      getUnreadCountByType
+      getUnreadCountByType,
+      isSoundEnabled,
+      setSoundEnabled,
+      testNotificationSound
     }}>
       {children}
     </NotificationContext.Provider>

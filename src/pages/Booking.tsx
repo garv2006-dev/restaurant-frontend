@@ -7,6 +7,7 @@ import { bookingsAPI, roomsAPI } from '../services/api';
 import { differenceInDays } from 'date-fns';
 import type { Room, Booking as BookingType, BookingFormData } from '../types';
 import { triggerBookingNotification } from '../utils/bookingNotification';
+import DiscountCode from '../components/booking/DiscountCode';
 
 const Booking: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -27,6 +28,18 @@ const Booking: React.FC = () => {
   const [totalAmount, setTotalAmount] = useState(0);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'Cash' | 'Card' | 'UPI' | 'Online'>('Cash');
   const [pendingBookingPayload, setPendingBookingPayload] = useState<any | null>(null);
+  
+  // Discount state
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    code: string;
+    name: string;
+    type: string;
+    value: number;
+    discountAmount: number;
+    finalAmount: number;
+  } | null>(null);
+  const [subtotalAmount, setSubtotalAmount] = useState(0);
+  const [finalAmount, setFinalAmount] = useState(0);
   
   const [bookingForm, setBookingForm] = useState<BookingFormData>({
     roomId: '',
@@ -300,7 +313,9 @@ const Booking: React.FC = () => {
         ...pendingBookingPayload,
         paymentDetails: {
           method: selectedPaymentMethod
-        }
+        },
+        // Include discount code if applied
+        ...(appliedDiscount && { discountCode: appliedDiscount.code })
       };
 
       console.log('Submitting booking with payment:', payload);
@@ -329,10 +344,28 @@ const Booking: React.FC = () => {
       console.error('Booking error:', error);
       let errorMessage = 'Failed to submit booking. Please try again.';
 
-      if (error.response) {
-        errorMessage = error.response.data?.message || error.response.statusText || errorMessage;
+      // Better error handling for different types of errors
+      if (error.code === 'ERR_NETWORK' || error.code === 'NETWORK_ERROR') {
+        errorMessage = 'Cannot connect to server. Please check if the backend server is running on port 5000.';
+      } else if (error.code === 'ECONNREFUSED') {
+        errorMessage = 'Connection refused. Please ensure the backend server is running.';
+      } else if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        if (status === 404) {
+          errorMessage = 'Booking service not found. Please contact support.';
+        } else if (status === 401) {
+          errorMessage = 'Authentication failed. Please log in again.';
+        } else if (status === 403) {
+          errorMessage = 'Access denied. Please check your permissions.';
+        } else if (status >= 500) {
+          errorMessage = 'Server error. Please try again later or contact support.';
+        } else {
+          errorMessage = error.response.data?.message || error.response.statusText || errorMessage;
+        }
       } else if (error.request) {
-        errorMessage = 'No response from server. Please check your connection.';
+        // Request was made but no response received
+        errorMessage = 'No response from server. Please check your connection and ensure the backend server is running on port 5000.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -352,12 +385,39 @@ const Booking: React.FC = () => {
       ) || 1;
       
       const basePrice = selectedRoom.price.basePrice;
-      const total = basePrice * nights;
+      const subtotal = basePrice * nights;
       
       setTotalNights(nights);
-      setTotalAmount(total);
+      setSubtotalAmount(subtotal);
+      
+      // Calculate final amount with discount
+      if (appliedDiscount) {
+        setFinalAmount(appliedDiscount.finalAmount);
+        setTotalAmount(appliedDiscount.finalAmount);
+      } else {
+        setFinalAmount(subtotal);
+        setTotalAmount(subtotal);
+      }
     }
-  }, [bookingForm.checkInDate, bookingForm.checkOutDate, selectedRoom]);
+  }, [bookingForm.checkInDate, bookingForm.checkOutDate, selectedRoom, appliedDiscount]);
+
+  const handleDiscountApplied = (discount: {
+    code: string;
+    name: string;
+    type: string;
+    value: number;
+    discountAmount: number;
+    finalAmount: number;
+  } | null) => {
+    setAppliedDiscount(discount);
+    if (discount) {
+      setFinalAmount(discount.finalAmount);
+      setTotalAmount(discount.finalAmount);
+    } else {
+      setFinalAmount(subtotalAmount);
+      setTotalAmount(subtotalAmount);
+    }
+  };
 
   const getRoomPrimaryImageUrl = (room: Room): string => {
     const fallbackUrl = 'https://via.placeholder.com/400x250?text=Room+Image';
@@ -386,6 +446,9 @@ const Booking: React.FC = () => {
 
   return (
     <Container className="py-5">
+      {/* Connection Test - Remove this after fixing the issue */}
+      
+      
       {/* Header */}
       <Row className="mb-5">
         <Col>
@@ -630,11 +693,27 @@ const Booking: React.FC = () => {
 
             {selectedRoom && bookingForm.checkInDate && bookingForm.checkOutDate && (
               <Alert variant="info">
-                <strong>Total Price: ₹{totalAmount}</strong>
-                <br />
-                <small>
-                  {totalNights} nights × ₹{selectedRoom.price.basePrice}/night
-                </small>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>Subtotal: ₹{subtotalAmount.toFixed(2)}</strong>
+                    <br />
+                    <small>
+                      {totalNights} nights × ₹{selectedRoom.price.basePrice}/night
+                    </small>
+                  </div>
+                </div>
+                {appliedDiscount && (
+                  <div className="mt-2 pt-2 border-top">
+                    <div className="d-flex justify-content-between">
+                      <small>Discount ({appliedDiscount.code}):</small>
+                      <small className="text-success">-₹{appliedDiscount.discountAmount.toFixed(2)}</small>
+                    </div>
+                    <div className="d-flex justify-content-between">
+                      <strong>Final Total:</strong>
+                      <strong className="text-primary">₹{finalAmount.toFixed(2)}</strong>
+                    </div>
+                  </div>
+                )}
               </Alert>
             )}
           </Modal.Body>
@@ -651,9 +730,9 @@ const Booking: React.FC = () => {
       </Modal>
 
       {/* Payment Method Modal */}
-      <Modal show={showPaymentModal} onHide={() => setShowPaymentModal(false)} centered>
+      <Modal show={showPaymentModal} onHide={() => setShowPaymentModal(false)} centered size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>Select Payment Method</Modal.Title>
+          <Modal.Title>Complete Your Booking</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {bookingError && (
@@ -661,20 +740,80 @@ const Booking: React.FC = () => {
               {bookingError}
             </Alert>
           )}
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Payment Method</Form.Label>
-              <Form.Select
-                value={selectedPaymentMethod}
-                onChange={(e) => setSelectedPaymentMethod(e.target.value as any)}
-              >
-                <option value="Cash">Cash</option>
-                <option value="Card">Card</option>
-                <option value="UPI">UPI</option>
-                <option value="Online">Online</option>
-              </Form.Select>
-            </Form.Group>
-          </Form>
+          
+          {/* Booking Summary */}
+          {selectedRoom && (
+            <Card className="mb-4">
+              <Card.Header>
+                <h6 className="mb-0">Booking Summary</h6>
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={6}>
+                    <p className="mb-1"><strong>Room:</strong> {selectedRoom.name}</p>
+                    <p className="mb-1"><strong>Check-in:</strong> {bookingForm.checkInDate}</p>
+                    <p className="mb-1"><strong>Check-out:</strong> {bookingForm.checkOutDate}</p>
+                    <p className="mb-0"><strong>Nights:</strong> {totalNights}</p>
+                  </Col>
+                  <Col md={6}>
+                    <p className="mb-1"><strong>Guests:</strong> {bookingForm.guests.adults} Adults{bookingForm.guests.children > 0 && `, ${bookingForm.guests.children} Children`}</p>
+                    <p className="mb-1"><strong>Rate:</strong> ₹{selectedRoom.price.basePrice}/night</p>
+                    <p className="mb-1"><strong>Subtotal:</strong> ₹{subtotalAmount.toFixed(2)}</p>
+                    {appliedDiscount && (
+                      <>
+                        <p className="mb-1 text-success">
+                          <strong>Discount ({appliedDiscount.code}):</strong> -₹{appliedDiscount.discountAmount.toFixed(2)}
+                        </p>
+                        <p className="mb-0 text-primary">
+                          <strong>Final Total:</strong> ₹{finalAmount.toFixed(2)}
+                        </p>
+                      </>
+                    )}
+                    {!appliedDiscount && (
+                      <p className="mb-0 text-primary">
+                        <strong>Total:</strong> ₹{totalAmount.toFixed(2)}
+                      </p>
+                    )}
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          )}
+
+          {/* Discount Code Section */}
+          <Card className="mb-4">
+            <Card.Body>
+              <DiscountCode
+                subtotal={subtotalAmount}
+                onDiscountApplied={handleDiscountApplied}
+                disabled={submitting}
+              />
+            </Card.Body>
+          </Card>
+
+          {/* Payment Method Selection */}
+          <Card>
+            <Card.Header>
+              <h6 className="mb-0">Payment Method</h6>
+            </Card.Header>
+            <Card.Body>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>Select Payment Method</Form.Label>
+                  <Form.Select
+                    value={selectedPaymentMethod}
+                    onChange={(e) => setSelectedPaymentMethod(e.target.value as any)}
+                    disabled={submitting}
+                  >
+                    <option value="Cash">Cash on Arrival</option>
+                    <option value="Card">Credit/Debit Card</option>
+                    <option value="UPI">UPI Payment</option>
+                    <option value="Online">Online Banking</option>
+                  </Form.Select>
+                </Form.Group>
+              </Form>
+            </Card.Body>
+          </Card>
         </Modal.Body>
         <Modal.Footer>
           <Button
@@ -683,11 +822,24 @@ const Booking: React.FC = () => {
               setShowPaymentModal(false);
               setShowBookingModal(true);
             }}
+            disabled={submitting}
           >
             Back
           </Button>
-          <Button variant="primary" onClick={handleConfirmPayment} disabled={submitting}>
-            {submitting ? 'Processing...' : 'Pay & Confirm'}
+          <Button 
+            variant="primary" 
+            onClick={handleConfirmPayment} 
+            disabled={submitting}
+            size="lg"
+          >
+            {submitting ? (
+              <>
+                <Spinner size="sm" className="me-2" />
+                Processing...
+              </>
+            ) : (
+              `Pay ₹${(appliedDiscount ? finalAmount : totalAmount).toFixed(2)} & Confirm`
+            )}
           </Button>
         </Modal.Footer>
       </Modal>
