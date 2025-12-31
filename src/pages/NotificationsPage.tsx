@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Badge, Button, Nav, Tab, Row, Col, Dropdown, Spinner, Alert } from 'react-bootstrap';
-import { Bell, Check, CheckCircle, Clock, Calendar, Star, MessageSquare, ShoppingBag, ChevronDown } from 'lucide-react';
+import { Container, Card, Badge, Button, Nav, Tab, Dropdown, Spinner, Alert } from 'react-bootstrap';
+import { Bell, Check, ChevronDown } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
+import VolumeControl from '../components/notifications/VolumeControl';
 import '../styles/notifications-responsive.css';
 
 const NotificationsPage: React.FC = () => {
@@ -15,8 +16,7 @@ const NotificationsPage: React.FC = () => {
     markAllAsRead, 
     deleteNotification, 
     clearAllNotifications,
-    getNotificationCount,
-    getUnreadCountByType
+    getNotificationCount
   } = useNotifications();
   
   const [activeTab, setActiveTab] = useState('all');
@@ -123,6 +123,7 @@ const NotificationsPage: React.FC = () => {
             </p>
           </div>
           <div className="notifications-actions">
+            <VolumeControl size="sm" />
             {unreadCount > 0 && (
               <Button variant="outline-primary" onClick={markAllAsRead}>
                 <Check size={16} className="me-1" />

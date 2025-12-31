@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Badge, Table, Spinner, Alert, Button } from 'react-bootstrap';
+import { Card, Row, Col, Badge, Table, Spinner, Alert, Button, Form, InputGroup } from 'react-bootstrap';
 import { 
   TrendingUp, 
   Book, 
@@ -10,10 +10,51 @@ import {
   XCircle, 
   LogIn, 
   LogOut,
-  Loader2
+  Loader2,
+  Search
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import '../../styles/admin-panel.css';
+
+// Add custom styles for search input
+const searchStyles = `
+  .search-input-group .form-control:focus {
+    border-color: #dee2e6;
+    box-shadow: none;
+    outline: none;
+  }
+  
+  .search-input-group .input-group-text {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+  }
+  
+  .search-input-group .form-control {
+    border-color: #dee2e6;
+  }
+  
+  .search-input-group .form-control:hover {
+    border-color: #dee2e6;
+    box-shadow: none;
+  }
+  
+  .search-input-group .form-control:focus + .btn,
+  .search-input-group .btn:focus {
+    border-color: #dee2e6;
+    box-shadow: none;
+  }
+  
+  .search-input-group .btn:hover {
+    border-color: #dee2e6;
+  }
+`;
+
+// Inject styles
+if (typeof document !== 'undefined') {
+  const styleElement = document.createElement('style');
+  styleElement.textContent = searchStyles;
+  document.head.appendChild(styleElement);
+}
 
 interface RecentBooking {
   _id: string;
@@ -54,6 +95,23 @@ const LiveDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [searchTerm, setSearchTerm] = useState<string>('');
+
+  // Filter bookings based on search term
+  const filteredBookings = data?.recentBookings?.filter(booking => {
+    if (!searchTerm) return true;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      booking.guestDetails.primaryGuest.name.toLowerCase().includes(searchLower) ||
+      booking.guestDetails.primaryGuest.email.toLowerCase().includes(searchLower) ||
+      booking.guestDetails.primaryGuest.phone.includes(searchTerm) ||
+      booking.room?.name?.toLowerCase().includes(searchLower) ||
+      booking.room?.roomNumber?.toLowerCase().includes(searchLower) ||
+      booking.status.toLowerCase().includes(searchLower) ||
+      booking.bookingId.toLowerCase().includes(searchLower)
+    );
+  }) || [];
 
   const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
     // Add confirmation for destructive actions
@@ -130,8 +188,8 @@ const LiveDashboard: React.FC = () => {
           
           console.log('Processed bookings:', bookings);
           
-          // Get recent 5 bookings
-          const recentBookings = bookings.slice(0, 5) as RecentBooking[];
+          // Get recent bookings (increased to 20 for better search results)
+          const recentBookings = bookings.slice(0, 20) as RecentBooking[];
           
           // Calculate stats
           const totalBookings = bookings.length;
@@ -160,6 +218,21 @@ const LiveDashboard: React.FC = () => {
 
     fetchBookings();
   }, []);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Clear search on Escape key
+      if (event.key === 'Escape' && searchTerm) {
+        setSearchTerm('');
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [searchTerm]);
 
   if (loading) {
     return (
@@ -254,9 +327,50 @@ const LiveDashboard: React.FC = () => {
       <Row>
         <Col md={12}>
           <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Recent Bookings</h5>
-              <Badge bg="secondary">Live</Badge>
+            <Card.Header>
+              <Row className="align-items-center">
+                <Col md={6}>
+                  <div className="d-flex align-items-center">
+                    <Badge bg="danger">Live</Badge>
+                    {searchTerm && (
+                      <Badge bg="info" className="ms-2">
+                        {filteredBookings.length} found
+                      </Badge>
+                    )}
+                  </div>
+                </Col>
+                <Col md={6}>
+                  <InputGroup className="search-input-group">
+                    <InputGroup.Text className="bg-light border-end-0">
+                      <Search size={16} className="text-muted" />
+                    </InputGroup.Text>
+                    <Form.Control
+                      type="text"
+                      placeholder="Search bookings by name, email, phone, room, or status..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="border-start-0 ps-0"
+                      style={{ boxShadow: 'none' }}
+                    />
+                    {searchTerm && (
+                      <Button 
+                        variant="outline-secondary" 
+                        onClick={() => setSearchTerm('')}
+                        title="Clear search"
+                        className="border-start-0"
+                        style={{ 
+                          borderTopLeftRadius: 0, 
+                          borderBottomLeftRadius: 0,
+                          fontSize: '18px',
+                          lineHeight: 1
+                        }}
+                      >
+                        ×
+                      </Button>
+                    )}
+                  </InputGroup>
+                </Col>
+              </Row>
             </Card.Header>
             <Card.Body>
               {error && (
@@ -279,8 +393,8 @@ const LiveDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data?.recentBookings && data.recentBookings.length > 0 ? (
-                    data.recentBookings.map((booking) => (
+                  {filteredBookings && filteredBookings.length > 0 ? (
+                    filteredBookings.map((booking) => (
                       <tr key={booking._id}>
                         <td>
                           <strong>{booking.guestDetails.primaryGuest.name}</strong>
@@ -400,7 +514,7 @@ const LiveDashboard: React.FC = () => {
                   ) : (
                     <tr>
                       <td colSpan={9} className="text-center text-muted py-4">
-                        No bookings available
+                        {searchTerm ? `No bookings found matching "${searchTerm}"` : 'No bookings available'}
                       </td>
                     </tr>
                   )}

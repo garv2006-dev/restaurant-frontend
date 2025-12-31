@@ -1,0 +1,431 @@
+/* Notification Display Component Styles */
+
+.notification-display-container {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.notification-display-container .toast {
+  pointer-events: auto;
+}
+
+/* Toast Styling */
+.notification-toast {
+  min-width: 350px;
+  max-width: 400px;
+  margin-bottom: 0.75rem;
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border-left: 4px solid #007bff;
+  animation: slideInNotification 0.3s ease-out;
+}
+
+.notification-toast.room_booking {
+  border-left-color: #007bff;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.notification-toast.promotion {
+  border-left-color: #ffc107;
+  background: rgba(255, 252, 240, 0.95);
+}
+
+.notification-toast.payment {
+  border-left-color: #28a745;
+  background: rgba(248, 255, 248, 0.95);
+}
+
+.notification-toast.system {
+  border-left-color: #17a2b8;
+  background: rgba(240, 248, 255, 0.95);
+}
+
+/* Toast Header */
+.notification-toast-header {
+  padding: 1rem 1rem 0.5rem;
+  border-bottom: none;
+  background: transparent;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.notification-header-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.notification-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 1;
+}
+
+.notification-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #212529;
+  line-height: 1.3;
+  margin: 0;
+}
+
+.notification-type-badge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+}
+
+.notification-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+  margin-left: 0.5rem;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #6c757d;
+  white-space: nowrap;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  color: #6c757d;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #495057;
+}
+
+/* Toast Body */
+.notification-toast-body {
+  padding: 0 1rem 1rem;
+  background: transparent;
+}
+
+.notification-message {
+  font-size: 0.875rem;
+  color: #495057;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Notification Icons */
+.notification-icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.notification-icon.booking {
+  color: #007bff;
+}
+
+.notification-icon.promotion {
+  color: #ffc107;
+}
+
+.notification-icon.payment {
+  color: #28a745;
+}
+
+.notification-icon.system {
+  color: #17a2b8;
+}
+
+.notification-icon.default {
+  color: #6c757d;
+}
+
+/* Animations */
+@keyframes slideInNotification {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutNotification {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.notification-toast.hide {
+  animation: slideOutNotification 0.3s ease-in forwards;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .notification-toast {
+    min-width: 280px;
+    max-width: 320px;
+    margin-bottom: 0.5rem;
+  }
+  
+  .notification-toast-header {
+    padding: 0.75rem 0.75rem 0.375rem;
+  }
+  
+  .notification-toast-body {
+    padding: 0 0.75rem 0.75rem;
+  }
+  
+  .notification-header-content {
+    gap: 0.5rem;
+  }
+  
+  .notification-title {
+    font-size: 0.9rem;
+  }
+  
+  .notification-message {
+    font-size: 0.8rem;
+  }
+  
+  .notification-type-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+/* Small screens */
+@media (max-width: 576px) {
+  .notification-toast {
+    min-width: 260px;
+    max-width: 300px;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+  }
+  
+  .notification-display-container[class*="top-"] {
+    top: 1rem !important;
+  }
+  
+  .notification-display-container[class*="bottom-"] {
+    bottom: 1rem !important;
+  }
+}
+
+/* Position adjustments */
+.notification-display-container.position-top-start {
+  top: 1.5rem;
+  left: 1.5rem;
+}
+
+.notification-display-container.position-top-center {
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.notification-display-container.position-top-end {
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.notification-display-container.position-bottom-start {
+  bottom: 1.5rem;
+  left: 1.5rem;
+}
+
+.notification-display-container.position-bottom-center {
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.notification-display-container.position-bottom-end {
+  bottom: 1.5rem;
+  right: 1.5rem;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .notification-toast {
+    background: rgba(45, 55, 72, 0.95);
+    color: #e2e8f0;
+  }
+  
+  .notification-toast.room_booking {
+    background: rgba(45, 55, 72, 0.95);
+  }
+  
+  .notification-toast.promotion {
+    background: rgba(68, 64, 60, 0.95);
+  }
+  
+  .notification-toast.payment {
+    background: rgba(47, 68, 47, 0.95);
+  }
+  
+  .notification-toast.system {
+    background: rgba(45, 55, 72, 0.95);
+  }
+  
+  .notification-title {
+    color: #e2e8f0;
+  }
+  
+  .notification-message {
+    color: #cbd5e0;
+  }
+  
+  .notification-time {
+    color: #a0aec0;
+  }
+  
+  .notification-close {
+    color: #a0aec0;
+  }
+  
+  .notification-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .notification-toast {
+    border-width: 2px;
+    border-style: solid;
+  }
+  
+  .notification-toast.room_booking {
+    border-color: #007bff;
+  }
+  
+  .notification-toast.promotion {
+    border-color: #ffc107;
+  }
+  
+  .notification-toast.payment {
+    border-color: #28a745;
+  }
+  
+  .notification-toast.system {
+    border-color: #17a2b8;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .notification-toast {
+    animation: none;
+  }
+  
+  .notification-toast.hide {
+    animation: none;
+    opacity: 0;
+  }
+  
+  .notification-close {
+    transition: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.notification-close:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
+
+/* Hover effects */
+.notification-toast:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-toast:hover {
+    transform: none;
+  }
+}
+
+/* Loading state for notifications */
+.notification-toast.loading {
+  opacity: 0.8;
+}
+
+.notification-toast.loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #007bff, transparent);
+  animation: loadingBar 1.5s infinite;
+}
+
+@keyframes loadingBar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Notification count indicator */
+.notification-count-indicator {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border: 2px solid white;
+}
+
+/* Stacking notifications */
+.notification-display-container .toast + .toast {
+  margin-top: 0.5rem;
+}
+
+/* Maximum height for notification container */
+.notification-display-container {
+  max-height: 80vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.notification-display-container::-webkit-scrollbar {
+  display: none;
+}
