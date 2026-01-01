@@ -24,7 +24,6 @@ export interface User {
 export interface Room {
   id: string;
   _id: string; // MongoDB _id field
-  roomNumber: string;
   name: string;
   type: 'Standard' | 'Deluxe' | 'Suite';
   description: string;
@@ -36,7 +35,6 @@ export interface Room {
   area: number;
   price: {
     basePrice: number;
-    weekendPrice: number;
     seasonalPricing: Array<{
       season: string;
       startDate: string;

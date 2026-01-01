@@ -48,12 +48,11 @@ export const BookingNotifications = {
   checkInAvailable: (bookingData: {
     bookingId: string;
     roomName: string;
-    roomNumber: string;
   }) => {
     realTimeNotificationService.triggerBookingNotification({
       bookingId: bookingData.bookingId,
       title: 'Check-in Available',
-      message: `Your room ${bookingData.roomName} (${bookingData.roomNumber}) is ready for check-in.`,
+      message: `Your room ${bookingData.roomName} is ready for check-in.`,
     });
   },
 

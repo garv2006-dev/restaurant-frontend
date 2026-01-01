@@ -175,6 +175,17 @@
   transition: all 0.2s ease;
 }
 
+.notifications-tabs .nav-link:focus,
+.notifications-tabs .nav-link:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.notifications-tabs .nav-link:active {
+  outline: none;
+  box-shadow: none;
+}
+
 .notifications-tabs .nav-link:hover {
   background-color: var(--bs-tertiary-bg);
   border-color: var(--bs-primary);
@@ -184,8 +195,17 @@
 .notifications-tabs .nav-link.active {
   color: white;
   background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
-  box-shadow: 0 2px 4px rgba(var(--bs-primary-rgb), 0.3);
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.notifications-tabs .nav-link.active:focus,
+.notifications-tabs .nav-link.active:focus-visible,
+.notifications-tabs .nav-link.active:active {
+  outline: none;
+  box-shadow: none;
+  border: none;
 }
 
 .notifications-tabs .nav-link .badge {
@@ -203,9 +223,9 @@
 
 /* Active tab badge styling */
 .notifications-tabs .nav-link.active .badge {
-  background-color: white;
-  color: var(--bs-primary);
-  border: 1px solid rgba(255,255,255,0.3);
+  background-color: white !important;
+  color: var(--bs-primary) !important;
+  border: none !important;
 }
 
 /* Inactive tab badge styling */

@@ -17,7 +17,6 @@ interface Room {
   description: string;
   price: {
     basePrice: number;
-    weekendPrice: number;
   };
   images: Array<{
     url: string;
@@ -152,10 +151,7 @@ const Home: React.FC = () => {
     }
   };
 
-  const handleWeekendGetaway = () => {
-    // Navigate to booking page with weekend package parameters
-    navigate('/booking?package=weekend-getaway&discount=20');
-  };
+
 
   return (
     <div>
@@ -300,14 +296,6 @@ const Home: React.FC = () => {
             interval={5000}
             className="special-offers-carousel"
           >
-            <Carousel.Item>
-              <div className="text-center p-4">
-                <h4 className="text-primary">Weekend Getaway Package</h4>
-                <p className="lead">20% off on weekend stays with complimentary breakfast</p>
-                <p className="text-muted">Starting from ₹4,000 per night</p>
-                <Button variant="outline-primary" onClick={handleWeekendGetaway}>Book Now</Button>
-              </div>
-            </Carousel.Item>
             <Carousel.Item>
               <div className="text-center p-4">
                 <h4 className="text-primary">Loyalty Program</h4>
