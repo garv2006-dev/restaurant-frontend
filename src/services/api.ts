@@ -1,14 +1,32 @@
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosResponse, AxiosError } from 'axios';
 import { ApiResponse, User, Room, Booking, Review, Payment, LoginCredentials, RegisterData } from '../types';
 
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
-  timeout: 10000,
+  timeout: 60000, // Increased to 60 seconds for production cold starts
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Retry configuration
+const MAX_RETRIES = 2;
+const RETRY_DELAY = 2000; // 2 seconds
+
+// Helper function to check if error is retryable
+const isRetryableError = (error: AxiosError): boolean => {
+  if (!error.response) {
+    // Network errors, timeouts, etc.
+    return true;
+  }
+  // Retry on 5xx server errors and 408 timeout
+  const status = error.response.status;
+  return status >= 500 || status === 408;
+};
+
+// Helper function to delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Request interceptor to add auth token
 api.interceptors.request.use(
@@ -29,13 +47,34 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle errors and token refresh
+// Response interceptor to handle errors, token refresh, and retries
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error: AxiosError) => {
+    const config: any = error.config;
+    
+    // Initialize retry count
+    if (!config._retryCount) {
+      config._retryCount = 0;
+    }
+    
+    // Check if we should retry
+    if (config._retryCount < MAX_RETRIES && isRetryableError(error)) {
+      config._retryCount += 1;
+      
+      console.log(`Retrying request (${config._retryCount}/${MAX_RETRIES}):`, config.url);
+      
+      // Exponential backoff: 2s, 4s, 8s...
+      const delayTime = RETRY_DELAY * Math.pow(2, config._retryCount - 1);
+      await delay(delayTime);
+      
+      // Retry the request
+      return api(config);
+    }
+    
     // Only logout on 401 for specific API calls and not during app initialization
-    const isLoyaltyAPI = error.config.url?.includes('/loyalty/');
-    const isAuthMeAPI = error.config.url?.includes('/auth/me');
+    const isLoyaltyAPI = error.config?.url?.includes('/loyalty/');
+    const isAuthMeAPI = error.config?.url?.includes('/auth/me');
     
     if (error.response?.status === 401 && !isLoyaltyAPI && !isAuthMeAPI) {
       // Clear token and redirect to login
@@ -44,6 +83,17 @@ api.interceptors.response.use(
       localStorage.removeItem('userType');
       window.location.href = '/login';
     }
+    
+    // Enhance error message for timeouts
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      const enhancedError: any = new Error(
+        'The server is taking longer than expected to respond. This may be due to server startup. Please try again in a moment.'
+      );
+      enhancedError.isTimeout = true;
+      enhancedError.originalError = error;
+      return Promise.reject(enhancedError);
+    }
+    
     return Promise.reject(error);
   }
 );

@@ -175,7 +175,7 @@ const MyBookings: React.FC = () => {
             {bookings && bookings.map ? bookings.map((b, idx) => {
               // Handle both string and object room references
               const room = typeof b.room === 'object' && b.room !== null ? b.room : null;
-              const roomLabel = room ? `${room.name || ''} ${room.type ? `(${room.type})` : ''} ${room.roomNumber ? `#${room.roomNumber}` : ''}`.trim() : 'Unknown Room';
+              const roomLabel = room ? `${room.name || ''} ${room.type ? `(${room.type})` : ''}`.trim() : 'Unknown Room';
               const ci = new Date(b.bookingDates.checkInDate).toLocaleDateString();
               const co = new Date(b.bookingDates.checkOutDate).toLocaleDateString();
               const nights = b.bookingDates.nights || 0;
@@ -259,7 +259,7 @@ const MyBookings: React.FC = () => {
               <strong>Booking Details:</strong>
               <ul className="mt-2">
                 <li>Room: {typeof selectedBooking.room === 'object' && selectedBooking.room !== null 
-                  ? `${selectedBooking.room.name || ''} ${selectedBooking.room.roomNumber ? `#${selectedBooking.room.roomNumber}` : ''}`.trim() 
+                  ? `${selectedBooking.room.name || ''}`.trim() 
                   : 'Unknown Room'}</li>
                 <li>Check-in: {new Date(selectedBooking.bookingDates.checkInDate).toLocaleDateString()}</li>
                 <li>Check-out: {new Date(selectedBooking.bookingDates.checkOutDate).toLocaleDateString()}</li>

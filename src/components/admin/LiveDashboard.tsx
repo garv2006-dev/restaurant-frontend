@@ -69,7 +69,6 @@ interface RecentBooking {
   room: {
     _id: string;
     name: string;
-    roomNumber: string;
     type: string;
   };
   bookingDates: {
@@ -107,7 +106,6 @@ const LiveDashboard: React.FC = () => {
       booking.guestDetails.primaryGuest.email.toLowerCase().includes(searchLower) ||
       booking.guestDetails.primaryGuest.phone.includes(searchTerm) ||
       booking.room?.name?.toLowerCase().includes(searchLower) ||
-      booking.room?.roomNumber?.toLowerCase().includes(searchLower) ||
       booking.status.toLowerCase().includes(searchLower) ||
       booking.bookingId.toLowerCase().includes(searchLower)
     );
@@ -162,7 +160,7 @@ const LiveDashboard: React.FC = () => {
   const handleViewDetails = (booking: RecentBooking) => {
     // For now, just show an alert with booking details
     // You can implement a proper modal later
-    alert(`Booking Details:\nID: ${booking.bookingId}\nGuest: ${booking.guestDetails.primaryGuest.name}\nRoom: ${booking.room.name} #${booking.room.roomNumber}\nStatus: ${booking.status}`);
+    alert(`Booking Details:\nID: ${booking.bookingId}\nGuest: ${booking.guestDetails.primaryGuest.name}\nRoom: ${booking.room.name}\nStatus: ${booking.status}`);
   };
 
   useEffect(() => {
@@ -406,7 +404,7 @@ const LiveDashboard: React.FC = () => {
                           <small>{booking.guestDetails.primaryGuest.phone}</small>
                         </td>
                         <td>
-                          {booking?.room?.name} #{booking?.room?.roomNumber}
+                          {booking?.room?.name}
                         </td>
                         <td>
                           <small>{new Date(booking.bookingDates.checkInDate).toLocaleDateString()}</small>

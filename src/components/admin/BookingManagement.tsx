@@ -305,7 +305,7 @@ const BookingManagement: React.FC = () => {
                   bookings.map((booking) => {
                     const room = typeof booking.room === 'object' && booking.room !== null ? booking.room : null;
                     const guestName = booking.guestDetails?.primaryGuest?.name || 'Unknown';
-                    const roomLabel = room ? `${room.name || ''} ${room.roomNumber ? `#${room.roomNumber}` : ''}`.trim() : '-';
+                    const roomLabel = room ? `${room.name || ''}`.trim() : '-';
                     
                     return (
                       <tr key={booking.id || booking._id}>

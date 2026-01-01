@@ -18,7 +18,6 @@ import ImageGallery from './ImageGallery';
 
 interface Room {
   _id: string;
-  roomNumber: string;
   name: string;
   type: 'Standard' | 'Deluxe' | 'Suite';
   description: string;
@@ -30,7 +29,6 @@ interface Room {
   area: number;
   price: {
     basePrice: number;
-    weekendPrice: number;
   };
   features: {
     airConditioning: boolean;
@@ -64,12 +62,11 @@ const RoomManagement: React.FC = () => {
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [roomForImageUpload, setRoomForImageUpload] = useState<Room | null>(null);
   const [formData, setFormData] = useState<{
-    roomNumber: string;
     name: string;
     type: 'Standard' | 'Deluxe' | 'Suite';
     description: string;
     capacity: { adults: number; children: number };
-    price: { basePrice: number; weekendPrice: number };
+    price: { basePrice: number };
     features: {
       airConditioning: boolean;
       wifi: boolean;
@@ -83,12 +80,11 @@ const RoomManagement: React.FC = () => {
     area: number;
     floor: number;
   }>({
-    roomNumber: '',
     name: '',
     type: 'Standard',
     description: '',
     capacity: { adults: 2, children: 1 },
-    price: { basePrice: 0, weekendPrice: 0 },
+    price: { basePrice: 0 },
     features: {
       airConditioning: true,
       wifi: true,
@@ -161,7 +157,6 @@ const RoomManagement: React.FC = () => {
   const handleEditRoom = (room: Room) => {
     setEditingRoom(room);
     setFormData({
-      roomNumber: room.roomNumber,
       name: room.name,
       type: room.type,
       description: room.description,
@@ -184,12 +179,11 @@ const RoomManagement: React.FC = () => {
     setSuccess('');
     setEditingRoom(null);
     setFormData({
-      roomNumber: '',
       name: '',
       type: 'Standard',
       description: '',
       capacity: { adults: 2, children: 1 },
-      price: { basePrice: 0, weekendPrice: 0 },
+      price: { basePrice: 0 },
       features: {
         airConditioning: true,
         wifi: true,
@@ -232,7 +226,7 @@ const RoomManagement: React.FC = () => {
   if (submitting) return;
 
   // Validation
-  const requiredFields = ['roomNumber', 'name', 'type', 'description', 'bedType'];
+  const requiredFields = ['name', 'type', 'description', 'bedType'];
   const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
   
   if (missingFields.length > 0) {
@@ -257,7 +251,6 @@ const RoomManagement: React.FC = () => {
       const formDataToSend = new FormData();
 
       // Primitive fields
-      formDataToSend.append('roomNumber', formData.roomNumber);
       formDataToSend.append('name', formData.name);
       formDataToSend.append('type', formData.type);
       formDataToSend.append('description', formData.description);
@@ -303,8 +296,6 @@ const RoomManagement: React.FC = () => {
         errorMessage = 'You are not authorized. Please login again.';
       } else if (err.response.status === 403) {
         errorMessage = 'You do not have permission to perform this action.';
-      } else if (err.response.status === 409) {
-        errorMessage = 'A room with this number already exists.';
       } else if (err.response.status === 413) {
         errorMessage = 'File size is too large. Maximum size is 5MB per image.';
       } else if (err.response.status === 429) {
@@ -548,12 +539,10 @@ const RoomManagement: React.FC = () => {
                     onChange={(e) => handleSelectAll(e.target.checked)}
                   />
                 </th>
-                <th>Room #</th>
                 <th>Name</th>
                 <th>Type</th>
                 <th>Capacity</th>
                 <th>Base Price</th>
-                <th>Weekend Price</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -561,7 +550,7 @@ const RoomManagement: React.FC = () => {
             <tbody>
               {rooms.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-4">
+                  <td colSpan={7} className="text-center py-4">
                     No rooms found. <Button variant="link" onClick={handleAddRoom}>Add your first room</Button>
                   </td>
                 </tr>
@@ -575,14 +564,12 @@ const RoomManagement: React.FC = () => {
                         onChange={(e) => handleSelectRoom(room._id, e.target.checked)}
                       />
                     </td>
-                    <td>{room.roomNumber}</td>
                     <td>{room.name}</td>
                     <td>
                       <Badge bg="secondary">{room.type}</Badge>
                     </td>
                     <td>{room.capacity.adults} Adults, {room.capacity.children} Children</td>
                     <td>₹{room.price.basePrice}</td>
-                    <td>₹{room.price.weekendPrice}</td>
                     <td>{getStatusBadge(room.status)}</td>
                     <td>
                       <Button variant="outline-primary" size="sm" className="me-1" onClick={() => handleEditRoom(room)}>
@@ -630,19 +617,7 @@ const RoomManagement: React.FC = () => {
     <Modal.Body>
       {error && <Alert variant="danger">{error}</Alert>}
       <Row>
-        <Col md={6}>
-          <Form.Group className="mb-3">
-            <Form.Label>Room Number *</Form.Label>
-            <Form.Control
-              type="text"
-              value={formData.roomNumber}
-              onChange={(e) => setFormData({...formData, roomNumber: e.target.value})}
-              required
-              placeholder="E.g., 101"
-            />
-          </Form.Group>
-        </Col>
-        <Col md={6}>
+        <Col md={12}>
           <Form.Group className="mb-3">
             <Form.Label>Room Name *</Form.Label>
             <Form.Control
@@ -708,24 +683,6 @@ const RoomManagement: React.FC = () => {
         </Col>
         <Col md={6}>
           <Form.Group className="mb-3">
-            <Form.Label>Weekend Price (₹)</Form.Label>
-            <Form.Control
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.price.weekendPrice}
-              onChange={(e) => setFormData({
-                ...formData,
-                price: {...formData.price, weekendPrice: parseFloat(e.target.value) || 0}
-              })}
-            />
-          </Form.Group>
-        </Col>
-      </Row>
-
-      <Row>
-        <Col md={6}>
-          <Form.Group className="mb-3">
             <Form.Label>Floor *</Form.Label>
             <Form.Control
               type="number"
@@ -736,6 +693,9 @@ const RoomManagement: React.FC = () => {
             />
           </Form.Group>
         </Col>
+      </Row>
+
+      <Row>
         <Col md={6}>
           <Form.Group className="mb-3">
             <Form.Label>Area (sq.ft) *</Form.Label>
