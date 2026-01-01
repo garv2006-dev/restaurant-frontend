@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert } from 'react-bootstrap';
 import { MapPin, Phone, Mail, Clock, Send, MessageSquare } from 'lucide-react';
+import api from '../services/api';
+import '../styles/contact.css';
 
 interface ContactForm {
   name: string;
@@ -21,6 +23,7 @@ const Contact: React.FC = () => {
   const [errors, setErrors] = useState<Partial<ContactForm>>({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [apiError, setApiError] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -36,29 +39,58 @@ const Contact: React.FC = () => {
         [name]: undefined
       }));
     }
+    
+    // Clear API error
+    if (apiError) {
+      setApiError('');
+    }
   };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<ContactForm> = {};
 
+    // Name validation
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters long';
+    } else if (!/^[a-zA-Z\s]+$/.test(formData.name.trim())) {
+      newErrors.name = 'Name can only contain letters and spaces';
     }
+
+    // Email validation
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
+
+    // Phone validation
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
+    } else {
+      const phoneDigits = formData.phone.replace(/\D/g, '');
+      if (phoneDigits.length < 10) {
+        newErrors.phone = 'Phone number must be at least 10 digits';
+      } else if (phoneDigits.length > 15) {
+        newErrors.phone = 'Phone number cannot exceed 15 digits';
+      } else if (!/^[0-9+\-\s()]+$/.test(formData.phone)) {
+        newErrors.phone = 'Please enter a valid phone number';
+      }
     }
+
+    // Subject validation
     if (!formData.subject.trim()) {
       newErrors.subject = 'Subject is required';
     }
+
+    // Message validation
     if (!formData.message.trim()) {
       newErrors.message = 'Message is required';
     } else if (formData.message.trim().length < 10) {
       newErrors.message = 'Message must be at least 10 characters long';
+    } else if (formData.message.trim().length > 1000) {
+      newErrors.message = 'Message cannot exceed 1000 characters';
     }
 
     setErrors(newErrors);
@@ -73,26 +105,28 @@ const Contact: React.FC = () => {
     }
 
     setLoading(true);
+    setApiError('');
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await api.post('/contact', formData);
       
-      console.log('Contact form submitted:', formData);
-      
-      setSuccess(true);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        subject: '',
-        message: ''
-      });
-      
-      // Hide success message after 5 seconds
-      setTimeout(() => setSuccess(false), 5000);
-    } catch (error) {
+      if (response.data.success) {
+        setSuccess(true);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          subject: '',
+          message: ''
+        });
+        
+        // Hide success message after 5 seconds
+        setTimeout(() => setSuccess(false), 5000);
+      }
+    } catch (error: any) {
       console.error('Error submitting contact form:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to send message. Please try again later.';
+      setApiError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -150,7 +184,8 @@ const Contact: React.FC = () => {
   ];
 
   return (
-    <Container className="py-5">
+    <div className="contact-page">
+      <Container className="py-5">
       {/* Header */}
       <Row className="mb-5">
         <Col>
@@ -220,6 +255,12 @@ const Contact: React.FC = () => {
                 <Alert variant="success" className="mb-4">
                   <strong>Thank you!</strong> Your message has been sent successfully. We'll get back to you within 24 hours.
                 </Alert>
+              )}  
+              
+              {apiError && (
+                <Alert variant="danger" className="mb-4">
+                  <strong>Error!</strong> {apiError}
+                </Alert>
               )}
 
               <Form onSubmit={handleSubmit}>
@@ -268,12 +309,15 @@ const Contact: React.FC = () => {
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        placeholder="Enter your phone number"
+                        placeholder="+91 1234567890"
                         isInvalid={!!errors.phone}
                       />
                       <Form.Control.Feedback type="invalid">
                         {errors.phone}
                       </Form.Control.Feedback>
+                      <Form.Text className="text-muted">
+                        Enter 10-15 digits (e.g., +91 1234567890)
+                      </Form.Text>
                     </Form.Group>
                   </Col>
                   
@@ -308,12 +352,13 @@ const Contact: React.FC = () => {
                     onChange={handleChange}
                     placeholder="Please describe your inquiry in detail..."
                     isInvalid={!!errors.message}
+                    maxLength={1000}
                   />
                   <Form.Control.Feedback type="invalid">
                     {errors.message}
                   </Form.Control.Feedback>
                   <Form.Text className="text-muted">
-                    Minimum 10 characters required
+                    {formData.message.length}/1000 characters (minimum 10 required)
                   </Form.Text>
                 </Form.Group>
 
@@ -402,6 +447,7 @@ const Contact: React.FC = () => {
         </Col>
       </Row>
     </Container>
+    </div>
   );
 };
 

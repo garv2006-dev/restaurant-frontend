@@ -155,6 +155,32 @@ const Booking: React.FC = () => {
     if (field.includes('.')) {
       // Handle nested fields like 'guests.adults' or 'guestDetails.name'
       const [parent, child] = field.split('.');
+      
+      // Special handling for guest changes to validate capacity
+      if (parent === 'guests' && selectedRoom) {
+        const currentGuests = { ...bookingForm.guests };
+        currentGuests[child as 'adults' | 'children'] = value as number;
+        
+        const totalGuests = currentGuests.adults + currentGuests.children;
+        const maxCapacity = selectedRoom.capacity.adults + selectedRoom.capacity.children;
+        
+        // Prevent exceeding capacity
+        if (totalGuests > maxCapacity) {
+          setErrors(prev => ({
+            ...prev,
+            guests: `Maximum capacity for this room is ${maxCapacity} guests (${selectedRoom.capacity.adults} adults + ${selectedRoom.capacity.children} children)`
+          }));
+          return; // Don't update if it exceeds capacity
+        } else {
+          // Clear error if within capacity
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors.guests;
+            return newErrors;
+          });
+        }
+      }
+      
       setBookingForm(prev => ({
         ...prev,
         [parent]: {
@@ -606,11 +632,17 @@ const Booking: React.FC = () => {
                   <Form.Select
                     value={bookingForm.guests.adults}
                     onChange={(e) => handleFormChange('guests.adults', parseInt(e.target.value))}
+                    isInvalid={!!errors.guests}
                   >
-                    {[1,2,3,4].map(num => (
+                    {Array.from({ length: selectedRoom?.capacity.adults || 4 }, (_, i) => i + 1).map(num => (
                       <option key={num} value={num}>{num}</option>
                     ))}
                   </Form.Select>
+                  {selectedRoom && (
+                    <Form.Text className="text-muted">
+                      {/* Maximum {selectedRoom.capacity.adults} adults */}
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
               
@@ -620,14 +652,36 @@ const Booking: React.FC = () => {
                   <Form.Select
                     value={bookingForm.guests.children}
                     onChange={(e) => handleFormChange('guests.children', parseInt(e.target.value))}
+                    isInvalid={!!errors.guests}
                   >
-                    {[0,1,2,3].map(num => (
+                    {Array.from({ length: (selectedRoom?.capacity.children || 3) + 1 }, (_, i) => i).map(num => (
                       <option key={num} value={num}>{num}</option>
                     ))}
                   </Form.Select>
+                  {selectedRoom && (
+                    <Form.Text className="text-muted">
+                      {/* Maximum {selectedRoom.capacity.children} children */}
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
             </Row>
+            
+            {/* {errors.guests && (
+              <Alert variant="danger" className="mb-3">
+                {errors.guests}
+              </Alert>
+            )}
+            
+            {selectedRoom && (
+              <Alert variant="info" className="mb-3">
+                <strong>Room Capacity:</strong> Maximum {selectedRoom.capacity.adults + selectedRoom.capacity.children} guests 
+                ({selectedRoom.capacity.adults} {selectedRoom.capacity.adults === 1 ? 'adult' : 'adults'} + {selectedRoom.capacity.children} {selectedRoom.capacity.children === 1 ? 'child' : 'children'})
+                <br />
+                <small>Current selection: {bookingForm.guests.adults + bookingForm.guests.children} guests 
+                ({bookingForm.guests.adults} {bookingForm.guests.adults === 1 ? 'adult' : 'adults'} + {bookingForm.guests.children} {bookingForm.guests.children === 1 ? 'child' : 'children'})</small>
+              </Alert>
+            )} */}
 
             <Row>
               <Col md={6} className="mb-3">
