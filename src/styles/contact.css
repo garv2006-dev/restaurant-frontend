@@ -1,0 +1,156 @@
+/* Contact Page Styling */
+
+.contact-page {
+  padding-top: 80px;
+  min-height: 100vh;
+  background-color: var(--bs-body-bg);
+}
+
+/* Contact Cards */
+.contact-page .card {
+  transition: all 0.3s ease;
+  background: var(--bs-card-bg, var(--bs-body-bg));
+  border: 1px solid var(--bs-border-color);
+}
+
+.contact-page .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Contact Info Icons */
+.contact-page .text-primary {
+  color: var(--bs-primary) !important;
+}
+
+/* Form Styling */
+.contact-page .form-label {
+  font-weight: 500;
+  color: var(--bs-body-color);
+  margin-bottom: 0.5rem;
+}
+
+.contact-page .form-control,
+.contact-page .form-select {
+  background-color: var(--bs-body-bg);
+  border: 1px solid var(--bs-border-color);
+  color: var(--bs-body-color);
+  transition: all 0.2s ease;
+}
+
+.contact-page .form-control:focus,
+.contact-page .form-select:focus {
+  background-color: var(--bs-body-bg);
+  border-color: var(--bs-primary);
+  color: var(--bs-body-color);
+  box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+.contact-page .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  opacity: 0.7;
+}
+
+/* Dark Mode Specific Styles */
+[data-bs-theme="dark"] .contact-page .card {
+  background: rgba(45, 45, 45, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-bs-theme="dark"] .contact-page .card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-bs-theme="dark"] .contact-page .card-header {
+  background-color: rgba(45, 45, 45, 0.9) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+[data-bs-theme="dark"] .contact-page .form-control,
+[data-bs-theme="dark"] .contact-page .form-select {
+  background-color: rgba(30, 30, 30, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-bs-theme="dark"] .contact-page .form-control:focus,
+[data-bs-theme="dark"] .contact-page .form-select:focus {
+  background-color: rgba(30, 30, 30, 0.9);
+  border-color: var(--bs-primary);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+[data-bs-theme="dark"] .contact-page .bg-light {
+  background-color: rgba(45, 45, 45, 0.8) !important;
+}
+
+/* Light Mode Specific Styles */
+[data-bs-theme="light"] .contact-page .card-header {
+  background-color: white !important;
+}
+
+/* Social Media Buttons */
+.contact-page .btn-outline-primary,
+.contact-page .btn-outline-info,
+.contact-page .btn-outline-danger {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.contact-page .btn-outline-primary:hover,
+.contact-page .btn-outline-info:hover,
+.contact-page .btn-outline-danger:hover {
+  transform: scale(1.1);
+}
+
+/* Submit Button */
+.contact-page .btn-primary {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  transition: all 0.3s ease;
+}
+
+.contact-page .btn-primary:hover:not(:disabled) {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(var(--bs-primary-rgb), 0.4);
+}
+
+.contact-page .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Alert Styling */
+.contact-page .alert {
+  border-radius: 0.5rem;
+  border: none;
+}
+
+/* Map Section */
+.contact-page .bg-light {
+  background-color: var(--bs-secondary-bg) !important;
+  color: var(--bs-secondary-color);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .contact-page {
+    padding-top: 70px;
+  }
+  
+  .contact-page .display-4 {
+    font-size: 2rem;
+  }
+  
+  .contact-page .lead {
+    font-size: 1rem;
+  }
+}

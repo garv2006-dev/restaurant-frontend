@@ -4,6 +4,8 @@
 .notifications-page {
   padding-top: 80px; /* Account for fixed header */
   min-height: 100vh;
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
 }
 
 /* Header section */
@@ -22,12 +24,13 @@
   font-weight: 700;
   margin-bottom: 0.25rem;
   line-height: 1.2;
+  color: var(--bs-body-color);
 }
 
 .notifications-title p {
   font-size: 0.95rem;
   margin: 0;
-  color: #6c757d;
+  color: var(--bs-secondary-color);
 }
 
 /* Header actions */
@@ -71,8 +74,8 @@
   font-size: 0.9rem;
   font-weight: 500;
   border-radius: 0.5rem;
-  background-color: var(--bs-gray-100);
-  border: 1px solid var(--bs-gray-300);
+  background-color: var(--bs-secondary-bg);
+  border: 1px solid var(--bs-border-color);
   color: var(--bs-body-color);
   display: flex;
   justify-content: space-between;
@@ -90,9 +93,10 @@
 
 .notifications-dropdown .dropdown-menu {
   width: 100%;
-  border: 1px solid var(--bs-gray-300);
+  border: 1px solid var(--bs-border-color);
   border-radius: 0.5rem;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  background-color: var(--bs-body-bg);
 }
 
 .notifications-dropdown .dropdown-item {
@@ -104,10 +108,11 @@
   transition: all 0.2s ease;
   cursor: pointer;
   user-select: none;
+  color: var(--bs-body-color);
 }
 
 .notifications-dropdown .dropdown-item:hover {
-  background-color: var(--bs-gray-100);
+  background-color: var(--bs-secondary-bg);
 }
 
 .notifications-dropdown .dropdown-item.active {
@@ -165,13 +170,13 @@
   white-space: nowrap;
   min-width: fit-content;
   color: var(--bs-body-color);
-  background-color: var(--bs-gray-100);
-  border: 1px solid var(--bs-gray-300);
+  background-color: var(--bs-secondary-bg);
+  border: 1px solid var(--bs-border-color);
   transition: all 0.2s ease;
 }
 
 .notifications-tabs .nav-link:hover {
-  background-color: var(--bs-gray-200);
+  background-color: var(--bs-tertiary-bg);
   border-color: var(--bs-primary);
   color: var(--bs-primary);
 }
@@ -205,7 +210,7 @@
 
 /* Inactive tab badge styling */
 .notifications-tabs .nav-link:not(.active) .badge.bg-secondary {
-  background-color: var(--bs-gray-500) !important;
+  background-color: var(--bs-secondary) !important;
   color: white;
 }
 
@@ -215,9 +220,9 @@
 }
 
 .notifications-tabs .nav-link:not(.active) .badge.bg-light {
-  background-color: var(--bs-gray-600) !important;
+  background-color: rgba(108, 117, 125, 0.8) !important;
   color: white;
-  border: 1px solid var(--bs-gray-400);
+  border: 1px solid rgba(108, 117, 125, 0.5);
 }
 
 /* Notification cards */
@@ -227,23 +232,23 @@
 }
 
 .notification-card {
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid var(--bs-border-color);
   border-radius: 0.75rem;
   margin-bottom: 1rem;
   transition: all 0.2s ease;
-  background: var(--bs-body-bg);
+  background: var(--bs-card-bg, var(--bs-body-bg));
   overflow: hidden;
 }
 
 .notification-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   transform: translateY(-2px);
   border-color: var(--bs-primary);
 }
 
 .notification-card.unread {
   border-left: 4px solid var(--bs-primary);
-  background: linear-gradient(to right, rgba(var(--bs-primary-rgb), 0.05), transparent);
+  background: linear-gradient(to right, rgba(var(--bs-primary-rgb), 0.08), var(--bs-card-bg, var(--bs-body-bg)));
 }
 
 .notification-card .card-body {
@@ -340,8 +345,8 @@
   text-align: center;
   padding: 3rem 1rem;
   border-radius: 0.75rem;
-  background: var(--bs-body-bg);
-  border: 1px solid rgba(0,0,0,0.08);
+  background: var(--bs-card-bg, var(--bs-body-bg));
+  border: 1px solid var(--bs-border-color);
 }
 
 .notifications-empty .icon {
@@ -349,6 +354,7 @@
   height: 64px;
   margin: 0 auto 1.5rem;
   opacity: 0.5;
+  color: var(--bs-secondary-color);
 }
 
 .notifications-empty h5 {
@@ -424,8 +430,8 @@
     font-size: 0.9rem;
     font-weight: 500;
     border-radius: 0.5rem;
-    background-color: var(--bs-gray-100);
-    border: 1px solid var(--bs-gray-300);
+    background-color: var(--bs-secondary-bg);
+    border: 1px solid var(--bs-border-color);
     color: var(--bs-body-color);
     display: flex;
     justify-content: space-between;
@@ -689,22 +695,90 @@
 }
 
 /* Dark mode adjustments */
+[data-bs-theme="dark"] .notifications-page {
+  background-color: #121212;
+}
+
 [data-bs-theme="dark"] .notification-card {
-  border-color: rgba(255,255,255,0.1);
-  background: rgba(45,45,45,0.8);
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(45,45,45,0.9);
 }
 
 [data-bs-theme="dark"] .notification-card:hover {
   border-color: var(--bs-primary);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+[data-bs-theme="dark"] .notification-card.unread {
+  background: linear-gradient(to right, rgba(var(--bs-primary-rgb), 0.15), rgba(45,45,45,0.9));
 }
 
 [data-bs-theme="dark"] .notification-icon {
-  background: rgba(var(--bs-primary-rgb), 0.2);
+  background: rgba(var(--bs-primary-rgb), 0.25);
+  color: var(--bs-primary);
 }
 
 [data-bs-theme="dark"] .notifications-empty {
-  border-color: rgba(255,255,255,0.1);
-  background: rgba(45,45,45,0.8);
+  border-color: rgba(255,255,255,0.12);
+  background: rgba(45,45,45,0.9);
+}
+
+[data-bs-theme="dark"] .notifications-tabs .nav-link {
+  background-color: rgba(45,45,45,0.8);
+  border-color: rgba(255,255,255,0.12);
+}
+
+[data-bs-theme="dark"] .notifications-tabs .nav-link:hover {
+  background-color: rgba(60,60,60,0.9);
+  border-color: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] .notifications-tabs .nav-link.active {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] .notifications-dropdown .dropdown-toggle {
+  background-color: rgba(45,45,45,0.8);
+  border-color: rgba(255,255,255,0.12);
+}
+
+[data-bs-theme="dark"] .notifications-dropdown .dropdown-menu {
+  background-color: rgba(30,30,30,0.98);
+  border-color: rgba(255,255,255,0.12);
+}
+
+[data-bs-theme="dark"] .notifications-dropdown .dropdown-item {
+  color: rgba(255,255,255,0.9);
+}
+
+[data-bs-theme="dark"] .notifications-dropdown .dropdown-item:hover {
+  background-color: rgba(60,60,60,0.8);
+}
+
+[data-bs-theme="dark"] .notifications-dropdown .dropdown-item.active {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+[data-bs-theme="dark"] .notifications-actions .btn-outline-primary {
+  border-color: var(--bs-primary);
+  color: var(--bs-primary);
+}
+
+[data-bs-theme="dark"] .notifications-actions .btn-outline-primary:hover {
+  background-color: var(--bs-primary);
+  color: white;
+}
+
+[data-bs-theme="dark"] .notifications-actions .btn-outline-danger {
+  border-color: var(--bs-danger);
+  color: var(--bs-danger);
+}
+
+[data-bs-theme="dark"] .notifications-actions .btn-outline-danger:hover {
+  background-color: var(--bs-danger);
+  color: white;
 }
 
 /* Floating action button fix */
