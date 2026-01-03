@@ -14,7 +14,7 @@
 
 class NotificationSoundService {
   private audioContext: AudioContext | null = null;
-  private soundEnabled: boolean = true;
+  private soundEnabled: boolean = false; // Default to false per requirements
   private soundVolume: number = 0.7;
   private lastPlayTime: number = 0;
   private minPlayInterval: number = 500;
@@ -26,13 +26,18 @@ class NotificationSoundService {
   private maxQueueSize: number = 3;
   private initializationPromise: Promise<void> | null = null;
   private audioUnlocked: boolean = false;
+  private permissionState: 'prompt' | 'granted' | 'denied' = 'prompt'; // New permission state
 
   constructor() {
     this.loadUserPreferences();
     this.initializeAudioContext();
     this.createAudioElement();
     this.setupVisibilityListener();
-    this.setupUnlockListener();
+    
+    // Only setup unlock listener if permission was already granted
+    if (this.permissionState === 'granted') {
+      this.setupUnlockListener();
+    }
   }
 
   /**
@@ -231,14 +236,26 @@ class NotificationSoundService {
    */
   private loadUserPreferences(): void {
     try {
-      const soundEnabled = localStorage.getItem('notificationSoundEnabled');
+      const permissionState = localStorage.getItem('notificationSoundPermission') as 'prompt' | 'granted' | 'denied' | null;
       const soundVolume = localStorage.getItem('notificationSoundVolume');
       
-      this.soundEnabled = soundEnabled !== 'false'; // Default to true
+      // Load permission state (default to 'prompt')
+      this.permissionState = permissionState || 'prompt';
+      
+      // Sound is only enabled if permission was granted
+      this.soundEnabled = this.permissionState === 'granted';
+      
+      // Load volume
       this.soundVolume = soundVolume ? Math.max(0, Math.min(1, parseFloat(soundVolume))) : 0.7;
       
       // Update audio elements
       this.updateVolume();
+      
+      console.log('🔊 Loaded sound preferences:', {
+        permissionState: this.permissionState,
+        soundEnabled: this.soundEnabled,
+        soundVolume: this.soundVolume
+      });
       
     } catch (error) {
       console.warn('Failed to load sound preferences:', error);
@@ -246,12 +263,86 @@ class NotificationSoundService {
   }
 
   /**
+   * Check if we should show the permission prompt
+   * Returns true only if permission is in 'prompt' state (not yet decided)
+   */
+  public shouldShowPermissionPrompt(): boolean {
+    return this.permissionState === 'prompt';
+  }
+
+  /**
+   * Grant sound permission and initialize audio
+   * This should be called when user clicks "OK" or "Enable Sounds"
+   */
+  public async grantSoundPermission(): Promise<void> {
+    console.log('✅ Granting sound permission...');
+    
+    this.permissionState = 'granted';
+    this.soundEnabled = true;
+    
+    // Save preference
+    this.saveUserPreferences();
+    
+    // Initialize audio on this user interaction
+    await this.initializeOnUserInteraction();
+    
+    // Setup unlock listener for future interactions
+    this.setupUnlockListener();
+    
+    console.log('✅ Sound permission granted and audio initialized');
+  }
+
+  /**
+   * Deny sound permission
+   * This should be called when user clicks "Cancel" or "Not Now"
+   */
+  public denySoundPermission(): void {
+    console.log('🔇 Denying sound permission...');
+    
+    this.permissionState = 'denied';
+    this.soundEnabled = false;
+    
+    // Save preference
+    this.saveUserPreferences();
+    
+    console.log('🔇 Sound permission denied');
+  }
+
+  /**
+   * Reset permission state back to 'prompt'
+   * Useful for testing or allowing users to change their mind
+   */
+  public resetPermission(): void {
+    console.log('🔄 Resetting sound permission...');
+    
+    this.permissionState = 'prompt';
+    this.soundEnabled = false;
+    
+    // Save preference
+    this.saveUserPreferences();
+    
+    console.log('🔄 Sound permission reset to prompt state');
+  }
+
+  /**
+   * Get current permission state
+   */
+  public getPermissionState(): 'prompt' | 'granted' | 'denied' {
+    return this.permissionState;
+  }
+
+  /**
    * Save user sound preferences to localStorage
    */
   private saveUserPreferences(): void {
     try {
-      localStorage.setItem('notificationSoundEnabled', this.soundEnabled.toString());
+      localStorage.setItem('notificationSoundPermission', this.permissionState);
       localStorage.setItem('notificationSoundVolume', this.soundVolume.toString());
+      
+      console.log('💾 Saved sound preferences:', {
+        permissionState: this.permissionState,
+        soundVolume: this.soundVolume
+      });
     } catch (error) {
       console.warn('Failed to save sound preferences:', error);
     }
@@ -368,7 +459,9 @@ class NotificationSoundService {
       console.warn('Audio state:', {
         isInitialized: this.isInitialized,
         audioUnlocked: this.audioUnlocked,
-        audioContextState: this.audioContext?.state
+        audioContextState: this.audioContext?.state,
+        permissionState: this.permissionState,
+        environment: process.env.NODE_ENV
       });
       return; // Fail gracefully instead of attempting to initialize
     }
@@ -390,8 +483,17 @@ class NotificationSoundService {
         await this.playHTML5Audio();
         playSuccess = true;
         console.log('✅ Sound played via HTML5 Audio');
-      } catch (html5Error) {
+      } catch (html5Error: any) {
         console.warn('⚠️ HTML5 Audio failed:', html5Error);
+        console.warn('Error details:', {
+          name: html5Error?.name,
+          message: html5Error?.message,
+          audioElementState: {
+            readyState: this.audioElement?.readyState,
+            paused: this.audioElement?.paused,
+            src: this.audioElement?.src?.substring(0, 50)
+          }
+        });
       }
       
       // Fallback to Web Audio API if HTML5 failed
@@ -408,6 +510,11 @@ class NotificationSoundService {
       if (!playSuccess) {
         console.error('❌ All audio playback methods failed');
         console.error('This usually means audio was not properly initialized on user interaction');
+        console.error('Environment:', {
+          isProduction: process.env.NODE_ENV === 'production',
+          protocol: window.location.protocol,
+          isHTTPS: window.location.protocol === 'https:'
+        });
       }
       
     } catch (error) {
@@ -480,6 +587,11 @@ class NotificationSoundService {
     if (!this.audioContext) {
       const error = 'AudioContext not available - audio initialization may have failed';
       console.error('❌', error);
+      console.error('Environment info:', {
+        isProduction: process.env.NODE_ENV === 'production',
+        protocol: window.location.protocol,
+        userAgent: navigator.userAgent
+      });
       throw new Error(error);
     }
 
@@ -488,6 +600,14 @@ class NotificationSoundService {
     if (this.audioContext.state === 'suspended') {
       try {
         console.log('▶️ Resuming suspended audio context...');
+        console.log('Environment:', {
+          isProduction: process.env.NODE_ENV === 'production',
+          isHTTPS: window.location.protocol === 'https:',
+          browser: navigator.userAgent.includes('Chrome') ? 'Chrome' : 
+                   navigator.userAgent.includes('Firefox') ? 'Firefox' : 
+                   navigator.userAgent.includes('Safari') ? 'Safari' : 'Other'
+        });
+        
         await this.audioContext.resume();
         
         // Check the state after resume (use type assertion to avoid TypeScript narrowing issue)
@@ -504,6 +624,11 @@ class NotificationSoundService {
       } catch (error) {
         console.error('❌ Failed to resume audio context:', error);
         console.error('This usually means there was no recent user interaction');
+        console.error('Additional context:', {
+          permissionState: this.permissionState,
+          isInitialized: this.isInitialized,
+          audioUnlocked: this.audioUnlocked
+        });
         throw error;
       }
     } else if (this.audioContext.state === 'running') {
