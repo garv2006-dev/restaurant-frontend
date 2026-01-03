@@ -1,0 +1,241 @@
+/* Sound Permission Toast - Browser-style permission prompt */
+.sound-permission-toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  max-width: 420px;
+  animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.sound-permission-toast {
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.12),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.sound-permission-toast .toast-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 14px 18px;
+  font-weight: 600;
+}
+
+.sound-permission-toast .toast-body {
+  padding: 18px;
+  background: white;
+}
+
+.sound-permission-toast .toast-body p {
+  color: #495057;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.sound-permission-toast .btn {
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border-width: 1px;
+}
+
+.sound-permission-toast .btn-primary {
+  background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+  border-color: #0d6efd;
+}
+
+.sound-permission-toast .btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.sound-permission-toast .btn-outline-secondary {
+  background: transparent;
+  border-color: #dee2e6;
+  color: #6c757d;
+}
+
+.sound-permission-toast .btn-outline-secondary:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+  color: #495057;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.sound-permission-toast .btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sound-permission-toast .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.sound-permission-toast .btn-close {
+  opacity: 0.4;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  padding: 0.5rem;
+}
+
+.sound-permission-toast .btn-close:hover:not(:disabled) {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+.sound-permission-toast .btn-close:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+/* Icon animations */
+.sound-permission-toast .toast-header svg {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .sound-permission-toast {
+    background: #2d3748;
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 
+      0 10px 40px rgba(0, 0, 0, 0.4),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .sound-permission-toast .toast-header {
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+  }
+
+  .sound-permission-toast .toast-body {
+    background: #2d3748;
+    color: #e5e7eb;
+  }
+
+  .sound-permission-toast .toast-body p {
+    color: #d1d5db;
+  }
+
+  .sound-permission-toast .btn-outline-secondary {
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #d1d5db;
+  }
+
+  .sound-permission-toast .btn-outline-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #f3f4f6;
+  }
+
+  .sound-permission-toast .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 576px) {
+  .sound-permission-toast-container {
+    bottom: 16px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+  }
+
+  .sound-permission-toast .toast-header {
+    padding: 12px 14px;
+  }
+
+  .sound-permission-toast .toast-body {
+    padding: 14px;
+  }
+
+  .sound-permission-toast .toast-body p {
+    font-size: 0.85rem;
+  }
+
+  .sound-permission-toast .btn {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+
+  .sound-permission-toast .d-flex {
+    flex-wrap: wrap;
+  }
+
+  .sound-permission-toast .btn {
+    flex: 1;
+    min-width: 100px;
+  }
+}
+
+/* Tablet responsive */
+@media (max-width: 768px) and (min-width: 577px) {
+  .sound-permission-toast-container {
+    bottom: 20px;
+    right: 20px;
+    max-width: 380px;
+  }
+}
+
+/* Accessibility - High contrast mode */
+@media (prefers-contrast: high) {
+  .sound-permission-toast {
+    border-width: 2px;
+    border-color: currentColor;
+  }
+
+  .sound-permission-toast .btn {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .sound-permission-toast-container {
+    animation: none;
+  }
+
+  .sound-permission-toast .toast-header svg {
+    animation: none;
+  }
+
+  .sound-permission-toast .btn {
+    transition: none;
+  }
+
+  .sound-permission-toast .btn-close {
+    transition: none;
+  }
+}

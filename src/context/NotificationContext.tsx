@@ -329,51 +329,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   }, [isAuthenticated, user]);
 
-  // Initialize audio context on user interaction
-  useEffect(() => {
-    let initializationAttempted = false;
-
-    const initializeAudio = async () => {
-      // Prevent multiple simultaneous initialization attempts
-      if (initializationAttempted) {
-        console.log('⏭️ Audio initialization already attempted');
-        return;
-      }
-      
-      // Check if service is already initialized
-      if (notificationSoundService.isReady()) {
-        console.log('✅ Audio already initialized and ready');
-        return;
-      }
-      
-      initializationAttempted = true;
-      console.log('🎬 Initializing audio on user interaction...');
-      
-      try {
-        await notificationSoundService.initializeOnUserInteraction();
-        console.log('✅ Audio initialized successfully');
-        console.log('🔊 Notification sounds are now enabled');
-      } catch (error) {
-        console.error('❌ Failed to initialize audio:', error);
-        initializationAttempted = false; // Allow retry on next interaction
-      }
-    };
-
-    // Listen for multiple interaction types with 'once' option
-    // This automatically removes listeners after first fire
-    document.addEventListener('click', initializeAudio, { once: true, passive: true });
-    document.addEventListener('keydown', initializeAudio, { once: true, passive: true });
-    document.addEventListener('touchstart', initializeAudio, { once: true, passive: true });
-    document.addEventListener('mousedown', initializeAudio, { once: true, passive: true });
-
-    return () => {
-      // Cleanup in case component unmounts before interaction
-      document.removeEventListener('click', initializeAudio);
-      document.removeEventListener('keydown', initializeAudio);
-      document.removeEventListener('touchstart', initializeAudio);
-      document.removeEventListener('mousedown', initializeAudio);
-    };
-  }, []);
+  // Note: Audio initialization is now handled by SoundPermissionToast
+  // No automatic initialization on user interaction - user must explicitly grant permission
 
   // Socket.io real-time notification listener
   useEffect(() => {

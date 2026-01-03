@@ -14,7 +14,8 @@ import Layout from './components/layout/Layout';
 
 // Notification Components
 import NotificationDisplay from './components/notifications/NotificationDisplay';
-import AudioStatusIndicator from './components/notifications/AudioStatusIndicator';
+import SoundPermissionToast from './components/notifications/SoundPermissionToast';
+// import AudioStatusIndicator from './components/notifications/AudioStatusIndicator'; // Removed - alert not needed
 
 // Services
 import './services/RealTimeNotificationService'; // Initialize real-time notifications
@@ -175,8 +176,14 @@ function App() {
                 maxNotifications={5} 
               />
               
-              {/* Audio Status Indicator - Shows when audio needs initialization */}
-              <AudioStatusIndicator />
+              {/* Sound Permission Toast - Browser-style permission prompt */}
+              <SoundPermissionToast 
+                onPermissionGranted={() => console.log('✅ User granted sound permission')}
+                onPermissionDenied={() => console.log('🔇 User denied sound permission')}
+              />
+              
+              {/* Audio Status Indicator - Removed to hide alert message */}
+              {/* <AudioStatusIndicator /> */}
             </NotificationProvider>
           </SocketProvider>
         </AuthProvider>
