@@ -14,6 +14,7 @@ import Layout from './components/layout/Layout';
 
 // Notification Components
 import NotificationDisplay from './components/notifications/NotificationDisplay';
+import AudioStatusIndicator from './components/notifications/AudioStatusIndicator';
 
 // Services
 import './services/RealTimeNotificationService'; // Initialize real-time notifications
@@ -173,6 +174,9 @@ function App() {
                 position="top-end" 
                 maxNotifications={5} 
               />
+              
+              {/* Audio Status Indicator - Shows when audio needs initialization */}
+              <AudioStatusIndicator />
             </NotificationProvider>
           </SocketProvider>
         </AuthProvider>

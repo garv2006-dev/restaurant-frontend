@@ -57,7 +57,7 @@
 .notification-header-content {
   display: flex;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 0;
   flex: 1;
 }
 
@@ -119,6 +119,11 @@
 .notification-toast-body {
   padding: 0 1rem 1rem;
   background: transparent;
+  transition: all 0.3s ease;
+}
+
+.notification-toast.collapsed .notification-toast-body {
+  padding-bottom: 0.75rem;
 }
 
 .notification-message {
@@ -126,32 +131,48 @@
   color: #495057;
   line-height: 1.4;
   margin: 0;
+  transition: all 0.3s ease;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
-/* Notification Icons */
-.notification-icon {
-  flex-shrink: 0;
-  margin-top: 0.125rem;
+/* Collapsed state - single line with ellipsis */
+.notification-message.collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
-.notification-icon.booking {
+/* Expanded state - show full message */
+.notification-message.expanded {
+  display: block;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Expand hint */
+.notification-expand-hint {
+  display: block;
+  font-size: 0.75rem;
   color: #007bff;
+  margin-top: 0.25rem;
+  font-style: italic;
+  opacity: 0.8;
 }
 
-.notification-icon.promotion {
-  color: #ffc107;
+/* Hover effect on body to indicate clickability */
+.notification-toast-body:hover {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 0.5rem;
 }
 
-.notification-icon.payment {
-  color: #28a745;
-}
-
-.notification-icon.system {
-  color: #17a2b8;
-}
-
-.notification-icon.default {
-  color: #6c757d;
+.notification-toast.collapsed .notification-toast-body:hover .notification-expand-hint {
+  opacity: 1;
+  text-decoration: underline;
 }
 
 /* Animations */
@@ -197,6 +218,10 @@
     padding: 0 0.75rem 0.75rem;
   }
   
+  .notification-toast.collapsed .notification-toast-body {
+    padding-bottom: 0.5rem;
+  }
+  
   .notification-header-content {
     gap: 0.5rem;
   }
@@ -209,9 +234,18 @@
     font-size: 0.8rem;
   }
   
+  .notification-message.collapsed {
+    font-size: 0.8rem;
+    max-width: 220px;
+  }
+  
   .notification-type-badge {
     font-size: 0.65rem;
     padding: 0.2rem 0.4rem;
+  }
+  
+  .notification-expand-hint {
+    font-size: 0.7rem;
   }
 }
 
@@ -222,6 +256,10 @@
     max-width: 300px;
     margin-left: 0.5rem;
     margin-right: 0.5rem;
+  }
+  
+  .notification-message.collapsed {
+    max-width: 200px;
   }
   
   .notification-display-container[class*="top-"] {
@@ -308,6 +346,14 @@
   .notification-close:hover {
     background: rgba(255, 255, 255, 0.1);
     color: #e2e8f0;
+  }
+  
+  .notification-expand-hint {
+    color: #63b3ed;
+  }
+  
+  .notification-toast-body:hover {
+    background: rgba(255, 255, 255, 0.05);
   }
 }
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Badge, Button, Nav, Tab, Dropdown, Spinner, Alert } from 'react-bootstrap';
-import { Bell, Check, ChevronDown } from 'lucide-react';
+import { Bell, Check, ChevronDown, Trash2, X } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import VolumeControl from '../components/notifications/VolumeControl';
 import '../styles/notifications-responsive.css';
@@ -20,6 +20,19 @@ const NotificationsPage: React.FC = () => {
   } = useNotifications();
   
   const [activeTab, setActiveTab] = useState('all');
+  const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpandedNotifications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   // Fetch notifications based on active tab
   useEffect(() => {
@@ -127,12 +140,13 @@ const NotificationsPage: React.FC = () => {
             {unreadCount > 0 && (
               <Button variant="outline-primary" onClick={markAllAsRead}>
                 <Check size={16} className="me-1" />
-                Mark All Read
+              
               </Button>
             )}
             {notifications.length > 0 && (
               <Button variant="outline-danger" onClick={clearAllNotifications}>
-                Clear All
+                <Trash2 size={16} className="me-1" />
+                
               </Button>
             )}
           </div>
@@ -214,53 +228,71 @@ const NotificationsPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="notifications-container">
-                  {filteredNotifications.map((notification) => (
-                    <Card 
-                      key={notification.id} 
-                      className={`notification-card ${!notification.read ? 'unread' : ''}`}
-                      onClick={() => markAsRead(notification.id)}
-                    >
-                      <Card.Body>
-                        <div className="notification-content">
-                          <div className="notification-icon">
-                            {notification.icon}
-                          </div>
-                          <div className="notification-details">
-                            <div className="notification-header">
-                              <div className="notification-title">
-                                <h6>
-                                  {notification.title}
-                                  {!notification.read && (
-                                    <Badge bg="primary" pill>New</Badge>
-                                  )}
-                                </h6>
-                                <Badge bg={getTypeColor(notification.type)}>
-                                  {notification.type === 'room_booking' ? 'Room Booking' : 
-                                   notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-                                </Badge>
-                              </div>
-                              <div className="notification-meta">
-                                <div className="notification-time">
-                                  {formatTimestamp(notification.timestamp)}
+                  {filteredNotifications.map((notification) => {
+                    const isExpanded = expandedNotifications.has(notification.id);
+                    const isLongMessage = notification.message.length > 80;
+                    
+                    return (
+                      <Card 
+                        key={notification.id} 
+                        className={`notification-card ${!notification.read ? 'unread' : ''} ${isExpanded ? 'expanded' : 'collapsed'}`}
+                      >
+                        <Card.Body>
+                          <div className="notification-content">
+                            <div className="notification-details">
+                              <div className="notification-header">
+                                <div className="notification-title">
+                                  <h6>
+                                    {notification.title}
+                                    {!notification.read && (
+                                      <Badge bg="primary" pill>New</Badge>
+                                    )}
+                                  </h6>
+                                  <Badge bg={getTypeColor(notification.type)}>
+                                    {notification.type === 'room_booking' ? 'Room Booking' : 
+                                     notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
+                                  </Badge>
                                 </div>
-                                <Button
-                                  variant="link"
-                                  className="notification-delete"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    deleteNotification(notification.id);
-                                  }}
-                                >
-                                  Delete
-                                </Button>
+                                <div className="notification-meta">
+                                  <div className="notification-time">
+                                    {formatTimestamp(notification.timestamp)}
+                                  </div>
+                                  <Button
+                                    variant="link"
+                                    className="notification-delete"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteNotification(notification.id);
+                                    }}
+                                    aria-label="Delete notification"
+                                  >
+                                    <Trash2 size={16} />
+                                  </Button>
+                                </div>
+                              </div>
+                              <div 
+                                className="notification-message-wrapper"
+                                onClick={() => {
+                                  markAsRead(notification.id);
+                                  if (isLongMessage) {
+                                    toggleExpanded(notification.id);
+                                  }
+                                }}
+                                style={{ cursor: isLongMessage ? 'pointer' : 'default' }}
+                              >
+                                <p className={`notification-message ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                                  {notification.message}
+                                </p>
+                                {!isExpanded && isLongMessage && (
+                                  <span className="notification-expand-hint">Click to read more...</span>
+                                )}
                               </div>
                             </div>
-                            <p className="notification-message">{notification.message}</p>
                           </div>
-                        </div>
-                      </Card.Body>
-                    </Card>
-                  ))}
+                        </Card.Body>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </Tab.Pane>
