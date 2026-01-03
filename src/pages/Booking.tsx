@@ -8,6 +8,7 @@ import { differenceInDays } from 'date-fns';
 import type { Room, Booking as BookingType, BookingFormData } from '../types';
 import { triggerBookingNotification } from '../utils/bookingNotification';
 import DiscountCode from '../components/booking/DiscountCode';
+import { toast } from 'react-toastify';
 
 const Booking: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -28,6 +29,38 @@ const Booking: React.FC = () => {
   const [totalAmount, setTotalAmount] = useState(0);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'Cash' | 'Card' | 'UPI' | 'Online'>('Cash');
   const [pendingBookingPayload, setPendingBookingPayload] = useState<any | null>(null);
+  
+  // Payment method specific modals
+  const [showCardPaymentModal, setShowCardPaymentModal] = useState(false);
+  const [showUPIPaymentModal, setShowUPIPaymentModal] = useState(false);
+  const [showOnlineBankingModal, setShowOnlineBankingModal] = useState(false);
+  
+  // Payment details state
+  const [cardDetails, setCardDetails] = useState({
+    cardNumber: '',
+    cardHolderName: '',
+    expiryMonth: '',
+    expiryYear: '',
+    cvv: ''
+  });
+  
+  const [upiDetails, setUpiDetails] = useState({
+    upiId: '',
+    upiName: ''
+  });
+  
+  const [bankingDetails, setBankingDetails] = useState({
+    bankName: '',
+    accountNumber: '',
+    ifscCode: ''
+  });
+  
+  const [processingPayment, setProcessingPayment] = useState(false);
+  
+  // Payment validation errors
+  const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
+  const [upiErrors, setUpiErrors] = useState<Record<string, string>>({});
+  const [bankingErrors, setBankingErrors] = useState<Record<string, string>>({});
   
   // Discount state
   const [appliedDiscount, setAppliedDiscount] = useState<{
@@ -331,14 +364,43 @@ const Booking: React.FC = () => {
   const handleConfirmPayment = async () => {
     if (!pendingBookingPayload || !selectedRoom) return;
 
+    // Validate payment method selection
+    if (!selectedPaymentMethod) {
+      setBookingError('Please select a payment method');
+      return;
+    }
+
+    // For Cash payment, proceed directly
+    if (selectedPaymentMethod === 'Cash') {
+      await processBookingWithPayment(null);
+      return;
+    }
+
+    // For other payment methods, open respective modals
+    setShowPaymentModal(false);
+    
+    if (selectedPaymentMethod === 'Card') {
+      setShowCardPaymentModal(true);
+    } else if (selectedPaymentMethod === 'UPI') {
+      setShowUPIPaymentModal(true);
+    } else if (selectedPaymentMethod === 'Online') {
+      setShowOnlineBankingModal(true);
+    }
+  };
+
+  // Process booking with payment details
+  const processBookingWithPayment = async (paymentData: any) => {
+    if (!pendingBookingPayload || !selectedRoom) return;
+
     try {
-      setSubmitting(true);
+      setProcessingPayment(true);
       setBookingError(null);
 
       const payload = {
         ...pendingBookingPayload,
         paymentDetails: {
-          method: selectedPaymentMethod
+          method: selectedPaymentMethod,
+          ...paymentData
         },
         // Include discount code if applied
         ...(appliedDiscount && { discountCode: appliedDiscount.code })
@@ -351,15 +413,38 @@ const Booking: React.FC = () => {
 
       if (response?.success) {
         setSuccess(true);
+        
+        // Close all modals
         setShowPaymentModal(false);
-        alert('Booking confirmed successfully!');
+        setShowCardPaymentModal(false);
+        setShowUPIPaymentModal(false);
+        setShowOnlineBankingModal(false);
+        
+        // Clear form and reset state
+        setPendingBookingPayload(null);
+        setAppliedDiscount(null);
+        setSelectedPaymentMethod('Cash');
+        setCardDetails({ cardNumber: '', cardHolderName: '', expiryMonth: '', expiryYear: '', cvv: '' });
+        setUpiDetails({ upiId: '', upiName: '' });
+        setBankingDetails({ bankName: '', accountNumber: '', ifscCode: '' });
+        setCardErrors({});
+        setUpiErrors({});
+        setBankingErrors({});
+        
+        const bookingId = response.data?.bookingId || 'your booking';
+        toast.success(`Booking received successfully! Your booking ID is ${bookingId}. Awaiting admin confirmation.`, {
+          position: "top-right",
+          autoClose: 6000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         
         // Trigger notification
         if ((response.data as any)?.notificationTrigger) {
           console.log('Triggering notification:', (response.data as any).notificationTrigger);
           triggerBookingNotification((response.data as any).notificationTrigger);
-        } else {
-          console.log('No notification trigger in response');
         }
         
         navigate('/bookings');
@@ -370,13 +455,11 @@ const Booking: React.FC = () => {
       console.error('Booking error:', error);
       let errorMessage = 'Failed to submit booking. Please try again.';
 
-      // Better error handling for different types of errors
       if (error.code === 'ERR_NETWORK' || error.code === 'NETWORK_ERROR') {
         errorMessage = 'Cannot connect to server. Please check if the backend server is running on port 5000.';
       } else if (error.code === 'ECONNREFUSED') {
         errorMessage = 'Connection refused. Please ensure the backend server is running.';
       } else if (error.response) {
-        // Server responded with error status
         const status = error.response.status;
         if (status === 404) {
           errorMessage = 'Booking service not found. Please contact support.';
@@ -384,22 +467,355 @@ const Booking: React.FC = () => {
           errorMessage = 'Authentication failed. Please log in again.';
         } else if (status === 403) {
           errorMessage = 'Access denied. Please check your permissions.';
+        } else if (status === 400) {
+          errorMessage = error.response.data?.message || 'Invalid booking data. Please check your information.';
         } else if (status >= 500) {
           errorMessage = 'Server error. Please try again later or contact support.';
         } else {
           errorMessage = error.response.data?.message || error.response.statusText || errorMessage;
         }
       } else if (error.request) {
-        // Request was made but no response received
         errorMessage = 'No response from server. Please check your connection and ensure the backend server is running on port 5000.';
       } else if (error.message) {
         errorMessage = error.message;
       }
 
       setBookingError(errorMessage);
+      
+      // Reopen payment modal on error
+      setShowPaymentModal(true);
+      setShowCardPaymentModal(false);
+      setShowUPIPaymentModal(false);
+      setShowOnlineBankingModal(false);
     } finally {
-      setSubmitting(false);
+      setProcessingPayment(false);
     }
+  };
+
+  // Handle card payment submission
+  const handleCardPaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate all card fields
+    const newErrors: Record<string, string> = {};
+    
+    const cardNumberError = validateCardNumber(cardDetails.cardNumber);
+    if (cardNumberError) newErrors.cardNumber = cardNumberError;
+    
+    const nameError = validateCardHolderName(cardDetails.cardHolderName);
+    if (nameError) newErrors.cardHolderName = nameError;
+    
+    const expiryError = validateExpiryDate(cardDetails.expiryMonth, cardDetails.expiryYear);
+    if (expiryError) newErrors.expiry = expiryError;
+    
+    const cvvError = validateCVV(cardDetails.cvv, cardDetails.cardNumber);
+    if (cvvError) newErrors.cvv = cvvError;
+    
+    if (Object.keys(newErrors).length > 0) {
+      setCardErrors(newErrors);
+      toast.error('Please fix all validation errors before proceeding');
+      return;
+    }
+
+    // Simulate payment processing and generate transaction ID
+    const transactionId = `CARD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const paymentData = {
+      transactionId,
+      cardLast4: cardDetails.cardNumber.slice(-4),
+      cardHolderName: cardDetails.cardHolderName,
+      cardBrand: getCardBrand(cardDetails.cardNumber)
+    };
+
+    await processBookingWithPayment(paymentData);
+  };
+
+  // Handle UPI payment submission
+  const handleUPIPaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate UPI details
+    const upiError = validateUPIId(upiDetails.upiId);
+    if (upiError) {
+      setUpiErrors({ upiId: upiError });
+      toast.error('Please fix validation errors before proceeding');
+      return;
+    }
+
+    // Simulate payment processing and generate transaction ID
+    const transactionId = `UPI_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const paymentData = {
+      transactionId,
+      upiId: upiDetails.upiId,
+      upiName: upiDetails.upiName || 'UPI User'
+    };
+
+    await processBookingWithPayment(paymentData);
+  };
+
+  // Handle online banking payment submission
+  const handleOnlineBankingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate banking details
+    const newErrors: Record<string, string> = {};
+    
+    const bankError = validateBankName(bankingDetails.bankName);
+    if (bankError) newErrors.bankName = bankError;
+    
+    if (bankingDetails.accountNumber) {
+      const accError = validateAccountNumber(bankingDetails.accountNumber);
+      if (accError) newErrors.accountNumber = accError;
+    }
+    
+    if (bankingDetails.ifscCode) {
+      const ifscError = validateIFSC(bankingDetails.ifscCode);
+      if (ifscError) newErrors.ifscCode = ifscError;
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setBankingErrors(newErrors);
+      toast.error('Please fix validation errors before proceeding');
+      return;
+    }
+
+    // Simulate payment processing and generate transaction ID
+    const transactionId = `BANK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const paymentData = {
+      transactionId,
+      bankName: bankingDetails.bankName,
+      accountLast4: bankingDetails.accountNumber ? bankingDetails.accountNumber.slice(-4) : 'XXXX'
+    };
+
+    await processBookingWithPayment(paymentData);
+  };
+
+  // Get card brand from card number
+  const getCardBrand = (cardNumber: string): string => {
+    const number = cardNumber.replace(/\s/g, '');
+    if (/^4/.test(number)) return 'Visa';
+    if (/^5[1-5]/.test(number)) return 'Mastercard';
+    if (/^3[47]/.test(number)) return 'American Express';
+    if (/^6(?:011|5)/.test(number)) return 'Discover';
+    return 'Unknown';
+  };
+
+  // Real-time Card Validation
+  const validateCardNumber = (cardNumber: string): string => {
+    const number = cardNumber.replace(/\s/g, '');
+    if (!number) return 'Card number is required';
+    if (number.length < 13) return 'Card number must be at least 13 digits';
+    if (number.length > 19) return 'Card number is too long';
+    if (!/^\d+$/.test(number)) return 'Card number must contain only digits';
+    
+    // Luhn algorithm validation
+    let sum = 0;
+    let isEven = false;
+    for (let i = number.length - 1; i >= 0; i--) {
+      let digit = parseInt(number[i]);
+      if (isEven) {
+        digit *= 2;
+        if (digit > 9) digit -= 9;
+      }
+      sum += digit;
+      isEven = !isEven;
+    }
+    if (sum % 10 !== 0) return 'Invalid card number';
+    
+    return '';
+  };
+
+  const validateCardHolderName = (name: string): string => {
+    if (!name.trim()) return 'Card holder name is required';
+    if (name.trim().length < 3) return 'Name must be at least 3 characters';
+    if (!/^[a-zA-Z\s]+$/.test(name)) return 'Name must contain only letters';
+    return '';
+  };
+
+  const validateExpiryDate = (month: string, year: string): string => {
+    if (!month) return 'Expiry month is required';
+    if (!year) return 'Expiry year is required';
+    
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth() + 1;
+    
+    const expYear = parseInt(year);
+    const expMonth = parseInt(month);
+    
+    if (expYear < currentYear) return 'Card has expired';
+    if (expYear === currentYear && expMonth < currentMonth) return 'Card has expired';
+    
+    return '';
+  };
+
+  const validateCVV = (cvv: string, cardNumber: string): string => {
+    if (!cvv) return 'CVV is required';
+    const number = cardNumber.replace(/\s/g, '');
+    const isAmex = /^3[47]/.test(number);
+    const requiredLength = isAmex ? 4 : 3;
+    
+    if (cvv.length !== requiredLength) {
+      return `CVV must be ${requiredLength} digits for ${isAmex ? 'American Express' : 'this card'}`;
+    }
+    if (!/^\d+$/.test(cvv)) return 'CVV must contain only digits';
+    
+    return '';
+  };
+
+  // Real-time UPI Validation
+  const validateUPIId = (upiId: string): string => {
+    if (!upiId.trim()) return 'UPI ID is required';
+    
+    // UPI ID format: username@provider
+    const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/;
+    if (!upiRegex.test(upiId)) {
+      return 'Invalid UPI ID format (e.g., yourname@paytm)';
+    }
+    
+    const [username, provider] = upiId.split('@');
+    if (username.length < 3) return 'UPI username must be at least 3 characters';
+    
+    const validProviders = ['paytm', 'googlepay', 'phonepe', 'amazonpay', 'bhim', 'ybl', 'okaxis', 'oksbi', 'okicici', 'okhdfcbank', 'axl', 'ibl', 'icici'];
+    if (!validProviders.includes(provider.toLowerCase())) {
+      return 'Please use a valid UPI provider (e.g., paytm, googlepay, phonepe)';
+    }
+    
+    return '';
+  };
+
+  // Real-time Banking Validation
+  const validateBankName = (bankName: string): string => {
+    if (!bankName) return 'Please select a bank';
+    return '';
+  };
+
+  const validateAccountNumber = (accountNumber: string): string => {
+    if (!accountNumber) return ''; // Optional field
+    
+    const number = accountNumber.replace(/\s/g, '');
+    if (number.length < 9) return 'Account number must be at least 9 digits';
+    if (number.length > 18) return 'Account number is too long';
+    if (!/^\d+$/.test(number)) return 'Account number must contain only digits';
+    
+    return '';
+  };
+
+  const validateIFSC = (ifscCode: string): string => {
+    if (!ifscCode) return ''; // Optional field
+    
+    // IFSC format: 4 letters + 0 + 6 alphanumeric
+    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+    if (!ifscRegex.test(ifscCode)) {
+      return 'Invalid IFSC code format (e.g., SBIN0001234)';
+    }
+    
+    return '';
+  };
+
+  // Handle card input changes with validation
+  const handleCardInputChange = (field: string, value: string) => {
+    const newCardDetails = { ...cardDetails, [field]: value };
+    setCardDetails(newCardDetails);
+    
+    const newErrors = { ...cardErrors };
+    
+    switch (field) {
+      case 'cardNumber':
+        const error = validateCardNumber(value);
+        if (error) {
+          newErrors.cardNumber = error;
+        } else {
+          delete newErrors.cardNumber;
+        }
+        break;
+      case 'cardHolderName':
+        const nameError = validateCardHolderName(value);
+        if (nameError) {
+          newErrors.cardHolderName = nameError;
+        } else {
+          delete newErrors.cardHolderName;
+        }
+        break;
+      case 'cvv':
+        const cvvError = validateCVV(value, newCardDetails.cardNumber);
+        if (cvvError) {
+          newErrors.cvv = cvvError;
+        } else {
+          delete newErrors.cvv;
+        }
+        break;
+      case 'expiryMonth':
+      case 'expiryYear':
+        const expiryError = validateExpiryDate(
+          field === 'expiryMonth' ? value : newCardDetails.expiryMonth,
+          field === 'expiryYear' ? value : newCardDetails.expiryYear
+        );
+        if (expiryError) {
+          newErrors.expiry = expiryError;
+        } else {
+          delete newErrors.expiry;
+        }
+        break;
+    }
+    
+    setCardErrors(newErrors);
+  };
+
+  // Handle UPI input changes with validation
+  const handleUPIInputChange = (field: string, value: string) => {
+    setUpiDetails({ ...upiDetails, [field]: value });
+    
+    const newErrors = { ...upiErrors };
+    
+    if (field === 'upiId') {
+      const error = validateUPIId(value);
+      if (error) {
+        newErrors.upiId = error;
+      } else {
+        delete newErrors.upiId;
+      }
+    }
+    
+    setUpiErrors(newErrors);
+  };
+
+  // Handle banking input changes with validation
+  const handleBankingInputChange = (field: string, value: string) => {
+    setBankingDetails({ ...bankingDetails, [field]: value });
+    
+    const newErrors = { ...bankingErrors };
+    
+    switch (field) {
+      case 'bankName':
+        const bankError = validateBankName(value);
+        if (bankError) {
+          newErrors.bankName = bankError;
+        } else {
+          delete newErrors.bankName;
+        }
+        break;
+      case 'accountNumber':
+        const accError = validateAccountNumber(value);
+        if (accError) {
+          newErrors.accountNumber = accError;
+        } else {
+          delete newErrors.accountNumber;
+        }
+        break;
+      case 'ifscCode':
+        const ifscError = validateIFSC(value);
+        if (ifscError) {
+          newErrors.ifscCode = ifscError;
+        } else {
+          delete newErrors.ifscCode;
+        }
+        break;
+    }
+    
+    setBankingErrors(newErrors);
   };
 
   // Calculate total price when dates or room changes
@@ -853,18 +1269,47 @@ const Booking: React.FC = () => {
             <Card.Body>
               <Form>
                 <Form.Group className="mb-3">
-                  <Form.Label>Select Payment Method</Form.Label>
+                  <Form.Label>Select Payment Method *</Form.Label>
                   <Form.Select
                     value={selectedPaymentMethod}
-                    onChange={(e) => setSelectedPaymentMethod(e.target.value as any)}
+                    onChange={(e) => {
+                      setSelectedPaymentMethod(e.target.value as any);
+                      setBookingError(null); // Clear errors when changing payment method
+                    }}
                     disabled={submitting}
+                    required
                   >
-                    <option value="Cash">Cash on Arrival</option>
-                    <option value="Card">Credit/Debit Card</option>
-                    <option value="UPI">UPI Payment</option>
-                    <option value="Online">Online Banking</option>
+                    <option value="Cash">💰 Cash on Arrival - Pay at hotel during check-in</option>
+                    <option value="Card">💳 Credit/Debit Card - Secure online payment</option>
+                    <option value="UPI">📱 UPI Payment - Quick UPI transfer</option>
+                    <option value="Online">🏦 Online Banking - Direct bank transfer</option>
                   </Form.Select>
+                  <Form.Text className="text-muted">
+                    {selectedPaymentMethod === 'Cash' && '✓ Your booking will be confirmed immediately. Pay at the hotel during check-in.'}
+                    {selectedPaymentMethod === 'Card' && '✓ Secure payment processing. Your booking will be confirmed after successful payment.'}
+                    {selectedPaymentMethod === 'UPI' && '✓ Fast and secure UPI payment. Booking confirmed after successful transaction.'}
+                    {selectedPaymentMethod === 'Online' && '✓ Direct bank transfer. Booking confirmed after payment verification.'}
+                  </Form.Text>
                 </Form.Group>
+                
+                {selectedPaymentMethod === 'Cash' && (
+                  <Alert variant="info" className="mb-0">
+                    <strong>Cash Payment Information:</strong>
+                    <ul className="mb-0 mt-2">
+                      <li>Your booking will be confirmed immediately</li>
+                      <li>No online payment required</li>
+                      <li>Pay the full amount at the hotel during check-in</li>
+                      <li>Cancellation policy applies as per terms</li>
+                    </ul>
+                  </Alert>
+                )}
+                
+                {selectedPaymentMethod !== 'Cash' && (
+                  <Alert variant="warning" className="mb-0">
+                    <strong>Online Payment:</strong>
+                    <p className="mb-0">You will be redirected to the payment gateway to complete your {selectedPaymentMethod} payment securely.</p>
+                  </Alert>
+                )}
               </Form>
             </Card.Body>
           </Card>
@@ -876,26 +1321,403 @@ const Booking: React.FC = () => {
               setShowPaymentModal(false);
               setShowBookingModal(true);
             }}
-            disabled={submitting}
+            disabled={submitting || processingPayment}
           >
             Back
           </Button>
           <Button 
             variant="primary" 
             onClick={handleConfirmPayment} 
-            disabled={submitting}
+            disabled={submitting || processingPayment}
             size="lg"
           >
-            {submitting ? (
+            {submitting || processingPayment ? (
               <>
                 <Spinner size="sm" className="me-2" />
                 Processing...
               </>
+            ) : selectedPaymentMethod === 'Cash' ? (
+              `Confirm Booking - Pay ₹${(appliedDiscount ? finalAmount : totalAmount).toFixed(2)} at Hotel`
             ) : (
-              `Pay ₹${(appliedDiscount ? finalAmount : totalAmount).toFixed(2)} & Confirm`
+              `Proceed to ${selectedPaymentMethod} Payment`
             )}
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Card Payment Modal */}
+      <Modal show={showCardPaymentModal} onHide={() => {
+        if (!processingPayment) {
+          setShowCardPaymentModal(false);
+          setCardErrors({});
+        }
+      }} centered>
+        <Modal.Header closeButton={!processingPayment}>
+          <Modal.Title>💳 Card Payment</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleCardPaymentSubmit}>
+          <Modal.Body>
+            {bookingError && (
+              <Alert variant="danger" className="mb-3">
+                {bookingError}
+              </Alert>
+            )}
+
+            <Alert variant="info" className="mb-3">
+              <strong>Amount to Pay:</strong> ₹{(appliedDiscount ? finalAmount : totalAmount).toFixed(2)}
+            </Alert>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Card Number *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="1234 5678 9012 3456"
+                value={cardDetails.cardNumber}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '').slice(0, 16);
+                  const formatted = value.match(/.{1,4}/g)?.join(' ') || value;
+                  handleCardInputChange('cardNumber', formatted);
+                }}
+                maxLength={19}
+                required
+                disabled={processingPayment}
+                isInvalid={!!cardErrors.cardNumber}
+              />
+              <Form.Control.Feedback type="invalid">
+                {cardErrors.cardNumber}
+              </Form.Control.Feedback>
+              {cardDetails.cardNumber && !cardErrors.cardNumber && (
+                <Form.Text className="text-success">
+                  ✓ {getCardBrand(cardDetails.cardNumber)} card detected
+                </Form.Text>
+              )}
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Card Holder Name *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="John Doe"
+                value={cardDetails.cardHolderName}
+                onChange={(e) => handleCardInputChange('cardHolderName', e.target.value)}
+                required
+                disabled={processingPayment}
+                isInvalid={!!cardErrors.cardHolderName}
+              />
+              <Form.Control.Feedback type="invalid">
+                {cardErrors.cardHolderName}
+              </Form.Control.Feedback>
+            </Form.Group>
+
+            <Row>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Month *</Form.Label>
+                  <Form.Select
+                    value={cardDetails.expiryMonth}
+                    onChange={(e) => handleCardInputChange('expiryMonth', e.target.value)}
+                    required
+                    disabled={processingPayment}
+                    isInvalid={!!cardErrors.expiry}
+                  >
+                    <option value="">MM</option>
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
+                      <option key={month} value={month.toString().padStart(2, '0')}>
+                        {month.toString().padStart(2, '0')}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Year *</Form.Label>
+                  <Form.Select
+                    value={cardDetails.expiryYear}
+                    onChange={(e) => handleCardInputChange('expiryYear', e.target.value)}
+                    required
+                    disabled={processingPayment}
+                    isInvalid={!!cardErrors.expiry}
+                  >
+                    <option value="">YYYY</option>
+                    {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map(year => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>CVV *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="123"
+                    value={cardDetails.cvv}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      handleCardInputChange('cvv', value);
+                    }}
+                    maxLength={4}
+                    required
+                    disabled={processingPayment}
+                    isInvalid={!!cardErrors.cvv}
+                  />
+                  <Form.Control.Feedback type="invalid">
+                    {cardErrors.cvv}
+                  </Form.Control.Feedback>
+                </Form.Group>
+              </Col>
+            </Row>
+            {cardErrors.expiry && (
+              <Alert variant="danger" className="mb-3">
+                {cardErrors.expiry}
+              </Alert>
+            )}
+
+            <Alert variant="secondary" className="mb-0">
+              <small>
+                🔒 Your card information is secure and encrypted. We use industry-standard security measures.
+              </small>
+            </Alert>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowCardPaymentModal(false);
+                setShowPaymentModal(true);
+                setCardErrors({});
+              }}
+              disabled={processingPayment}
+            >
+              Back
+            </Button>
+            <Button variant="primary" type="submit" disabled={processingPayment}>
+              {processingPayment ? (
+                <>
+                  <Spinner size="sm" className="me-2" />
+                  Processing Payment...
+                </>
+              ) : (
+                `Pay ₹${(appliedDiscount ? finalAmount : totalAmount).toFixed(2)}`
+              )}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* UPI Payment Modal */}
+      <Modal show={showUPIPaymentModal} onHide={() => {
+        if (!processingPayment) {
+          setShowUPIPaymentModal(false);
+          setUpiErrors({});
+        }
+      }} centered>
+        <Modal.Header closeButton={!processingPayment}>
+          <Modal.Title>📱 UPI Payment</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleUPIPaymentSubmit}>
+          <Modal.Body>
+            {bookingError && (
+              <Alert variant="danger" className="mb-3">
+                {bookingError}
+              </Alert>
+            )}
+
+            <Alert variant="info" className="mb-3">
+              <strong>Amount to Pay:</strong> ₹{(appliedDiscount ? finalAmount : totalAmount).toFixed(2)}
+            </Alert>
+
+            <Form.Group className="mb-3">
+              <Form.Label>UPI ID *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="yourname@upi"
+                value={upiDetails.upiId}
+                onChange={(e) => handleUPIInputChange('upiId', e.target.value.toLowerCase())}
+                required
+                disabled={processingPayment}
+                isInvalid={!!upiErrors.upiId}
+              />
+              <Form.Control.Feedback type="invalid">
+                {upiErrors.upiId}
+              </Form.Control.Feedback>
+              <Form.Text className="text-muted">
+                Enter your UPI ID (e.g., yourname@paytm, yourname@googlepay)
+              </Form.Text>
+              {upiDetails.upiId && !upiErrors.upiId && (
+                <Form.Text className="text-success d-block">
+                  ✓ Valid UPI ID format
+                </Form.Text>
+              )}
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Name (Optional)</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Your Name"
+                value={upiDetails.upiName}
+                onChange={(e) => handleUPIInputChange('upiName', e.target.value)}
+                disabled={processingPayment}
+              />
+            </Form.Group>
+
+            <Alert variant="secondary" className="mb-0">
+              <small>
+                💡 You will receive a payment request on your UPI app. Please approve it to complete the booking.
+              </small>
+            </Alert>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowUPIPaymentModal(false);
+                setShowPaymentModal(true);
+                setUpiErrors({});
+              }}
+              disabled={processingPayment}
+            >
+              Back
+            </Button>
+            <Button variant="primary" type="submit" disabled={processingPayment}>
+              {processingPayment ? (
+                <>
+                  <Spinner size="sm" className="me-2" />
+                  Processing Payment...
+                </>
+              ) : (
+                `Pay ₹${(appliedDiscount ? finalAmount : totalAmount).toFixed(2)} via UPI`
+              )}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
+
+      {/* Online Banking Modal */}
+      <Modal show={showOnlineBankingModal} onHide={() => {
+        if (!processingPayment) {
+          setShowOnlineBankingModal(false);
+          setBankingErrors({});
+        }
+      }} centered>
+        <Modal.Header closeButton={!processingPayment}>
+          <Modal.Title>🏦 Online Banking</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleOnlineBankingSubmit}>
+          <Modal.Body>
+            {bookingError && (
+              <Alert variant="danger" className="mb-3">
+                {bookingError}
+              </Alert>
+            )}
+
+            <Alert variant="info" className="mb-3">
+              <strong>Amount to Pay:</strong> ₹{(appliedDiscount ? finalAmount : totalAmount).toFixed(2)}
+            </Alert>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Select Your Bank *</Form.Label>
+              <Form.Select
+                value={bankingDetails.bankName}
+                onChange={(e) => handleBankingInputChange('bankName', e.target.value)}
+                required
+                disabled={processingPayment}
+                isInvalid={!!bankingErrors.bankName}
+              >
+                <option value="">Choose your bank...</option>
+                <option value="State Bank of India">State Bank of India</option>
+                <option value="HDFC Bank">HDFC Bank</option>
+                <option value="ICICI Bank">ICICI Bank</option>
+                <option value="Axis Bank">Axis Bank</option>
+                <option value="Punjab National Bank">Punjab National Bank</option>
+                <option value="Bank of Baroda">Bank of Baroda</option>
+                <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
+                <option value="IndusInd Bank">IndusInd Bank</option>
+                <option value="Yes Bank">Yes Bank</option>
+                <option value="IDFC First Bank">IDFC First Bank</option>
+                <option value="Other">Other Bank</option>
+              </Form.Select>
+              <Form.Control.Feedback type="invalid">
+                {bankingErrors.bankName}
+              </Form.Control.Feedback>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Account Number (Optional)</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="XXXX XXXX XXXX 1234"
+                value={bankingDetails.accountNumber}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, '');
+                  handleBankingInputChange('accountNumber', value);
+                }}
+                disabled={processingPayment}
+                isInvalid={!!bankingErrors.accountNumber}
+              />
+              <Form.Control.Feedback type="invalid">
+                {bankingErrors.accountNumber}
+              </Form.Control.Feedback>
+              <Form.Text className="text-muted">
+                Last 4 digits will be stored for reference
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>IFSC Code (Optional)</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="SBIN0001234"
+                value={bankingDetails.ifscCode}
+                onChange={(e) => handleBankingInputChange('ifscCode', e.target.value.toUpperCase())}
+                maxLength={11}
+                disabled={processingPayment}
+                isInvalid={!!bankingErrors.ifscCode}
+              />
+              <Form.Control.Feedback type="invalid">
+                {bankingErrors.ifscCode}
+              </Form.Control.Feedback>
+              {bankingDetails.ifscCode && !bankingErrors.ifscCode && bankingDetails.ifscCode.length === 11 && (
+                <Form.Text className="text-success d-block">
+                  ✓ Valid IFSC code format
+                </Form.Text>
+              )}
+            </Form.Group>
+
+            <Alert variant="secondary" className="mb-0">
+              <small>
+                🔒 You will be redirected to your bank's secure payment gateway to complete the transaction.
+              </small>
+            </Alert>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowOnlineBankingModal(false);
+                setShowPaymentModal(true);
+                setBankingErrors({});
+              }}
+              disabled={processingPayment}
+            >
+              Back
+            </Button>
+            <Button variant="primary" type="submit" disabled={processingPayment}>
+              {processingPayment ? (
+                <>
+                  <Spinner size="sm" className="me-2" />
+                  Processing Payment...
+                </>
+              ) : (
+                `Pay ₹${(appliedDiscount ? finalAmount : totalAmount).toFixed(2)} via Net Banking`
+              )}
+            </Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
     </Container>
   );

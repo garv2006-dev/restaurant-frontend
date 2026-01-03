@@ -24,6 +24,19 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
   maxNotifications = 5 
 }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpandedNotifications(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     // Listen for new notifications from various sources
@@ -139,51 +152,64 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
       className="notification-display-container"
       style={{ zIndex: 9999 }}
     >
-      {notifications.map((notification) => (
-        <Toast
-          key={notification.id}
-          show={true}
-          onClose={() => removeNotification(notification.id)}
-          autohide={notification.autoHide}
-          delay={notification.duration}
-          className={`notification-toast ${notification.type}`}
-        >
-          <Toast.Header className="notification-toast-header">
-            <div className="notification-header-content">
-              {getNotificationIcon(notification.type)}
-              <div className="notification-title-section">
-                <strong className="notification-title">
-                  {notification.title}
-                </strong>
-                <Badge 
-                  bg={getNotificationVariant(notification.type)} 
-                  className="notification-type-badge"
-                >
-                  {getTypeLabel(notification.type)}
-                </Badge>
+      {notifications.map((notification) => {
+        const isExpanded = expandedNotifications.has(notification.id);
+        
+        return (
+          <Toast
+            key={notification.id}
+            show={true}
+            onClose={() => removeNotification(notification.id)}
+            autohide={notification.autoHide}
+            delay={notification.duration}
+            className={`notification-toast ${notification.type} ${isExpanded ? 'expanded' : 'collapsed'}`}
+          >
+            <Toast.Header className="notification-toast-header">
+              <div className="notification-header-content">
+                <div className="notification-title-section">
+                  <strong className="notification-title">
+                    {notification.title}
+                  </strong>
+                  <Badge 
+                    bg={getNotificationVariant(notification.type)} 
+                    className="notification-type-badge"
+                  >
+                    {getTypeLabel(notification.type)}
+                  </Badge>
+                </div>
               </div>
-            </div>
-            <div className="notification-meta">
-              <small className="notification-time">
-                {formatTimestamp(notification.timestamp)}
-              </small>
-              <button
-                type="button"
-                className="btn-close notification-close"
-                aria-label="Close"
-                onClick={() => removeNotification(notification.id)}
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </Toast.Header>
-          <Toast.Body className="notification-toast-body">
-            <p className="notification-message">
-              {notification.message}
-            </p>
-          </Toast.Body>
-        </Toast>
-      ))}
+              <div className="notification-meta">
+                <small className="notification-time">
+                  {formatTimestamp(notification.timestamp)}
+                </small>
+                <button
+                  type="button"
+                  className="btn-close notification-close"
+                  aria-label="Close"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeNotification(notification.id);
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </Toast.Header>
+            <Toast.Body 
+              className="notification-toast-body"
+              onClick={() => toggleExpanded(notification.id)}
+              style={{ cursor: 'pointer' }}
+            >
+              <p className={`notification-message ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                {notification.message}
+              </p>
+              {!isExpanded && notification.message.length > 60 && (
+                <span className="notification-expand-hint">Click to read more...</span>
+              )}
+            </Toast.Body>
+          </Toast>
+        );
+      })}
     </ToastContainer>
   );
 };

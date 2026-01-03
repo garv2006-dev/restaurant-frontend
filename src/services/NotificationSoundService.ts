@@ -362,15 +362,20 @@ class NotificationSoundService {
       return;
     }
 
+    // Check if audio is ready BEFORE attempting to play
+    if (!this.isInitialized || !this.audioUnlocked) {
+      console.warn('⚠️ Audio not initialized yet. Please click anywhere on the page to enable sounds.');
+      console.warn('Audio state:', {
+        isInitialized: this.isInitialized,
+        audioUnlocked: this.audioUnlocked,
+        audioContextState: this.audioContext?.state
+      });
+      return; // Fail gracefully instead of attempting to initialize
+    }
+
     console.log('🔊 Playing notification sound for type:', notificationType);
 
     try {
-      // Ensure audio is initialized
-      if (!this.isInitialized) {
-        console.log('⚠️ Audio not initialized, initializing now...');
-        await this.initializeOnUserInteraction();
-      }
-
       // Ensure audio context is ready
       await this.ensureAudioContextReady();
       
@@ -402,6 +407,7 @@ class NotificationSoundService {
       
       if (!playSuccess) {
         console.error('❌ All audio playback methods failed');
+        console.error('This usually means audio was not properly initialized on user interaction');
       }
       
     } catch (error) {
@@ -472,8 +478,9 @@ class NotificationSoundService {
    */
   private async ensureAudioContextReady(): Promise<void> {
     if (!this.audioContext) {
-      console.log('⚠️ No audio context available');
-      return;
+      const error = 'AudioContext not available - audio initialization may have failed';
+      console.error('❌', error);
+      throw new Error(error);
     }
 
     console.log('🎧 Audio context state:', this.audioContext.state);
@@ -482,18 +489,29 @@ class NotificationSoundService {
       try {
         console.log('▶️ Resuming suspended audio context...');
         await this.audioContext.resume();
-        console.log('✅ Audio context resumed, new state:', this.audioContext.state);
+        
+        // Check the state after resume (use type assertion to avoid TypeScript narrowing issue)
+        const currentState = this.audioContext.state as AudioContextState;
+        console.log('✅ Audio context resumed, new state:', currentState);
+        
+        // Verify it actually resumed
+        if (currentState !== 'running') {
+          throw new Error(`AudioContext failed to resume, still in state: ${currentState}`);
+        }
         
         // Wait a bit for the context to fully resume
         await new Promise(resolve => setTimeout(resolve, 50));
       } catch (error) {
         console.error('❌ Failed to resume audio context:', error);
+        console.error('This usually means there was no recent user interaction');
         throw error;
       }
     } else if (this.audioContext.state === 'running') {
       console.log('✅ Audio context already running');
     } else {
-      console.warn('⚠️ Audio context in unexpected state:', this.audioContext.state);
+      const error = `AudioContext in unexpected state: ${this.audioContext.state}`;
+      console.warn('⚠️', error);
+      throw new Error(error);
     }
   }
 

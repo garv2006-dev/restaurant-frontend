@@ -33,6 +33,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionTimestamp, setConnectionTimestamp] = useState(Date.now());
   const isInitialized = useRef(false);
+  const hasJoinedUserRoom = useRef(false);
 
   useEffect(() => {
     // Prevent multiple socket connections (React StrictMode protection)
@@ -65,11 +66,38 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected(true);
       setConnectionTimestamp(timestamp);
       console.log('📅 Connection timestamp updated:', new Date(timestamp).toISOString());
+      
+      // CRITICAL FIX: Auto-join user room on connection if user is logged in
+      try {
+        const userStr = localStorage.getItem('user');
+        console.log('🔍 Checking localStorage for user:', userStr ? 'Found' : 'Not found');
+        
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          console.log('🔍 Parsed user object:', { id: user?.id, _id: user?._id, name: user?.name });
+          
+          // Try both 'id' and '_id' fields (MongoDB uses _id)
+          const userId = user?.id || user?._id;
+          
+          if (userId) {
+            socketInstance?.emit('join-user-room', userId);
+            hasJoinedUserRoom.current = true;
+            console.log('✅ Auto-joined user room on connection:', userId);
+          } else {
+            console.warn('⚠️ User object found but no id field:', user);
+          }
+        } else {
+          console.warn('⚠️ No user found in localStorage - will join room after login');
+        }
+      } catch (error) {
+        console.error('❌ Failed to auto-join user room:', error);
+      }
     });
 
     socketInstance.on('disconnect', (reason) => {
       console.log('⚠️ Socket.io disconnected. Reason:', reason);
       setIsConnected(false);
+      hasJoinedUserRoom.current = false; // Reset flag on disconnect
       
       // Auto-reconnect for certain disconnect reasons
       if (reason === 'io server disconnect') {
@@ -84,6 +112,24 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected(true);
       setConnectionTimestamp(timestamp);
       console.log('📅 Reconnection timestamp updated:', new Date(timestamp).toISOString());
+      
+      // CRITICAL FIX: Re-join user room on reconnection
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          // Try both 'id' and '_id' fields (MongoDB uses _id)
+          const userId = user?.id || user?._id;
+          
+          if (userId) {
+            socketInstance?.emit('join-user-room', userId);
+            hasJoinedUserRoom.current = true;
+            console.log('✅ Re-joined user room on reconnection:', userId);
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to re-join user room on reconnection:', error);
+      }
     });
 
     socketInstance.on('reconnect_attempt', (attemptNumber) => {

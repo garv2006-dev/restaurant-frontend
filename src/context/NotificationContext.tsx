@@ -256,11 +256,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       : Date.now();
     const notificationAge = Date.now() - notificationCreatedAt;
     
-    // CRITICAL: Only play sound for truly NEW notifications
-    // Must be: created within last 10 seconds AND after socket connected AND after initial fetch
+    // CRITICAL: Relaxed timing check for real-time notifications
+    // Increased from 10 seconds to 30 seconds to account for network delays
+    // Removed connection timestamp check to avoid filtering valid notifications
     const isRealTimeNotification = 
-      notificationAge < 10000 && // Created within last 10 seconds
-      notificationCreatedAt > connectionTimestamp && // Created after socket connected
+      notificationAge < 30000 && // Created within last 30 seconds (increased from 10)
       initialFetchComplete.current; // Initial fetch has completed
     
     console.log('📊 Notification timing analysis:', {
@@ -331,47 +331,43 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   // Initialize audio context on user interaction
   useEffect(() => {
-    let isInitialized = false;
-    let initializationAttempts = 0;
-    const maxAttempts = 3;
+    let initializationAttempted = false;
 
     const initializeAudio = async () => {
-      if (isInitialized) return;
+      // Prevent multiple simultaneous initialization attempts
+      if (initializationAttempted) {
+        console.log('⏭️ Audio initialization already attempted');
+        return;
+      }
       
-      initializationAttempts++;
-      console.log(`🎬 User interaction detected - initializing audio (attempt ${initializationAttempts})...`);
+      // Check if service is already initialized
+      if (notificationSoundService.isReady()) {
+        console.log('✅ Audio already initialized and ready');
+        return;
+      }
+      
+      initializationAttempted = true;
+      console.log('🎬 Initializing audio on user interaction...');
       
       try {
         await notificationSoundService.initializeOnUserInteraction();
-        isInitialized = true;
-        console.log('✅ Audio initialized successfully on user interaction');
-        
-        // Remove listeners after successful initialization
-        document.removeEventListener('click', initializeAudio);
-        document.removeEventListener('keydown', initializeAudio);
-        document.removeEventListener('touchstart', initializeAudio);
-        document.removeEventListener('mousedown', initializeAudio);
+        console.log('✅ Audio initialized successfully');
+        console.log('🔊 Notification sounds are now enabled');
       } catch (error) {
         console.error('❌ Failed to initialize audio:', error);
-        
-        // Retry if not exceeded max attempts
-        if (initializationAttempts >= maxAttempts) {
-          console.error('❌ Max initialization attempts reached, giving up');
-          document.removeEventListener('click', initializeAudio);
-          document.removeEventListener('keydown', initializeAudio);
-          document.removeEventListener('touchstart', initializeAudio);
-          document.removeEventListener('mousedown', initializeAudio);
-        }
+        initializationAttempted = false; // Allow retry on next interaction
       }
     };
 
-    // Listen for multiple interaction types
-    document.addEventListener('click', initializeAudio, { passive: true });
-    document.addEventListener('keydown', initializeAudio, { passive: true });
-    document.addEventListener('touchstart', initializeAudio, { passive: true });
-    document.addEventListener('mousedown', initializeAudio, { passive: true });
+    // Listen for multiple interaction types with 'once' option
+    // This automatically removes listeners after first fire
+    document.addEventListener('click', initializeAudio, { once: true, passive: true });
+    document.addEventListener('keydown', initializeAudio, { once: true, passive: true });
+    document.addEventListener('touchstart', initializeAudio, { once: true, passive: true });
+    document.addEventListener('mousedown', initializeAudio, { once: true, passive: true });
 
     return () => {
+      // Cleanup in case component unmounts before interaction
       document.removeEventListener('click', initializeAudio);
       document.removeEventListener('keydown', initializeAudio);
       document.removeEventListener('touchstart', initializeAudio);
@@ -399,8 +395,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     console.log('✅ Setting up socket notification listeners for user:', user.id);
     console.log('📅 Socket connection timestamp:', new Date(connectionTimestamp).toISOString());
 
-    // Join user-specific room for notifications
-    socket.emit('join-user-room', user.id);
+    // Join user-specific room for notifications (backup join in case SocketContext didn't)
+    const userId = user.id || (user as any)._id;
+    socket.emit('join-user-room', userId);
+    console.log('🔄 Joining user room from NotificationContext:', userId);
 
     // Listen for real-time notifications
     const handleNotification = (data: any) => {
