@@ -38,7 +38,6 @@ import Contact from './pages/Contact';
 import OrderSuccess from './pages/OrderSuccess';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ReportsAnalytics from './components/admin/ReportsAnalytics';
-import LoyaltyDashboard from './pages/LoyaltyDashboard';
 import Dashboard from './pages/Dashboard';
 import NotificationsPage from './pages/NotificationsPage';
 
@@ -119,11 +118,6 @@ function App() {
                       <Route path="/order-success" element={
                         <ProtectedRoute>
                           <OrderSuccess />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/loyalty" element={
-                        <ProtectedRoute>
-                          <LoyaltyDashboard />
                         </ProtectedRoute>
                       } />
                       <Route path="/dashboard" element={

@@ -453,17 +453,22 @@ class NotificationSoundService {
       return;
     }
 
-    // Check if audio is ready BEFORE attempting to play
+    // Auto-initialize if not ready (fallback for edge cases)
     if (!this.isInitialized || !this.audioUnlocked) {
-      console.warn('⚠️ Audio not initialized yet. Please click anywhere on the page to enable sounds.');
-      console.warn('Audio state:', {
-        isInitialized: this.isInitialized,
-        audioUnlocked: this.audioUnlocked,
-        audioContextState: this.audioContext?.state,
-        permissionState: this.permissionState,
-        environment: process.env.NODE_ENV
-      });
-      return; // Fail gracefully instead of attempting to initialize
+      console.warn('⚠️ Audio not initialized, attempting auto-initialization...');
+      try {
+        await this.initializeOnUserInteraction();
+        console.log('✅ Auto-initialization successful');
+      } catch (error) {
+        console.error('❌ Auto-initialization failed:', error);
+        console.warn('Audio state:', {
+          isInitialized: this.isInitialized,
+          audioUnlocked: this.audioUnlocked,
+          audioContextState: this.audioContext?.state,
+          permissionState: this.permissionState
+        });
+        return; // Fail gracefully
+      }
     }
 
     console.log('🔊 Playing notification sound for type:', notificationType);
@@ -494,6 +499,16 @@ class NotificationSoundService {
             src: this.audioElement?.src?.substring(0, 50)
           }
         });
+        
+        // If it's a NotAllowedError, audio context might be suspended
+        if (html5Error?.name === 'NotAllowedError') {
+          console.warn('⚠️ Audio playback not allowed - attempting to resume audio context');
+          try {
+            await this.ensureAudioContextReady();
+          } catch (resumeError) {
+            console.error('❌ Failed to resume audio context:', resumeError);
+          }
+        }
       }
       
       // Fallback to Web Audio API if HTML5 failed
@@ -513,7 +528,8 @@ class NotificationSoundService {
         console.error('Environment:', {
           isProduction: process.env.NODE_ENV === 'production',
           protocol: window.location.protocol,
-          isHTTPS: window.location.protocol === 'https:'
+          isHTTPS: window.location.protocol === 'https:',
+          audioState: this.getAudioState()
         });
       }
       
@@ -616,7 +632,15 @@ class NotificationSoundService {
         
         // Verify it actually resumed
         if (currentState !== 'running') {
-          throw new Error(`AudioContext failed to resume, still in state: ${currentState}`);
+          console.warn(`⚠️ AudioContext still in state: ${currentState}, attempting force resume...`);
+          // Try one more time with a delay
+          await new Promise(resolve => setTimeout(resolve, 100));
+          await this.audioContext.resume();
+          
+          const retryState = this.audioContext.state as AudioContextState;
+          if (retryState !== 'running') {
+            throw new Error(`AudioContext failed to resume after retry, state: ${retryState}`);
+          }
         }
         
         // Wait a bit for the context to fully resume

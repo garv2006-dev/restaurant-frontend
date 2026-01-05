@@ -73,10 +73,9 @@ api.interceptors.response.use(
     }
     
     // Only logout on 401 for specific API calls and not during app initialization
-    const isLoyaltyAPI = error.config?.url?.includes('/loyalty/');
     const isAuthMeAPI = error.config?.url?.includes('/auth/me');
     
-    if (error.response?.status === 401 && !isLoyaltyAPI && !isAuthMeAPI) {
+    if (error.response?.status === 401 && !isAuthMeAPI) {
       // Clear token and redirect to login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -539,61 +538,6 @@ export const newsletterAPI = {
   },
 };
 
-// Loyalty API
-export const loyaltyAPI = {
-  // Get loyalty program details
-  getProgram: async (): Promise<ApiResponse<any>> => {
-    const response: AxiosResponse<ApiResponse<any>> = await api.get('/loyalty/program');
-    return response.data;
-  },
 
-  // Get all loyalty programs (admin)
-  getPrograms: async (): Promise<ApiResponse<any>> => {
-    const response: AxiosResponse<ApiResponse<any>> = await api.get('/loyalty/programs');
-    return response.data;
-  },
-
-  // Create loyalty program (admin)
-  createProgram: async (programData: any): Promise<ApiResponse> => {
-    const response: AxiosResponse<ApiResponse> = await api.post('/loyalty/programs', programData);
-    return response.data;
-  },
-
-  // Update loyalty program (admin)
-  updateProgram: async (id: string, programData: any): Promise<ApiResponse> => {
-    const response: AxiosResponse<ApiResponse> = await api.put(`/loyalty/programs/${id}`, programData);
-    return response.data;
-  },
-
-  // Delete loyalty program (admin)
-  deleteProgram: async (id: string): Promise<ApiResponse> => {
-    const response: AxiosResponse<ApiResponse> = await api.delete(`/loyalty/programs/${id}`);
-    return response.data;
-  },
-
-  // Join loyalty program
-  joinProgram: async (): Promise<ApiResponse> => {
-    const response: AxiosResponse<ApiResponse> = await api.post('/loyalty/join');
-    return response.data;
-  },
-
-  // Get user loyalty data
-  getUserLoyaltyData: async (): Promise<ApiResponse<any>> => {
-    const response: AxiosResponse<ApiResponse<any>> = await api.get('/loyalty/my-points');
-    return response.data;
-  },
-
-  // Get all user loyalty data (admin)
-  getUserLoyaltyDataAll: async (): Promise<ApiResponse<any>> => {
-    const response: AxiosResponse<ApiResponse<any>> = await api.get('/loyalty/users');
-    return response.data;
-  },
-
-  // Redeem reward
-  redeemReward: async (rewardId: string): Promise<ApiResponse> => {
-    const response: AxiosResponse<ApiResponse> = await api.post('/loyalty/redeem', { rewardId });
-    return response.data;
-  },
-};
 
 export default api;

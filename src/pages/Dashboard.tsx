@@ -13,7 +13,6 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
-  const [loyaltyPoints, setLoyaltyPoints] = useState<number>(0);
   const [bookingSummary, setBookingSummary] = useState<BookingSummary>({ upcoming: 0, pending: 0, total: 0 });
   const [reviewsCount, setReviewsCount] = useState<number>(0);
 
@@ -24,7 +23,6 @@ const Dashboard: React.FC = () => {
         const me = await authAPI.getMe();
         if (me.user) {
           setUserName(me.user.name || '');
-          setLoyaltyPoints(me.user.loyaltyPoints || 0);
         }
 
         // User bookings
@@ -71,14 +69,6 @@ const Dashboard: React.FC = () => {
     <div className="container py-5">
       <h2 className="mb-4">Welcome, {userName}</h2>
       <Row className="g-3">
-        <Col md={4}>
-          <Card className="p-3">
-            <h5 className="mb-2">Loyalty</h5>
-            <div>
-              Points: <Badge bg="warning" text="dark">{loyaltyPoints}</Badge>
-            </div>
-          </Card>
-        </Col>
         <Col md={4}>
           <Card className="p-3">
             <h5 className="mb-2">Bookings</h5>
