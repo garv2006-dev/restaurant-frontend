@@ -7,7 +7,6 @@ export interface User {
   role: 'customer' | 'staff' | 'admin';
   avatar?: string;
   isEmailVerified: boolean;
-  loyaltyPoints: number;
   preferences: {
     notifications: {
       email: boolean;

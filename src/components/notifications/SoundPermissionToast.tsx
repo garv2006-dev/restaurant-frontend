@@ -33,11 +33,11 @@ const SoundPermissionToast: React.FC<SoundPermissionToastProps> = ({
     
     if (shouldShow) {
       // Delay showing the toast to avoid overwhelming the user on page load
-      // This also ensures the page is fully loaded and interactive
+      // Reduced delay to show prompt sooner for better notification sound readiness
       const timer = setTimeout(() => {
         setShow(true);
         console.log('🔔 Showing sound permission prompt');
-      }, 2000); // 2 second delay for better UX
+      }, 1000); // 1 second delay (reduced from 2 seconds)
       
       return () => clearTimeout(timer);
     } else {

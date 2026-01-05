@@ -10,7 +10,6 @@ import RoomManagement from '../../components/admin/RoomManagement';
 import BookingManagement from '../../components/admin/BookingManagement';
 import CustomerManagement from '../../components/admin/CustomerManagement';
 import ReportsAnalytics from '../../components/admin/ReportsAnalytics';
-import LoyaltyManagement from './LoyaltyManagement';
 import DiscountManagement from './DiscountManagement';
 import LiveDashboard from '../../components/admin/LiveDashboard';
 
@@ -105,14 +104,6 @@ const AdminDashboard: React.FC = () => {
                 </a>
                 <a
                   href="#"
-                  className={`admin-nav-item ${activeTab === 'loyalty' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab('loyalty'); }}
-                >
-                  <Gift size={16} className="admin-nav-icon" />
-                  Loyalty Program
-                </a>
-                <a
-                  href="#"
                   className={`admin-nav-item ${activeTab === 'discounts' ? 'active' : ''}`}
                   onClick={(e) => { e.preventDefault(); setActiveTab('discounts'); }}
                 >
@@ -137,7 +128,6 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'rooms' && <RoomManagement />}
               {activeTab === 'bookings' && <BookingManagement />}
               {activeTab === 'customers' && <CustomerManagement />}
-              {activeTab === 'loyalty' && <LoyaltyManagement />}
               {activeTab === 'discounts' && <DiscountManagement />}
               {activeTab === 'reports' && <ReportsAnalytics />}
             </div>

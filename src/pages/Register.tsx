@@ -418,7 +418,7 @@ const Register: React.FC = () => {
                 <ul className="mb-0 mt-2">
                   <li>We'll send a verification email to confirm your account</li>
                   <li>You'll gain access to our exclusive booking platform</li>
-                  <li>Start earning loyalty points with every stay</li>
+                  <li>Enjoy premium amenities and services</li>
                   <li>Receive special offers and early access to new amenities</li>
                 </ul>
               </Alert>

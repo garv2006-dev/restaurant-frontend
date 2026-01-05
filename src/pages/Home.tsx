@@ -298,9 +298,8 @@ const Home: React.FC = () => {
           >
             <Carousel.Item>
               <div className="text-center p-4">
-                <h4 className="text-primary">Loyalty Program</h4>
-                <p className="lead ">Earn points with every booking and unlock exclusive benefits</p>
-                <Button variant="outline-primary" href="/loyalty">Join Now</Button>
+                <p className="lead ">Experience luxury and comfort at its finest</p>
+                <Button variant="outline-primary" href="/booking">Book Now</Button>
               </div>
             </Carousel.Item>
           </Carousel>

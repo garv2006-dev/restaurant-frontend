@@ -256,11 +256,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       : Date.now();
     const notificationAge = Date.now() - notificationCreatedAt;
     
-    // CRITICAL: Relaxed timing check for real-time notifications
-    // Increased from 10 seconds to 30 seconds to account for network delays
-    // Removed connection timestamp check to avoid filtering valid notifications
+    // CRITICAL: More lenient timing check for real-time notifications
+    // Increased to 60 seconds to handle network delays and server processing time
+    // This ensures notifications aren't missed due to timing issues
     const isRealTimeNotification = 
-      notificationAge < 30000 && // Created within last 30 seconds (increased from 10)
+      notificationAge < 60000 && // Created within last 60 seconds (increased from 30)
       initialFetchComplete.current; // Initial fetch has completed
     
     console.log('📊 Notification timing analysis:', {
@@ -306,14 +306,19 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (isRealTimeNotification) {
       const soundEnabledTypes = ['promotion', 'room_booking', 'payment', 'system'];
       if (soundEnabledTypes.includes(socketNotif.type)) {
-        console.log('🔊 Playing sound for real-time notification:', socketNotif.type);
+        console.log('🔊 Attempting to play sound for real-time notification:', socketNotif.type);
         
-        // Use requestAnimationFrame to ensure we're not in a suspended state
-        requestAnimationFrame(() => {
-          notificationSoundService.playNotificationSound(socketNotif.type)
-            .then(() => console.log('✅ Sound played successfully'))
-            .catch((error) => console.error('❌ Error playing notification sound:', error));
-        });
+        // Use setTimeout with requestAnimationFrame for better timing
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            notificationSoundService.playNotificationSound(socketNotif.type)
+              .then(() => console.log('✅ Sound played successfully'))
+              .catch((error) => {
+                console.error('❌ Error playing notification sound:', error);
+                console.error('Sound service state:', notificationSoundService.getAudioState());
+              });
+          });
+        }, 100); // Small delay to ensure audio context is ready
       }
       console.log('✅ New REAL-TIME notification processed:', newNotification.id);
     } else {
@@ -328,6 +333,34 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       refreshNotifications();
     }
   }, [isAuthenticated, user]);
+
+  // Setup global click handler to initialize audio if permission was granted
+  useEffect(() => {
+    const handleGlobalClick = async () => {
+      const permissionState = notificationSoundService.getPermissionState();
+      const isReady = notificationSoundService.isReady();
+      
+      // If permission was granted but audio not initialized, initialize it
+      if (permissionState === 'granted' && !isReady) {
+        console.log('🎵 Initializing audio on user interaction (permission already granted)');
+        try {
+          await notificationSoundService.initializeOnUserInteraction();
+          console.log('✅ Audio initialized successfully on click');
+        } catch (error) {
+          console.error('❌ Failed to initialize audio on click:', error);
+        }
+      }
+    };
+
+    // Add listener with once: false to handle multiple attempts if needed
+    document.addEventListener('click', handleGlobalClick, { passive: true });
+    document.addEventListener('touchstart', handleGlobalClick, { passive: true });
+    
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+      document.removeEventListener('touchstart', handleGlobalClick);
+    };
+  }, []);
 
   // Note: Audio initialization is now handled by SoundPermissionToast
   // No automatic initialization on user interaction - user must explicitly grant permission

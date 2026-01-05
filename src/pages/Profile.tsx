@@ -21,7 +21,6 @@ const Profile: React.FC = () => {
         <div><strong>Email:</strong> {user.email}</div>
         <div><strong>Phone:</strong> {user.phone}</div>
         <div><strong>Role:</strong> {user.role}</div>
-        <div><strong>Loyalty Points:</strong> {user.loyaltyPoints || 0}</div>
       </Card>
     </div>
   );

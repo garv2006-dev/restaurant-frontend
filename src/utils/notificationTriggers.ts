@@ -149,21 +149,6 @@ export const PromotionNotifications = {
   },
 
   /**
-   * Trigger for loyalty rewards
-   */
-  loyaltyReward: (rewardData: {
-    promotionId: string;
-    points: number;
-    rewardType: string;
-  }) => {
-    realTimeNotificationService.triggerPromotionNotification({
-      promotionId: rewardData.promotionId,
-      title: 'Loyalty Reward Earned',
-      message: `Congratulations! You've earned ${rewardData.points} loyalty points and unlocked a ${rewardData.rewardType}.`,
-    });
-  },
-
-  /**
    * Trigger for seasonal promotions
    */
   seasonalPromotion: (promoData: {
