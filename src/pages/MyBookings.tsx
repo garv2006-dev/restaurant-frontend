@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Alert, Spinner, Button, Modal, Form, Toast, ToastContainer } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
-import { bookingsAPI } from '../services/api';
+import { Table, Alert, Spinner, Button, Modal, Form, Toast, ToastContainer, Badge } from 'react-bootstrap';
+import { Link, useNavigate } from 'react-router-dom';
+import { bookingsAPI, reviewsAPI } from '../services/api';
 import { Booking } from '../types';
-import ReviewForm from '../components/ReviewForm';
+import MyReviews from './MyReviews';  
 import { useNotifications } from '../context/NotificationContext';
 
 const MyBookings: React.FC = () => {
@@ -14,12 +14,12 @@ const MyBookings: React.FC = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [cancelReason, setCancelReason] = useState('');
-  const [showReviewModal, setShowReviewModal] = useState(false);
-  const [selectedBookingForReview, setSelectedBookingForReview] = useState<string>('');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [reviewStatuses, setReviewStatuses] = useState<{[key: string]: any}>({});
   
   const { refreshNotifications } = useNotifications();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -41,6 +41,9 @@ const MyBookings: React.FC = () => {
 
           console.log('Normalized bookings data:', bookingsData);
           setBookings(bookingsData);
+          
+          // Check review status for completed bookings
+          checkReviewStatuses(bookingsData);
         } else {
           console.log('No bookings data found in response');
           setBookings([]);
@@ -58,6 +61,73 @@ const MyBookings: React.FC = () => {
     };
     fetchBookings();
   }, []);
+
+  const checkReviewStatuses = async (bookings: Booking[]) => {
+    console.log('🔍 Checking review statuses for bookings:', bookings.length);
+    const statuses: {[key: string]: any} = {};
+    
+    // Only check review status for completed bookings
+    const completedBookings = bookings.filter(b => b.status === 'CheckedOut');
+    console.log('📋 Completed bookings to check:', completedBookings.length);
+    
+    if (completedBookings.length === 0) {
+      console.log('⚠️ No completed bookings found');
+      setReviewStatuses({});
+      return;
+    }
+
+    // For now, let's use a simpler approach - check if user has any reviews for these bookings
+    try {
+      console.log('📋 Fetching user reviews to check status...');
+      const userReviewsResponse = await reviewsAPI.getUserReviews();
+      console.log('📦 User reviews response:', userReviewsResponse);
+      
+      let userReviews: any[] = [];
+      if (userReviewsResponse.success && userReviewsResponse.data) {
+        userReviews = Array.isArray(userReviewsResponse.data) ? userReviewsResponse.data : [];
+      }
+      
+      console.log(`📊 Found ${userReviews.length} user reviews`);
+      
+      // Check each completed booking
+      for (const booking of completedBookings) {
+        const existingReview = userReviews.find(review => 
+          review.booking === booking._id || 
+          (typeof review.booking === 'object' && review.booking?._id === booking._id)
+        );
+        
+        if (existingReview) {
+          console.log(`✓ Found existing review for booking ${booking._id}`);
+          statuses[booking._id] = {
+            canReview: false,
+            reason: 'ALREADY_REVIEWED',
+            existingReview: {
+              id: existingReview._id,
+              title: existingReview.title,
+              rating: existingReview.rating,
+              createdAt: existingReview.createdAt,
+              isApproved: existingReview.isApproved
+            }
+          };
+        } else {
+          console.log(`✅ No existing review for booking ${booking._id}, can review`);
+          statuses[booking._id] = { canReview: true };
+        }
+      }
+      
+      console.log('📊 Final review statuses:', statuses);
+      setReviewStatuses(statuses);
+      
+    } catch (error: any) {
+      console.error('❌ Error checking review statuses:', error);
+      // Fallback: allow all completed bookings to be reviewed
+      const defaultStatuses: {[key: string]: any} = {};
+      completedBookings.forEach(booking => {
+        defaultStatuses[booking._id] = { canReview: true };
+      });
+      setReviewStatuses(defaultStatuses);
+    }
+  };
 
   const handleCancelClick = (booking: Booking) => {
     console.log('Cancel button clicked for booking:', booking._id);
@@ -124,6 +194,53 @@ const MyBookings: React.FC = () => {
 
   const canCancelBooking = (booking: Booking): boolean => {
     return booking.status === 'Pending' || booking.status === 'Confirmed';
+  };
+
+  const renderReviewAction = (booking: Booking) => {
+    console.log(`🎯 Rendering review action for booking ${booking._id}, status: ${booking.status}`);
+    
+    if (booking.status !== 'CheckedOut') {
+      console.log(`⏭️ Booking ${booking._id} not checked out, showing dash`);
+      return <span className="text-muted">-</span>;
+    }
+
+    const reviewStatus = reviewStatuses[booking._id];
+    console.log(`📊 Review status for ${booking._id}:`, reviewStatus);
+    
+    if (!reviewStatus) {
+      console.log(`⏳ No review status yet for ${booking._id}, showing spinner`);
+      return <Spinner animation="border" size="sm" />;
+    }
+
+    if (reviewStatus.canReview) {
+      console.log(`✅ Can review booking ${booking._id}, showing Review button`);
+      return (
+        <Button
+          variant="outline-primary"
+          size="sm"
+          onClick={() => {
+            console.log(`🖱️ Review button clicked for booking ${booking._id}, navigating to WriteReview`);
+            navigate(`/reviews`);
+          }}
+        >
+          Review
+        </Button>
+      );
+    } else if (reviewStatus.reason === 'ALREADY_REVIEWED') {
+      console.log(`✓ Already reviewed booking ${booking._id}, showing badge`);
+      return (
+        <div>
+          <Badge bg="success" className="mb-1">✓ Reviewed</Badge>
+          <br />
+          <small className="text-muted">
+            {reviewStatus.existingReview?.rating}⭐ - {reviewStatus.existingReview?.isApproved ? 'Published' : 'Pending'}
+          </small>
+        </div>
+      );
+    } else {
+      console.log(`❌ Cannot review booking ${booking._id}, reason: ${reviewStatus.reason}`);
+      return <Badge bg="secondary">Cannot Review</Badge>;
+    }
   };
 
   if (loading) {
@@ -207,19 +324,8 @@ const MyBookings: React.FC = () => {
                           'Cancel'
                         )}
                       </Button>
-                    ) : b.status === 'CheckedOut' ? (
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedBookingForReview(b._id);
-                          setShowReviewModal(true);
-                        }}
-                      >
-                        Review
-                      </Button>
                     ) : (
-                      <span className="text-muted">-</span>
+                      renderReviewAction(b)
                     )}
                   </td>
                 </tr>
@@ -235,18 +341,6 @@ const MyBookings: React.FC = () => {
         </Table>
       )}
       
-      {/* Review Modal */}
-      <ReviewForm
-        show={showReviewModal}
-        onHide={() => setShowReviewModal(false)}
-        bookingId={selectedBookingForReview}
-        onReviewSubmitted={() => {
-          setShowReviewModal(false);
-          setSelectedBookingForReview('');
-          // Optionally refresh bookings if needed
-        }}
-      />
-
       {/* Cancel Confirmation Modal */}
       <Modal show={showCancelModal} onHide={handleCloseModal} centered>
         <Modal.Header closeButton>

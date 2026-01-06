@@ -140,6 +140,7 @@ function App() {
                           <MyReviews />
                         </ProtectedRoute>
                       } />
+             
                       <Route path="/notifications" element={
                         <ProtectedRoute>
                           <NotificationsPage />

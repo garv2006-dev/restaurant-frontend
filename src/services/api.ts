@@ -314,11 +314,32 @@ export const reviewsAPI = {
     return response.data;
   },
 
-  getReviews: async (filters?: any): Promise<ApiResponse<{ reviews: Review[]; pagination: any }>> => {
-    const response: AxiosResponse<ApiResponse<{ reviews: Review[]; pagination: any }>> = await api.get('/reviews', {
+  getReviews: async (filters?: any): Promise<ApiResponse<Review[]>> => {
+    const response: AxiosResponse<any> = await api.get('/reviews', {
       params: filters,
     });
-    return response.data;
+    
+    // Backend returns: { success, count, total, pagination, data: Review[] }
+    // We need to normalize this to match the expected format
+    const raw = response.data || {};
+    
+    let reviews: Review[] = [];
+    let pagination: any = raw.pagination || null;
+    
+    if (Array.isArray(raw.data)) {
+      reviews = raw.data;
+    } else if (Array.isArray(raw.reviews)) {
+      reviews = raw.reviews;
+    } else if (Array.isArray(raw)) {
+      reviews = raw;
+    }
+    
+    return {
+      success: raw.success !== undefined ? raw.success : true,
+      message: raw.message,
+      data: reviews,
+      pagination
+    } as any;
   },
 
   getUserReviews: async (): Promise<ApiResponse<Review[]>> => {
@@ -338,6 +359,45 @@ export const reviewsAPI = {
 
   addHelpfulVote: async (id: string, vote: 'helpful' | 'notHelpful'): Promise<ApiResponse> => {
     const response: AxiosResponse<ApiResponse> = await api.post(`/reviews/${id}/vote`, { vote });
+    return response.data;
+  },
+
+  canReviewBooking: async (bookingId: string): Promise<ApiResponse<{
+    canReview: boolean;
+    reason?: string;
+    message: string;
+    existingReview?: {
+      id: string;
+      title: string;
+      rating: number;
+      createdAt: string;
+      isApproved: boolean;
+    };
+    booking?: {
+      id: string;
+      bookingId: string;
+      room: any;
+      checkOutDate: string;
+    };
+  }>> => {
+    const response: AxiosResponse<ApiResponse<{
+      canReview: boolean;
+      reason?: string;
+      message: string;
+      existingReview?: {
+        id: string;
+        title: string;
+        rating: number;
+        createdAt: string;
+        isApproved: boolean;
+      };
+      booking?: {
+        id: string;
+        bookingId: string;
+        room: any;
+        checkOutDate: string;
+      };
+    }>> = await api.get(`/reviews/can-review/${bookingId}`);
     return response.data;
   },
 };
