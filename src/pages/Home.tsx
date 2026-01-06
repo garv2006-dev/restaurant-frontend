@@ -4,6 +4,7 @@ import { FaCar, FaCoffee, FaSnowflake, FaStar, FaTv, FaWifi, FaUser, FaLock } fr
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import CustomerReviews from '../components/CustomerReviews';
 
 // Create a wrapper component for FontAwesome icons to ensure React 19 compatibility
 const IconWrapper = ({ icon: Icon, className, style, ...props }: { icon: any; className?: string; style?: React.CSSProperties }) => {
@@ -282,29 +283,8 @@ const Home: React.FC = () => {
         </Container>
       </section>
 
-      {/* Special Offers Section */}
-      <section className="special-offers-section py-5">
-        <Container>
-          <div className="text-center mb-5">
-            <span className="text-gold text-uppercase tracking-wider mb-2 d-block">Limited Time</span>
-            <h2 className="section-title">Special Offers</h2>
-            <p className="section-description">Indulge in our exclusive packages and memorable experiences</p>
-          </div>
-
-          <Carousel
-            indicators={false}
-            interval={5000}
-            className="special-offers-carousel"
-          >
-            <Carousel.Item>
-              <div className="text-center p-4">
-                <p className="lead ">Experience luxury and comfort at its finest</p>
-                <Button variant="outline-primary" href="/booking">Book Now</Button>
-              </div>
-            </Carousel.Item>
-          </Carousel>
-        </Container>
-      </section>
+      {/* Customer Reviews Section */}
+      <CustomerReviews />
     </div>
   );
 };
