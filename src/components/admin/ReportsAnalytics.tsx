@@ -402,7 +402,7 @@ const ReportsAnalytics: React.FC = () => {
           </Row>
         </Tab>
 
-        <Tab eventKey="customers" title="Customers">
+        {/* <Tab eventKey="customers" title="Customers">
           <Row>
             <Col md={6}>
               <Card>
@@ -438,7 +438,7 @@ const ReportsAnalytics: React.FC = () => {
               </Card>
             </Col>
           </Row>
-        </Tab>
+        </Tab> */}
       </Tabs>
     </Container>
   );

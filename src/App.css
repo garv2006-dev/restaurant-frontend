@@ -475,10 +475,30 @@ p {
 }
 
 /* High contrast mode */
-.high-contrast .card,
-.high-contrast .btn,
-.high-contrast .form-control {
+body.high-contrast .card,
+body.high-contrast .btn,
+body.high-contrast .form-control {
   border: 2px solid #000 !important;
+}
+
+body.high-contrast {
+  background: #fff !important;
+  color: #000 !important;
+}
+
+body.high-contrast .navbar-custom {
+  background: #fff !important;
+  border-bottom: 2px solid #000 !important;
+}
+
+body.high-contrast .card {
+  background: #fff !important;
+  color: #000 !important;
+}
+
+/* Font size application */
+body {
+  font-size: var(--base-font-size, 16px);
 }
 
 /* Large text mode */
@@ -493,16 +513,16 @@ p {
 .large-text .form-control { font-size: 1.1rem !important; }
 
 /* Focus styles for keyboard navigation */
-.focus-visible *:focus {
+body.focus-visible *:focus {
   outline: 3px solid #0056b3 !important;
   outline-offset: 2px;
   box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
 }
 
 /* Reduced motion preferences */
-.reduced-motion *,
-.reduced-motion *::before,
-.reduced-motion *::after {
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
