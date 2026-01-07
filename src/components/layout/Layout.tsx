@@ -1,4 +1,4 @@
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode, useState, useEffect } from 'react';
 import { Button } from 'react-bootstrap';
 import { Settings } from 'lucide-react';
 import Header from './Header';
@@ -18,6 +18,21 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
     setShowAccessibilityModal(true);
     announceToScreenReader('Accessibility settings opened');
   };
+
+  // Global keyboard shortcut for Alt + A
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.altKey && event.key === 'a') {
+        event.preventDefault();
+        openAccessibilitySettings();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openAccessibilitySettings]);
 
   return (
     <div className="d-flex flex-column min-vh-100">

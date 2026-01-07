@@ -40,6 +40,10 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ReportsAnalytics from './components/admin/ReportsAnalytics';
 import Dashboard from './pages/Dashboard';
 import NotificationsPage from './pages/NotificationsPage';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsConditions from './pages/TermsConditions';
+import FAQ from './pages/FAQ';
+import Help from './pages/Help';
 
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -113,6 +117,10 @@ function App() {
                       <Route path="/reset-password/:token" element={<ResetPassword />} />
                       <Route path="/booking" element={<Booking />} />
                       <Route path="/contact" element={<Contact />} />
+                      <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/terms" element={<TermsConditions />} />
+                      <Route path="/faq" element={<FAQ />} />
+                      <Route path="/help" element={<Help />} />
                       
                       {/* Protected routes - require authentication */}
                       <Route path="/order-success" element={

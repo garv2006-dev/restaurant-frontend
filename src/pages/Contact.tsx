@@ -220,7 +220,7 @@ const Contact: React.FC = () => {
           ))}
 
           {/* Social Media */}
-          <Card className="border-0 shadow-sm">
+          {/* <Card className="border-0 shadow-sm">
             <Card.Body>
               <h6 className="mb-3">Follow Us</h6>
               <div className="d-flex gap-2">
@@ -238,7 +238,7 @@ const Contact: React.FC = () => {
                 </Button>
               </div>
             </Card.Body>
-          </Card>
+          </Card> */}
         </Col>
 
         {/* Contact Form */}
@@ -392,7 +392,7 @@ const Contact: React.FC = () => {
       </Row>
 
       {/* Map Section */}
-      <Row className="mt-5">
+      {/* <Row className="mt-5">
         <Col>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-0 py-4">
@@ -416,10 +416,10 @@ const Contact: React.FC = () => {
             </Card.Body>
           </Card>
         </Col>
-      </Row>
+      </Row> */}
 
       {/* FAQ Section */}
-      <Row className="mt-5">
+      {/* <Row className="mt-5">
         <Col>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-0 py-4">
@@ -445,7 +445,7 @@ const Contact: React.FC = () => {
             </Card.Body>
           </Card>
         </Col>
-      </Row>
+      </Row> */}
     </Container>
     </div>
   );
