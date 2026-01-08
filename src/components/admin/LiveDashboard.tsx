@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Badge, Table, Spinner, Alert, Button, Form, InputGroup } from 'react-bootstrap';
+import { Card, Row, Col, Badge, Table, Spinner, Alert, Button, Form, InputGroup, Modal } from 'react-bootstrap';
 import { 
   TrendingUp, 
   Book, 
@@ -79,6 +79,7 @@ interface RecentBooking {
   pricing: {
     totalAmount: number;
   };
+  createdAt?: string;
 }
 
 interface DashboardData {
@@ -95,6 +96,8 @@ const LiveDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<RecentBooking | null>(null);
 
   // Filter bookings based on search term
   const filteredBookings = data?.recentBookings?.filter(booking => {
@@ -158,9 +161,8 @@ const LiveDashboard: React.FC = () => {
   };
 
   const handleViewDetails = (booking: RecentBooking) => {
-    // For now, just show an alert with booking details
-    // You can implement a proper modal later
-    alert(`Booking Details:\nID: ${booking.bookingId}\nGuest: ${booking.guestDetails.primaryGuest.name}\nRoom: ${booking.room.name}\nStatus: ${booking.status}`);
+    setSelectedBooking(booking);
+    setShowDetailsModal(true);
   };
 
   useEffect(() => {
@@ -522,8 +524,123 @@ const LiveDashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Booking Details Modal */}
+      <Modal 
+        show={showDetailsModal} 
+        onHide={() => setShowDetailsModal(false)}
+        size="lg"
+        className="booking-details-modal"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Booking Details</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedBooking ? (
+            <div>
+              {/* Booking Header */}
+              <div className="booking-header">
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h5>
+                      Booking <span className="booking-id">#{selectedBooking.bookingId}</span>
+                    </h5>
+                    <div className="booking-date">
+                      Created on {formatDate(selectedBooking.createdAt || '')}
+                    </div>
+                  </div>
+                  <div className="text-end">
+                    <div className="booking-amount">
+                      ₹{selectedBooking.pricing?.totalAmount || 0}
+                    </div>
+                    <div className="booking-status">
+                      <Badge bg={
+                        selectedBooking.status === 'Confirmed' ? 'success' :
+                        selectedBooking.status === 'Pending' ? 'warning' :
+                        selectedBooking.status === 'CheckedIn' ? 'info' :
+                        selectedBooking.status === 'CheckedOut' ? 'secondary' :
+                        selectedBooking.status === 'Cancelled' ? 'danger' :
+                        'secondary'
+                      }>
+                        {selectedBooking.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr />
+
+              <Row>
+                <Col md={6}>
+                  <Card className="info-card">
+                    <Card.Body>
+                      <h6>Guest Details</h6>
+                      <div className="info-item">
+                        <span className="info-label">Name:</span>
+                        <span className="info-value">{selectedBooking.guestDetails.primaryGuest.name}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Email:</span>
+                        <span className="info-value">{selectedBooking.guestDetails.primaryGuest.email}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Phone:</span>
+                        <span className="info-value">{selectedBooking.guestDetails.primaryGuest.phone}</span>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+                <Col md={6}>
+                  <Card className="info-card">
+                    <Card.Body>
+                      <h6>Booking Details</h6>
+                      <div className="info-item">
+                        <span className="info-label">Check-in:</span>
+                        <span className="info-value">{formatDate(selectedBooking.bookingDates.checkInDate)}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Check-out:</span>
+                        <span className="info-value">{formatDate(selectedBooking.bookingDates.checkOutDate)}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Room:</span>
+                        <span className="info-value">{selectedBooking.room.name}</span>
+                      </div>
+                      <div className="info-item">
+                        <span className="info-label">Room Type:</span>
+                        <span className="info-value">{selectedBooking.room.type}</span>
+                      </div>
+                    </Card.Body>
+                  </Card>
+                </Col>
+              </Row>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading booking details...</span>
+              </div>
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
     </div>
   );
+};
+
+// Helper function to format dates
+const formatDate = (dateString: string) => {
+  if (!dateString) return '-';
+  try {
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  } catch (error) {
+    return dateString;
+  }
 };
 
 export default LiveDashboard;
