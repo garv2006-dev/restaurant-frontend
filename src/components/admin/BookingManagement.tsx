@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, Table, Button, Form, Row, Col, Badge, Modal } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
 import { Booking, BookingFormData } from '../../types';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
-import { 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  LogIn, 
-  LogOut, 
-  Printer, 
-  ChevronLeft, 
+import {
+  Eye,
+  CheckCircle,
+  XCircle,
+  LogIn,
+  LogOut,
+  Printer,
+  ChevronLeft,
   ChevronRight,
   Loader2
 } from 'lucide-react';
+import DataLoader from '../common/DataLoader';
 
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -38,49 +39,64 @@ const BookingManagement: React.FC = () => {
     search: ''
   });
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(filters.search);
+
+  const fetchBookings = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      console.log('Fetching bookings with filters:', { ...filters, search: debouncedSearchTerm }); // Debug log
+
+      const response = await adminAPI.getAllBookings({
+        status: filters.status !== 'all' ? filters.status : undefined,
+        date: filters.date || undefined,
+        search: debouncedSearchTerm || undefined,
+        page: pagination.page,
+        limit: pagination.limit
+      });
+
+      console.log('Bookings API response:', response); // Debug log
+
+      if (response.success && response.data) {
+        const bookingsData = response.data.bookings || [];
+        console.log('Processed bookings data:', bookingsData); // Debug log
+
+        setBookings(bookingsData);
+        setPagination(prev => ({
+          ...prev,
+          total: response.data?.pagination?.total || 0,
+          pages: response.data?.pagination?.pages || 0
+        }));
+      } else {
+        throw new Error(response.message || 'Failed to fetch bookings');
+      }
+    } catch (err: any) {
+      console.error('Error fetching bookings:', err); // Debug log
+      const errorMessage = err?.response?.data?.message || err?.message || 'Failed to load bookings';
+      setError(errorMessage);
+      setBookings([]);
+    } finally {
+      setLoading(false);
+      setSearchLoading(false);
+    }
+  }, [filters.status, filters.date, debouncedSearchTerm, pagination.page, pagination.limit]);
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(filters.search);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [filters.search]);
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('Fetching bookings with filters:', filters); // Debug log
-        
-        const response = await adminAPI.getAllBookings({
-          status: filters.status !== 'all' ? filters.status : undefined,
-          date: filters.date || undefined,
-          search: filters.search || undefined,
-          page: pagination.page,
-          limit: pagination.limit
-        });
-        
-        console.log('Bookings API response:', response); // Debug log
-        
-        if (response.success && response.data) {
-          const bookingsData = response.data.bookings || [];
-          console.log('Processed bookings data:', bookingsData); // Debug log
-          
-          setBookings(bookingsData);
-          setPagination(prev => ({
-            ...prev,
-            total: response.data?.pagination?.total || 0,
-            pages: response.data?.pagination?.pages || 0
-          }));
-        } else {
-          throw new Error(response.message || 'Failed to fetch bookings');
-        }
-      } catch (err: any) {
-        console.error('Error fetching bookings:', err); // Debug log
-        const errorMessage = err?.response?.data?.message || err?.message || 'Failed to load bookings';
-        setError(errorMessage);
-        setBookings([]);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchBookings();
-  }, [filters, pagination.page, pagination.limit]);
+  }, [fetchBookings]);
+
+
 
   const handlePageChange = (newPage: number) => {
     setPagination(prev => ({ ...prev, page: newPage }));
@@ -97,6 +113,11 @@ const BookingManagement: React.FC = () => {
       [name]: value
     }));
     setPagination(prev => ({ ...prev, page: 1 }));
+
+    // Handle search loading state
+    if (name === 'search') {
+      setSearchLoading(true);
+    }
   };
 
   const handleViewDetails = (booking: Booking) => {
@@ -107,41 +128,41 @@ const BookingManagement: React.FC = () => {
   const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
     // Add confirmation for destructive actions
     if (status === 'Cancelled' || status === 'NoShow') {
-      const confirmMessage = status === 'Cancelled' 
-        ? 'Are you sure you want to cancel this booking?' 
+      const confirmMessage = status === 'Cancelled'
+        ? 'Are you sure you want to cancel this booking?'
         : 'Are you sure you want to mark this booking as No Show?';
-      
+
       if (!window.confirm(confirmMessage)) {
         return;
       }
     }
-    
+
     try {
       setActionLoading(prev => ({ ...prev, [bookingId]: true }));
       setError(null); // Clear any previous errors
-      
+
       console.log('Updating booking status:', { bookingId, status }); // Debug log
-      
+
       const response = await adminAPI.updateBookingStatus(bookingId, status);
-      
+
       console.log('Status update response:', response); // Debug log
-      
+
       if (response.success) {
         // Update local state
-        setBookings(prev => prev.map(booking => 
+        setBookings(prev => prev.map(booking =>
           (booking.id === bookingId || booking._id === bookingId)
-            ? { ...booking, status } 
+            ? { ...booking, status }
             : booking
         ));
-        
+
         // Update selected booking if it's the same one
         if (selectedBooking && (selectedBooking.id === bookingId || selectedBooking._id === bookingId)) {
           setSelectedBooking(prev => prev ? { ...prev, status } : null);
         }
-        
+
         // Show success message
         console.log('Booking status updated successfully');
-        
+
         // Optional: Show a success toast instead of console.log
         // toast.success(`Booking status updated to ${status}`);
       } else {
@@ -151,7 +172,7 @@ const BookingManagement: React.FC = () => {
       console.error('Failed to update booking status:', err);
       const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update booking status';
       setError(errorMessage);
-      
+
       // Show error to user (you can replace this with a toast notification)
       alert(`Error: ${errorMessage}`);
     } finally {
@@ -176,16 +197,16 @@ const BookingManagement: React.FC = () => {
   const handlePrintBooking = () => {
     // Store original title
     const originalTitle = document.title;
-    
+
     // Set print-friendly title
     if (selectedBooking) {
       document.title = `Booking Details - ${selectedBooking.bookingId}`;
     }
-    
+
     // Add a small delay to ensure modal is fully rendered
     setTimeout(() => {
       window.print();
-      
+
       // Restore original title after print dialog
       setTimeout(() => {
         document.title = originalTitle;
@@ -193,7 +214,7 @@ const BookingManagement: React.FC = () => {
     }, 100);
   };
 
-  
+
   const getStatusBadge = (status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
     const variants: { [key: string]: string } = {
       'Confirmed': 'success',
@@ -206,25 +227,7 @@ const BookingManagement: React.FC = () => {
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
 
-  if (loading) {
-    return (
-      <Card>
-        <Card.Body className="text-center py-4">
-          <div>Loading bookings...</div>
-        </Card.Body>
-      </Card>
-    );
-  }
 
-  if (error) {
-    return (
-      <Card>
-        <Card.Body>
-          <div className="text-danger">Error: {error}</div>
-        </Card.Body>
-      </Card>
-    );
-  }
 
   return (
     <>
@@ -241,9 +244,9 @@ const BookingManagement: React.FC = () => {
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
               <strong>Error:</strong> {error}
-              <button 
-                type="button" 
-                className="btn-close" 
+              <button
+                type="button"
+                className="btn-close"
                 onClick={() => setError(null)}
                 aria-label="Close"
               ></button>
@@ -251,7 +254,7 @@ const BookingManagement: React.FC = () => {
           )}
           <Row className="mb-3 g-3">
             <Col md={3}>
-              <Form.Select 
+              <Form.Select
                 name="status"
                 value={filters.status}
                 onChange={handleFilterChange}
@@ -266,23 +269,31 @@ const BookingManagement: React.FC = () => {
               </Form.Select>
             </Col>
             <Col md={3}>
-              <Form.Control 
+              <Form.Control
                 as="input"
-                type="date" 
+                type="date"
                 name="date"
                 value={filters.date}
                 onChange={handleFilterChange}
               />
             </Col>
             <Col md={6}>
-              <Form.Control 
-                as="input"
-                type="search" 
-                name="search"
-                value={filters.search}
-                onChange={handleFilterChange}
-                placeholder="Search by booking ID or guest name" 
-              />
+              <div className="position-relative">
+                <Form.Control
+                  as="input"
+                  type="search"
+                  name="search"
+                  value={filters.search}
+                  onChange={handleFilterChange}
+                  placeholder="Search by booking ID or guest name"
+                  disabled={loading}
+                />
+                {(searchLoading || loading) && (
+                  <div className="position-absolute top-50 end-0 translate-middle-y me-2">
+                    <Loader2 size={16} className="animate-spin text-muted" />
+                  </div>
+                )}
+              </div>
             </Col>
           </Row>
 
@@ -301,12 +312,14 @@ const BookingManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {bookings.length > 0 ? (
+                {loading && bookings.length === 0 ? (
+                  <DataLoader type="table" columns={8} count={5} />
+                ) : bookings.length > 0 ? (
                   bookings.map((booking) => {
                     const room = typeof booking.room === 'object' && booking.room !== null ? booking.room : null;
                     const guestName = booking.guestDetails?.primaryGuest?.name || 'Unknown';
                     const roomLabel = room ? `${room.name || ''}`.trim() : '-';
-                    
+
                     return (
                       <tr key={booking.id || booking._id}>
                         <td>
@@ -333,19 +346,19 @@ const BookingManagement: React.FC = () => {
                         <td>{getStatusBadge(booking.status)}</td>
                         <td className="text-end">
                           <div className="d-flex justify-content-end gap-1">
-                            <Button 
-                              variant="outline-primary" 
-                              size="sm" 
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
                               onClick={() => handleViewDetails(booking)}
                               title="View Details"
                               disabled={actionLoading[booking.id] || actionLoading[booking._id]}
                             >
                               <Eye size={16} />
                             </Button>
-                            
+
                             {booking.status === 'Pending' && (
-                              <Button 
-                                variant="outline-success" 
+                              <Button
+                                variant="outline-success"
                                 size="sm"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'Confirmed')}
                                 disabled={actionLoading[booking.id] || actionLoading[booking._id]}
@@ -359,10 +372,10 @@ const BookingManagement: React.FC = () => {
                                 )}
                               </Button>
                             )}
-                            
+
                             {['Pending', 'Confirmed'].includes(booking.status) && (
-                              <Button 
-                                variant="outline-danger" 
+                              <Button
+                                variant="outline-danger"
                                 size="sm"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'Cancelled')}
                                 disabled={actionLoading[booking.id] || actionLoading[booking._id]}
@@ -376,10 +389,10 @@ const BookingManagement: React.FC = () => {
                                 )}
                               </Button>
                             )}
-                            
+
                             {booking.status === 'Confirmed' && (
-                              <Button 
-                                variant="outline-info" 
+                              <Button
+                                variant="outline-info"
                                 size="sm"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'CheckedIn')}
                                 disabled={actionLoading[booking.id] || actionLoading[booking._id]}
@@ -393,10 +406,10 @@ const BookingManagement: React.FC = () => {
                                 )}
                               </Button>
                             )}
-                            
+
                             {booking.status === 'CheckedIn' && (
-                              <Button 
-                                variant="outline-secondary" 
+                              <Button
+                                variant="outline-secondary"
                                 size="sm"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'CheckedOut')}
                                 disabled={actionLoading[booking.id] || actionLoading[booking._id]}
@@ -419,8 +432,9 @@ const BookingManagement: React.FC = () => {
                   <tr>
                     <td colSpan={8} className="text-center py-4">
                       {loading ? (
-                        <div className="spinner-border text-primary" role="status">
-                          <span className="visually-hidden">Loading...</span>
+                        <div className="d-flex justify-content-center align-items-center">
+                          <Loader2 size={24} className="animate-spin text-primary me-2" />
+                          <span>Loading bookings...</span>
                         </div>
                       ) : (
                         <div className="text-muted">No bookings found</div>
@@ -431,14 +445,14 @@ const BookingManagement: React.FC = () => {
               </tbody>
             </Table>
           </div>
-          
+
           {/* Pagination Controls */}
           {pagination.pages > 1 && (
             <div className="d-flex justify-content-between align-items-center mt-3">
               <div className="d-flex align-items-center gap-2">
                 <span className="text-muted">Show</span>
-                <Form.Select 
-                  size="sm" 
+                <Form.Select
+                  size="sm"
                   style={{ width: 'auto' }}
                   value={pagination.limit}
                   onChange={(e) => handleLimitChange(Number(e.target.value))}
@@ -450,23 +464,23 @@ const BookingManagement: React.FC = () => {
                 </Form.Select>
                 <span className="text-muted">entries</span>
               </div>
-              
+
               <div className="d-flex align-items-center gap-2">
                 <span className="text-muted">
                   Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
                 </span>
               </div>
-              
+
               <div className="d-flex gap-1">
-                <Button 
-                  variant="outline-secondary" 
+                <Button
+                  variant="outline-secondary"
                   size="sm"
                   disabled={pagination.page === 1}
                   onClick={() => handlePageChange(pagination.page - 1)}
                 >
                   <ChevronLeft size={16} /> Previous
                 </Button>
-                
+
                 {/* Page Numbers */}
                 {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
                   let pageNum: number;
@@ -479,7 +493,7 @@ const BookingManagement: React.FC = () => {
                   } else {
                     pageNum = pagination.page - 2 + i;
                   }
-                  
+
                   return (
                     <Button
                       key={pageNum}
@@ -491,9 +505,9 @@ const BookingManagement: React.FC = () => {
                     </Button>
                   );
                 })}
-                
-                <Button 
-                  variant="outline-secondary" 
+
+                <Button
+                  variant="outline-secondary"
                   size="sm"
                   disabled={pagination.page === pagination.pages}
                   onClick={() => handlePageChange(pagination.page + 1)}
@@ -507,8 +521,8 @@ const BookingManagement: React.FC = () => {
       </Card>
 
       {/* Booking Details Modal */}
-      <Modal 
-        show={showDetailsModal} 
+      <Modal
+        show={showDetailsModal}
         onHide={() => setShowDetailsModal(false)}
         size="lg"
         className="booking-details-modal"
@@ -525,9 +539,9 @@ const BookingManagement: React.FC = () => {
                   Hotel Booking Receipt
                 </h1>
                 <p style={{ fontSize: '12pt', color: '#666', margin: '0' }}>
-                  Generated on {new Date().toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
+                  Generated on {new Date().toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
                     day: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit'
@@ -630,7 +644,7 @@ const BookingManagement: React.FC = () => {
                           <td>Room Charges ({selectedBooking.bookingDates.nights} nights)</td>
                           <td className="text-end">₹{selectedBooking.pricing?.roomPrice?.toFixed(2) || '0.00'}</td>
                         </tr>
-                        
+
                         {selectedBooking.pricing?.extraServices?.map((service, index) => (
                           <tr key={`service-${index}`}>
                             <td>
@@ -641,7 +655,7 @@ const BookingManagement: React.FC = () => {
                             </td>
                           </tr>
                         ))}
-                        
+
                         {selectedBooking.pricing?.discount?.amount > 0 && (
                           <tr className="discount-row">
                             <td>
@@ -652,7 +666,7 @@ const BookingManagement: React.FC = () => {
                             </td>
                           </tr>
                         )}
-                        
+
                         <tr className="total-row">
                           <td>
                             <strong>Total Amount</strong>

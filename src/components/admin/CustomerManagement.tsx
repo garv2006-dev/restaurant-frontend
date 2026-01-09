@@ -5,6 +5,7 @@ import { adminAPI } from '../../services/api';
 import { User as UserType } from '../../types';
 import { toast } from 'react-toastify';
 import '../../styles/admin-panel.css';
+import DataLoader from '../common/DataLoader';
 
 // Extend the User type with additional customer statistics
 interface Customer extends UserType {
@@ -34,7 +35,7 @@ const CustomerManagement: React.FC = () => {
       setError('');
       const response = await adminAPI.getCustomers();
       console.log('Customer API Response:', response);
-      
+
       if (response && response.success && response.data) {
         // The data structure is { customers: Customer[], pagination: any }
         const customerData = response.data.customers || response.data || [];
@@ -66,7 +67,7 @@ const CustomerManagement: React.FC = () => {
     try {
       setAddLoading(true);
       const response = await adminAPI.addCustomer(customerData);
-      
+
       if (response.success) {
         setShowAddModal(false);
         fetchCustomers(); // Refresh customer list
@@ -97,22 +98,22 @@ const CustomerManagement: React.FC = () => {
     if (!customerToDelete) return;
 
     console.log('Deleting customer:', customerToDelete);
-    
+
     try {
       setDeleteLoading(true);
       setError(''); // Clear any previous errors
-      
+
       // Use id first, then _id as fallback (MongoDB uses _id)
       const customerId = customerToDelete.id || customerToDelete._id;
       console.log('Customer ID to delete:', customerId);
-      
+
       if (!customerId) {
         throw new Error('Customer ID not found');
       }
-      
+
       const response = await adminAPI.deleteCustomer(customerId);
       console.log('Delete response:', response);
-      
+
       if (response && response.success) {
         setShowDeleteModal(false);
         setCustomerToDelete(null);
@@ -160,22 +161,6 @@ const CustomerManagement: React.FC = () => {
     return `₹${amount.toLocaleString()}`;
   };
 
-  if (loading) {
-    return (
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <h3 className="admin-card-title">Customer Management</h3>
-        </div>
-        <div className="admin-card-body">
-          <div className="admin-loading">
-            <div className="admin-spinner"></div>
-            Loading customers...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="admin-card">
       <div className="admin-card-header">
@@ -213,94 +198,116 @@ const CustomerManagement: React.FC = () => {
           </div>
         )}
 
-        {filteredCustomers.length === 0 ? (
-          <div className="admin-empty">
-            <div className="admin-empty-icon">
-              <User size={48} />
-            </div>
-            <h4 className="admin-empty-title">
-              {searchTerm ? 'No customers found' : 'No customers yet'}
-            </h4>
-            <p className="admin-empty-description">
-              {searchTerm ? 'Try adjusting your search terms.' : 'Start by adding your first customer.'}
-            </p>
-          </div>
-        ) : (
-          <div className="admin-table-responsive">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>EMAIL</th>
-                  <th>PHONE</th>
-                  <th>ROLE</th>
-                  <th>STATUS</th>
-                  <th>TOTAL BOOKINGS</th>
-                  <th>TOTAL SPENT</th>
-                  <th>JOINED</th>
-                  <th>ACTIONS</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredCustomers.map((customer) => (
-                  <tr key={customer.id || customer._id}>
-                    <td>
-                      <div>
-                        <strong>{customer.name || 'N/A'}</strong>
-                        <br />
-                        <small style={{ color: '#64748b' }}>{customer.email || 'N/A'}</small>
-                      </div>
-                    </td>
-                    <td>{customer.phone || '-'}</td>
-                    <td>
-                      <Badge bg={getRoleBadgeVariant(customer.role)}>
-                        {customer.role || 'customer'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <div className="admin-status">
-                        <span className={`admin-status-dot ${customer.isEmailVerified !== false ? 'active' : 'inactive'}`}></span>
-                        {customer.isEmailVerified !== false ? 'Active' : 'Inactive'}
-                      </div>
-                    </td>
-                    <td>
-                      <Badge bg="info">
-                        {customer.totalBookings || 0}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Badge bg="success">
-                        {formatCurrency(customer.totalSpent || 0)}
-                      </Badge>
-                    </td>
-                    <td>{formatDate(customer.createdAt)}</td>
-                    <td>
-                      <div className="admin-action-buttons">
-                        <Button 
-                          variant="outline-danger"
-                          size="sm"
-                          title="Delete Customer"
-                          onClick={() => handleDeleteClick(customer)}
-                          style={{ 
-                            padding: '0.25rem 0.5rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem'
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </td>
+        {
+          loading ? (
+            <div className="admin-table-responsive">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>EMAIL</th>
+                    <th>PHONE</th>
+                    <th>ROLE</th>
+                    <th>STATUS</th>
+                    <th>TOTAL BOOKINGS</th>
+                    <th>TOTAL SPENT</th>
+                    <th>JOINED</th>
+                    <th>ACTIONS</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-      
+                </thead>
+                <tbody>
+                  <DataLoader type="table" count={5} columns={8} />
+                </tbody>
+              </table>
+            </div>
+          ) : filteredCustomers.length === 0 ? (
+            <div className="admin-empty">
+              <div className="admin-empty-icon">
+                <User size={48} />
+              </div>
+              <h4 className="admin-empty-title">
+                {searchTerm ? 'No customers found' : 'No customers yet'}
+              </h4>
+              <p className="admin-empty-description">
+                {searchTerm ? 'Try adjusting your search terms.' : 'Start by adding your first customer.'}
+              </p>
+            </div>
+          ) : (
+            <div className="admin-table-responsive">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>EMAIL</th>
+                    <th>PHONE</th>
+                    <th>ROLE</th>
+                    <th>STATUS</th>
+                    <th>TOTAL BOOKINGS</th>
+                    <th>TOTAL SPENT</th>
+                    <th>JOINED</th>
+                    <th>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredCustomers.map((customer) => (
+                    <tr key={customer.id || customer._id}>
+                      <td>
+                        <div>
+                          <strong>{customer.name || 'N/A'}</strong>
+                          <br />
+                          <small style={{ color: '#64748b' }}>{customer.email || 'N/A'}</small>
+                        </div>
+                      </td>
+                      <td>{customer.phone || '-'}</td>
+                      <td>
+                        <Badge bg={getRoleBadgeVariant(customer.role)}>
+                          {customer.role || 'customer'}
+                        </Badge>
+                      </td>
+                      <td>
+                        <div className="admin-status">
+                          <span className={`admin-status-dot ${customer.isEmailVerified !== false ? 'active' : 'inactive'}`}></span>
+                          {customer.isEmailVerified !== false ? 'Active' : 'Inactive'}
+                        </div>
+                      </td>
+                      <td>
+                        <Badge bg="info">
+                          {customer.totalBookings || 0}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Badge bg="success">
+                          {formatCurrency(customer.totalSpent || 0)}
+                        </Badge>
+                      </td>
+                      <td>{formatDate(customer.createdAt)}</td>
+                      <td>
+                        <div className="admin-action-buttons">
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            title="Delete Customer"
+                            onClick={() => handleDeleteClick(customer)}
+                            style={{
+                              padding: '0.25rem 0.5rem',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.25rem'
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
+      </div >
+
       {/* Add Customer Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      < Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Add New Customer</Modal.Title>
         </Modal.Header>
@@ -315,7 +322,7 @@ const CustomerManagement: React.FC = () => {
                 required
               />
             </Form.Group>
-            
+
             <Form.Group className="mb-3">
               <Form.Label>Email</Form.Label>
               <Form.Control
@@ -325,7 +332,7 @@ const CustomerManagement: React.FC = () => {
                 required
               />
             </Form.Group>
-            
+
             <Form.Group className="mb-3">
               <Form.Label>Phone</Form.Label>
               <Form.Control
@@ -335,7 +342,7 @@ const CustomerManagement: React.FC = () => {
                 required
               />
             </Form.Group>
-            
+
             <Form.Group className="mb-3">
               <Form.Label>Password</Form.Label>
               <Form.Control
@@ -366,10 +373,10 @@ const CustomerManagement: React.FC = () => {
             </Button>
           </Modal.Footer>
         </Form>
-      </Modal>
+      </Modal >
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={handleDeleteCancel}>
+      < Modal show={showDeleteModal} onHide={handleDeleteCancel} >
         <Modal.Header closeButton>
           <Modal.Title>Delete Customer</Modal.Title>
         </Modal.Header>
@@ -404,8 +411,8 @@ const CustomerManagement: React.FC = () => {
             )}
           </Button>
         </Modal.Footer>
-      </Modal>
-    </div>
+      </Modal >
+    </div >
   );
 };
 

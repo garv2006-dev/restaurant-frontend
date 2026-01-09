@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, Row, Col, Badge, Table, Spinner, Alert, Button, Form, InputGroup, Modal } from 'react-bootstrap';
-import { 
-  TrendingUp, 
-  Book, 
-  DollarSign, 
+import {
+  TrendingUp,
+  Book,
+  DollarSign,
   Calendar,
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  LogIn, 
+  Eye,
+  CheckCircle,
+  XCircle,
+  LogIn,
   LogOut,
   Loader2,
   Search
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import '../../styles/admin-panel.css';
+import DataLoader from '../common/DataLoader';
 
 // Add custom styles for search input
 const searchStyles = `
@@ -96,57 +97,123 @@ const LiveDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [searchLoading, setSearchLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<RecentBooking | null>(null);
 
-  // Filter bookings based on search term
-  const filteredBookings = data?.recentBookings?.filter(booking => {
-    if (!searchTerm) return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      booking.guestDetails.primaryGuest.name.toLowerCase().includes(searchLower) ||
-      booking.guestDetails.primaryGuest.email.toLowerCase().includes(searchLower) ||
-      booking.guestDetails.primaryGuest.phone.includes(searchTerm) ||
-      booking.room?.name?.toLowerCase().includes(searchLower) ||
-      booking.status.toLowerCase().includes(searchLower) ||
-      booking.bookingId.toLowerCase().includes(searchLower)
-    );
-  }) || [];
+  // Fetch bookings with search functionality
+  const fetchBookings = useCallback(async (search?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Use admin endpoint to get all bookings with search
+      const response = await adminAPI.getAllBookings({
+        limit: 100,
+        search: search || undefined
+      });
+
+      console.log('Dashboard API response:', response);
+
+      if (response?.success && response?.data) {
+        let bookings: any[] = [];
+
+        // Handle different response structures
+        if (Array.isArray(response.data)) {
+          bookings = response.data;
+        } else if (response.data.bookings && Array.isArray(response.data.bookings)) {
+          bookings = response.data.bookings;
+        } else if (response.data && Array.isArray((response.data as any).data)) {
+          bookings = (response.data as any).data;
+        }
+
+        console.log('Processed bookings:', bookings);
+
+        // Get recent bookings (increased to 20 for better search results)
+        const recentBookings = bookings.slice(0, 20) as RecentBooking[];
+
+        // Calculate stats
+        const totalBookings = bookings.length;
+        const totalRevenue = bookings.reduce((sum: number, b: any) => sum + (b.pricing?.totalAmount || 0), 0);
+        const confirmedBookings = bookings.filter((b: any) => b.status === 'Confirmed').length;
+        const occupancyRate = totalBookings > 0 ? Math.round((confirmedBookings / totalBookings) * 100) : 0;
+        const pendingCheckins = bookings.filter((b: any) => b.status === 'Pending').length;
+
+        setData({
+          totalBookings,
+          totalRevenue,
+          occupancyRate,
+          pendingCheckins,
+          recentBookings
+        });
+      } else {
+        setError('Failed to fetch booking data');
+      }
+    } catch (err: any) {
+      console.error('Error fetching bookings:', err);
+      setError(err?.response?.data?.message || 'Failed to load bookings');
+    } finally {
+      setLoading(false);
+      setSearchLoading(false);
+    }
+  }, []);
+
+  // Debounced search function
+  const debouncedSearch = useMemo(
+    () => {
+      let timeoutId: NodeJS.Timeout;
+      return (searchValue: string) => {
+        clearTimeout(timeoutId);
+        if (searchValue.trim() === '') {
+          fetchBookings();
+        } else {
+          setSearchLoading(true);
+          timeoutId = setTimeout(() => {
+            fetchBookings(searchValue);
+          }, 500);
+        }
+      };
+    },
+    [fetchBookings]
+  );
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
     // Add confirmation for destructive actions
     if (status === 'Cancelled' || status === 'NoShow') {
-      const confirmMessage = status === 'Cancelled' 
-        ? 'Are you sure you want to cancel this booking?' 
+      const confirmMessage = status === 'Cancelled'
+        ? 'Are you sure you want to cancel this booking?'
         : 'Are you sure you want to mark this booking as No Show?';
-      
+
       if (!window.confirm(confirmMessage)) {
         return;
       }
     }
-    
+
     try {
       setActionLoading(prev => ({ ...prev, [bookingId]: true }));
-      
+
       console.log('Updating booking status:', { bookingId, status });
-      
+
       const response = await adminAPI.updateBookingStatus(bookingId, status);
-      
+
       if (response.success) {
         // Update local state
         setData(prev => {
           if (!prev) return prev;
           return {
             ...prev,
-            recentBookings: prev.recentBookings.map(booking => 
-              booking._id === bookingId 
-                ? { ...booking, status } 
+            recentBookings: prev.recentBookings.map(booking =>
+              booking._id === bookingId
+                ? { ...booking, status }
                 : booking
             )
           };
         });
-        
+
         console.log('Booking status updated successfully');
       } else {
         throw new Error(response.message || 'Failed to update booking status');
@@ -165,59 +232,18 @@ const LiveDashboard: React.FC = () => {
     setShowDetailsModal(true);
   };
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        setLoading(true);
-        // Use admin endpoint to get all bookings
-        const response = await adminAPI.getAllBookings({ limit: 100 });
-        
-        console.log('Dashboard API response:', response);
-        
-        if (response?.success && response?.data) {
-          let bookings: any[] = [];
-          
-          // Handle different response structures
-          if (Array.isArray(response.data)) {
-            bookings = response.data;
-          } else if (response.data.bookings && Array.isArray(response.data.bookings)) {
-            bookings = response.data.bookings;
-          } else if (response.data && Array.isArray((response.data as any).data)) {
-            bookings = (response.data as any).data;
-          }
-          
-          console.log('Processed bookings:', bookings);
-          
-          // Get recent bookings (increased to 20 for better search results)
-          const recentBookings = bookings.slice(0, 20) as RecentBooking[];
-          
-          // Calculate stats
-          const totalBookings = bookings.length;
-          const totalRevenue = bookings.reduce((sum: number, b: any) => sum + (b.pricing?.totalAmount || 0), 0);
-          const confirmedBookings = bookings.filter((b: any) => b.status === 'Confirmed').length;
-          const occupancyRate = totalBookings > 0 ? Math.round((confirmedBookings / totalBookings) * 100) : 0;
-          const pendingCheckins = bookings.filter((b: any) => b.status === 'Pending').length;
-          
-          setData({
-            totalBookings,
-            totalRevenue,
-            occupancyRate,
-            pendingCheckins,
-            recentBookings
-          });
-        } else {
-          setError('Failed to fetch booking data');
-        }
-      } catch (err: any) {
-        console.error('Error fetching bookings:', err);
-        setError(err?.response?.data?.message || 'Failed to load bookings');
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Handle search input change with debounce
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    debouncedSearch(value);
+  };
 
+  // Handle search clear
+  const handleClearSearch = () => {
+    setSearchTerm('');
     fetchBookings();
-  }, []);
+  };
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -236,14 +262,7 @@ const LiveDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <Card>
-        <Card.Body>
-          <div className="text-center py-4">
-            <Spinner animation="border" variant="primary" />
-            <p className="mt-2">Loading dashboard data...</p>
-          </div>
-        </Card.Body>
-      </Card>
+      <DataLoader type="card" count={4} />
     );
   }
 
@@ -274,7 +293,7 @@ const LiveDashboard: React.FC = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={3}>
           <Card className="border-start border-success border-4">
             <Card.Body>
@@ -290,7 +309,7 @@ const LiveDashboard: React.FC = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={3}>
           <Card className="border-start border-info border-4">
             <Card.Body>
@@ -306,7 +325,7 @@ const LiveDashboard: React.FC = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={3}>
           <Card className="border-start border-warning border-4">
             <Card.Body>
@@ -334,41 +353,49 @@ const LiveDashboard: React.FC = () => {
                     <Badge bg="danger">Live</Badge>
                     {searchTerm && (
                       <Badge bg="info" className="ms-2">
-                        {filteredBookings.length} found
+                        {data?.recentBookings?.length || 0} found
                       </Badge>
                     )}
                   </div>
                 </Col>
                 <Col md={6}>
-                  <InputGroup className="search-input-group">
-                    <InputGroup.Text className="bg-light border-end-0">
-                      <Search size={16} className="text-muted" />
-                    </InputGroup.Text>
-                    <Form.Control
-                      type="text"
-                      placeholder="Search bookings by name, email, phone, room, or status..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="border-start-0 ps-0"
-                      style={{ boxShadow: 'none' }}
-                    />
-                    {searchTerm && (
-                      <Button 
-                        variant="outline-secondary" 
-                        onClick={() => setSearchTerm('')}
-                        title="Clear search"
-                        className="border-start-0"
-                        style={{ 
-                          borderTopLeftRadius: 0, 
-                          borderBottomLeftRadius: 0,
-                          fontSize: '18px',
-                          lineHeight: 1
-                        }}
-                      >
-                        ×
-                      </Button>
-                    )}
-                  </InputGroup>
+                  <div className="position-relative">
+                    <InputGroup className="search-input-group">
+                      <InputGroup.Text className="bg-light border-end-0">
+                        <Search size={16} className="text-muted" />
+                      </InputGroup.Text>
+                      <Form.Control
+                        type="text"
+                        placeholder="Search bookings by name, email, phone, room, or status..."
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        className="border-start-0 ps-0"
+                        style={{ boxShadow: 'none' }}
+                        disabled={loading}
+                      />
+                      {(searchLoading || loading) && (
+                        <div className="position-absolute top-50 end-0 translate-middle-y me-2">
+                          <Loader2 size={16} className="animate-spin text-muted" />
+                        </div>
+                      )}
+                      {searchTerm && !searchLoading && (
+                        <Button
+                          variant="outline-secondary"
+                          onClick={handleClearSearch}
+                          title="Clear search"
+                          className="border-start-0"
+                          style={{
+                            borderTopLeftRadius: 0,
+                            borderBottomLeftRadius: 0,
+                            fontSize: '18px',
+                            lineHeight: 1
+                          }}
+                        >
+                          ×
+                        </Button>
+                      )}
+                    </InputGroup>
+                  </div>
                 </Col>
               </Row>
             </Card.Header>
@@ -393,8 +420,8 @@ const LiveDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredBookings && filteredBookings.length > 0 ? (
-                    filteredBookings.map((booking) => (
+                  {data?.recentBookings && data.recentBookings.length > 0 ? (
+                    data.recentBookings.map((booking) => (
                       <tr key={booking._id}>
                         <td>
                           <strong>{booking.guestDetails.primaryGuest.name}</strong>
@@ -419,30 +446,30 @@ const LiveDashboard: React.FC = () => {
                         </td>
                         <td>
                           <Badge bg={
-                            booking.status === 'Confirmed' ? 'success' : 
-                            booking.status === 'Pending' ? 'warning' : 
-                            booking.status === 'CheckedIn' ? 'info' :
-                            booking.status === 'CheckedOut' ? 'secondary' :
-                            booking.status === 'Cancelled' ? 'danger' : 'secondary'
+                            booking.status === 'Confirmed' ? 'success' :
+                              booking.status === 'Pending' ? 'warning' :
+                                booking.status === 'CheckedIn' ? 'info' :
+                                  booking.status === 'CheckedOut' ? 'secondary' :
+                                    booking.status === 'Cancelled' ? 'danger' : 'secondary'
                           }>
                             {booking.status}
                           </Badge>
                         </td>
                         <td>
                           <div className="d-flex justify-content-end gap-1">
-                            <Button 
-                              variant="outline-primary" 
-                              size="sm" 
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
                               onClick={() => handleViewDetails(booking)}
                               title="View booking details"
                               disabled={actionLoading[booking._id]}
                             >
                               <Eye size={16} />
                             </Button>
-                            
+
                             {booking.status === 'Pending' && (
-                              <Button 
-                                variant="outline-success" 
+                              <Button
+                                variant="outline-success"
                                 size="sm"
                                 onClick={() => handleStatusUpdate(booking._id, 'Confirmed')}
                                 disabled={actionLoading[booking._id]}
@@ -456,10 +483,10 @@ const LiveDashboard: React.FC = () => {
                                 )}
                               </Button>
                             )}
-                            
+
                             {['Pending', 'Confirmed'].includes(booking.status) && (
-                              <Button 
-                                variant="outline-danger" 
+                              <Button
+                                variant="outline-danger"
                                 size="sm"
                                 onClick={() => handleStatusUpdate(booking._id, 'Cancelled')}
                                 disabled={actionLoading[booking._id]}
@@ -473,10 +500,10 @@ const LiveDashboard: React.FC = () => {
                                 )}
                               </Button>
                             )}
-                            
+
                             {booking.status === 'Confirmed' && (
-                              <Button 
-                                variant="outline-info" 
+                              <Button
+                                variant="outline-info"
                                 size="sm"
                                 onClick={() => handleStatusUpdate(booking._id, 'CheckedIn')}
                                 disabled={actionLoading[booking._id]}
@@ -490,10 +517,10 @@ const LiveDashboard: React.FC = () => {
                                 )}
                               </Button>
                             )}
-                            
+
                             {booking.status === 'CheckedIn' && (
-                              <Button 
-                                variant="outline-secondary" 
+                              <Button
+                                variant="outline-secondary"
                                 size="sm"
                                 onClick={() => handleStatusUpdate(booking._id, 'CheckedOut')}
                                 disabled={actionLoading[booking._id]}
@@ -526,8 +553,8 @@ const LiveDashboard: React.FC = () => {
       </Row>
 
       {/* Booking Details Modal */}
-      <Modal 
-        show={showDetailsModal} 
+      <Modal
+        show={showDetailsModal}
         onHide={() => setShowDetailsModal(false)}
         size="lg"
         className="booking-details-modal"
@@ -556,11 +583,11 @@ const LiveDashboard: React.FC = () => {
                     <div className="booking-status">
                       <Badge bg={
                         selectedBooking.status === 'Confirmed' ? 'success' :
-                        selectedBooking.status === 'Pending' ? 'warning' :
-                        selectedBooking.status === 'CheckedIn' ? 'info' :
-                        selectedBooking.status === 'CheckedOut' ? 'secondary' :
-                        selectedBooking.status === 'Cancelled' ? 'danger' :
-                        'secondary'
+                          selectedBooking.status === 'Pending' ? 'warning' :
+                            selectedBooking.status === 'CheckedIn' ? 'info' :
+                              selectedBooking.status === 'CheckedOut' ? 'secondary' :
+                                selectedBooking.status === 'Cancelled' ? 'danger' :
+                                  'secondary'
                       }>
                         {selectedBooking.status}
                       </Badge>
@@ -633,10 +660,10 @@ const LiveDashboard: React.FC = () => {
 const formatDate = (dateString: string) => {
   if (!dateString) return '-';
   try {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   } catch (error) {
     return dateString;
