@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, 
-  Table, 
-  Button, 
-  Modal, 
+import {
+  Card,
+  Table,
+  Button,
+  Modal,
   Form,
   Row,
-  Col, 
-  Badge, 
+  Col,
+  Badge,
   Alert,
   Spinner
 } from 'react-bootstrap';
@@ -15,6 +15,7 @@ import { Plus, Edit2, Trash2, X, RefreshCw, ExternalLink, ChevronDown, Upload } 
 import api from '../../services/api';
 import ImageUploadModal from './ImageUploadModal';
 import ImageGallery from './ImageGallery';
+import DataLoader from '../common/DataLoader';
 
 interface Room {
   _id: string;
@@ -105,7 +106,7 @@ const RoomManagement: React.FC = () => {
       setError('');
       // Use the correct endpoint relative to baseURL (which already includes /api)
       const response = await api.get('/rooms');
-      
+
       // Handle different response structures
       let roomsData = [];
       if (Array.isArray(response.data)) {
@@ -115,9 +116,9 @@ const RoomManagement: React.FC = () => {
       } else if (response.data && Array.isArray(response.data.data)) {
         roomsData = response.data.data;
       }
-      
+
       setRooms(roomsData);
-      
+
       if (roomsData.length === 0) {
         setSuccess('No rooms found. Add your first room.');
       }
@@ -217,103 +218,103 @@ const RoomManagement: React.FC = () => {
     setImagePreview((prev) => prev.filter((_, i) => i !== index));
   };
 
- const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError('');
-  setSuccess('');
-  
-  // Prevent double submission
-  if (submitting) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
 
-  // Validation
-  const requiredFields = ['name', 'type', 'description', 'bedType'];
-  const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
-  
-  if (missingFields.length > 0) {
-    setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
-    return;
-  }
+    // Prevent double submission
+    if (submitting) return;
 
-  try {
-    setSubmitting(true);
+    // Validation
+    const requiredFields = ['name', 'type', 'description', 'bedType'];
+    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
 
-    // Create or update room
-    let response;
-
-    if (editingRoom) {
-      // For now, keep updates as JSON payloads
-      const payload = {
-        ...formData,
-      };
-      response = await api.put(`/rooms/${editingRoom._id}`, payload);
-    } else {
-      // Build FormData for creating a new room with optional images
-      const formDataToSend = new FormData();
-
-      // Primitive fields
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('type', formData.type);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('bedType', formData.bedType);
-      formDataToSend.append('status', formData.status);
-      formDataToSend.append('isActive', String(formData.isActive));
-      formDataToSend.append('area', String(formData.area));
-      formDataToSend.append('floor', String(formData.floor));
-
-      // Nested objects as JSON strings (parsed on backend)
-      formDataToSend.append('capacity', JSON.stringify(formData.capacity));
-      formDataToSend.append('price', JSON.stringify(formData.price));
-      formDataToSend.append('features', JSON.stringify(formData.features));
-
-      // Images - up to 5, enforced by handleImageSelect
-      selectedImages.forEach((file) => {
-        formDataToSend.append('images', file);
-      });
-
-      response = await api.post('/rooms', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+    if (missingFields.length > 0) {
+      setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+      return;
     }
 
-    // Show success message and refresh the list
-    setSuccess(editingRoom ? 'Room updated successfully!' : 'Room added successfully!');
-    handleCloseModal();
-    setSelectedImages([]);
-    setImagePreview([]);
-    fetchRooms();
-  } catch (err: any) {
-    console.error('Error saving room:', err);
-    
-    let errorMessage = 'Failed to save room';
-    
-    if (err.response) {
-      // Handle different error statuses
-      if (err.response.status === 400) {
-        errorMessage = 'Invalid data. Please check your inputs.';
-      } else if (err.response.status === 401) {
-        errorMessage = 'You are not authorized. Please login again.';
-      } else if (err.response.status === 403) {
-        errorMessage = 'You do not have permission to perform this action.';
-      } else if (err.response.status === 413) {
-        errorMessage = 'File size is too large. Maximum size is 5MB per image.';
-      } else if (err.response.status === 429) {
-        errorMessage = 'Too many requests. Please try again later.';
-      } else if (err.response.data && err.response.data.message) {
-        errorMessage = err.response.data.message;
+    try {
+      setSubmitting(true);
+
+      // Create or update room
+      let response;
+
+      if (editingRoom) {
+        // For now, keep updates as JSON payloads
+        const payload = {
+          ...formData,
+        };
+        response = await api.put(`/rooms/${editingRoom._id}`, payload);
+      } else {
+        // Build FormData for creating a new room with optional images
+        const formDataToSend = new FormData();
+
+        // Primitive fields
+        formDataToSend.append('name', formData.name);
+        formDataToSend.append('type', formData.type);
+        formDataToSend.append('description', formData.description);
+        formDataToSend.append('bedType', formData.bedType);
+        formDataToSend.append('status', formData.status);
+        formDataToSend.append('isActive', String(formData.isActive));
+        formDataToSend.append('area', String(formData.area));
+        formDataToSend.append('floor', String(formData.floor));
+
+        // Nested objects as JSON strings (parsed on backend)
+        formDataToSend.append('capacity', JSON.stringify(formData.capacity));
+        formDataToSend.append('price', JSON.stringify(formData.price));
+        formDataToSend.append('features', JSON.stringify(formData.features));
+
+        // Images - up to 5, enforced by handleImageSelect
+        selectedImages.forEach((file) => {
+          formDataToSend.append('images', file);
+        });
+
+        response = await api.post('/rooms', formDataToSend, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
       }
-    } else if (err.request) {
-      errorMessage = 'No response from server. Please check your connection.';
-    } else if (err.message) {
-      errorMessage = err.message;
+
+      // Show success message and refresh the list
+      setSuccess(editingRoom ? 'Room updated successfully!' : 'Room added successfully!');
+      handleCloseModal();
+      setSelectedImages([]);
+      setImagePreview([]);
+      fetchRooms();
+    } catch (err: any) {
+      console.error('Error saving room:', err);
+
+      let errorMessage = 'Failed to save room';
+
+      if (err.response) {
+        // Handle different error statuses
+        if (err.response.status === 400) {
+          errorMessage = 'Invalid data. Please check your inputs.';
+        } else if (err.response.status === 401) {
+          errorMessage = 'You are not authorized. Please login again.';
+        } else if (err.response.status === 403) {
+          errorMessage = 'You do not have permission to perform this action.';
+        } else if (err.response.status === 413) {
+          errorMessage = 'File size is too large. Maximum size is 5MB per image.';
+        } else if (err.response.status === 429) {
+          errorMessage = 'Too many requests. Please try again later.';
+        } else if (err.response.data && err.response.data.message) {
+          errorMessage = err.response.data.message;
+        }
+      } else if (err.request) {
+        errorMessage = 'No response from server. Please check your connection.';
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
+    } finally {
+      setSubmitting(false);
     }
-    
-    setError(errorMessage);
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
 
   const handleSelectRoom = (roomId: string, checked: boolean) => {
     if (checked) {
@@ -333,21 +334,21 @@ const RoomManagement: React.FC = () => {
 
   const handleDeleteRoom = async (roomId: string) => {
     if (!window.confirm('Are you sure you want to delete this room?')) return;
-    
+
     try {
       setDeletingRoomId(roomId);
       setError('');
-      
+
       const response = await api.delete(`/rooms/${roomId}`);
-      
+
       setSuccess('Room deleted successfully!');
       setDeletingRoomId(null);
       fetchRooms();
     } catch (err: any) {
       console.error('Error deleting room:', err);
-      
+
       let errorMessage = 'Failed to delete room';
-      
+
       if (err.response) {
         if (err.response.status === 400) {
           // This is likely "Cannot delete room with active bookings"
@@ -364,7 +365,7 @@ const RoomManagement: React.FC = () => {
       } else if (err.message) {
         errorMessage = err.message;
       }
-      
+
       setError(errorMessage);
       setDeletingRoomId(null);
     }
@@ -377,25 +378,25 @@ const RoomManagement: React.FC = () => {
     try {
       setSubmitting(true);
       setError('');
-      
+
       const results = await Promise.allSettled(
         selectedRooms.map(roomId => api.delete(`/rooms/${roomId}`))
       );
-      
+
       const successful = results.filter(r => r.status === 'fulfilled').length;
       const failed = results.filter(r => r.status === 'rejected').length;
-      
+
       if (failed > 0) {
         const failedRoomIds = selectedRooms.filter((_, i) => results[i].status === 'rejected');
         const failureReasons = results
           .map((r, i) => r.status === 'rejected' ? r.reason?.response?.data?.message : null)
           .filter(Boolean);
-        
+
         setError(`Successfully deleted ${successful} room(s). Failed to delete ${failed} room(s): ${failureReasons.join(', ')}`);
       } else {
         setSuccess(`${successful} rooms deleted successfully!`);
       }
-      
+
       setSelectedRooms([]);
       fetchRooms();
     } catch (error: any) {
@@ -470,8 +471,8 @@ const RoomManagement: React.FC = () => {
             <RefreshCw size={16} className={`me-1 ${loading ? 'spin' : ''}`} />
             Refresh
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={handleAddRoom}
             type="button"
             disabled={showModal || submitting}
@@ -499,20 +500,20 @@ const RoomManagement: React.FC = () => {
             {success}
             {success.includes('added successfully') && (
               <div className="mt-2">
-                <Button 
-                  variant="outline-success" 
-                  size="sm" 
-                  href="/" 
+                <Button
+                  variant="outline-success"
+                  size="sm"
+                  href="/"
                   target="_blank"
                   className="me-2"
                 >
                   <ExternalLink size={14} className="me-1" />
                   View on Home Page
                 </Button>
-                <Button 
-                  variant="outline-success" 
-                  size="sm" 
-                  href="/rooms" 
+                <Button
+                  variant="outline-success"
+                  size="sm"
+                  href="/rooms"
                   target="_blank"
                 >
                   <ExternalLink size={14} className="me-1" />
@@ -524,10 +525,7 @@ const RoomManagement: React.FC = () => {
         )}
 
         {loading ? (
-          <div className="text-center py-4">
-            <Spinner animation="border" />
-            <p className="mt-2">Loading rooms...</p>
-          </div>
+          <DataLoader type="table" count={5} columns={7} />
         ) : (
           <Table responsive hover>
             <thead>
@@ -575,18 +573,18 @@ const RoomManagement: React.FC = () => {
                       <Button variant="outline-primary" size="sm" className="me-1" onClick={() => handleEditRoom(room)}>
                         <Edit2 size={14} />
                       </Button>
-                      <Button 
-                        variant="outline-success" 
-                        size="sm" 
+                      <Button
+                        variant="outline-success"
+                        size="sm"
                         className="me-1"
                         onClick={() => handleOpenImageUploadModal(room)}
                         title="Upload images"
                       >
                         <Upload size={14} />
                       </Button>
-                      <Button 
-                        variant="outline-danger" 
-                        size="sm" 
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
                         onClick={() => handleDeleteRoom(room._id)}
                         disabled={deletingRoomId === room._id}
                       >
@@ -608,216 +606,216 @@ const RoomManagement: React.FC = () => {
         )}
       </Card.Body>
 
-     {/* Add/Edit Room Modal */}
-<Modal show={showModal} onHide={handleCloseModal} size="lg">
-  <Modal.Header closeButton>
-    <Modal.Title>{editingRoom ? 'Edit Room' : 'Add New Room'}</Modal.Title>
-  </Modal.Header>
-  <Form onSubmit={handleSubmit}>
-    <Modal.Body>
-      {error && <Alert variant="danger">{error}</Alert>}
-      <Row>
-        <Col md={12}>
-          <Form.Group className="mb-3">
-            <Form.Label>Room Name *</Form.Label>
-            <Form.Control
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              required
-              placeholder="E.g., Deluxe Suite"
-            />
-          </Form.Group>
-        </Col>
-      </Row>
+      {/* Add/Edit Room Modal */}
+      <Modal show={showModal} onHide={handleCloseModal} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editingRoom ? 'Edit Room' : 'Add New Room'}</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleSubmit}>
+          <Modal.Body>
+            {error && <Alert variant="danger">{error}</Alert>}
+            <Row>
+              <Col md={12}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Room Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    placeholder="E.g., Deluxe Suite"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <Row>
-        <Col md={6}>
-          <Form.Group className="mb-3">
-            <Form.Label>Room Type *</Form.Label>
-            <Form.Select
-              value={formData.type}
-              onChange={(e) => setFormData({...formData, type: e.target.value as any})}
-              required
-            >
-              <option value="Standard">Standard</option>
-              <option value="Deluxe">Deluxe</option>
-              <option value="Suite">Suite</option>
-            </Form.Select>
-          </Form.Group>
-        </Col>
-        <Col md={6}>
-          <Form.Group className="mb-3">
-            <Form.Label>Bed Type *</Form.Label>
-            <Form.Select
-              value={formData.bedType}
-              onChange={(e) => setFormData({...formData, bedType: e.target.value as any})}
-              required
-            >
-              <option value="Single">Single</option>
-              <option value="Double">Double</option>
-              <option value="Queen">Queen</option>
-              <option value="King">King</option>
-              <option value="Twin">Twin</option>
-            </Form.Select>
-          </Form.Group>
-        </Col>
-      </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Room Type *</Form.Label>
+                  <Form.Select
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    required
+                  >
+                    <option value="Standard">Standard</option>
+                    <option value="Deluxe">Deluxe</option>
+                    <option value="Suite">Suite</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Bed Type *</Form.Label>
+                  <Form.Select
+                    value={formData.bedType}
+                    onChange={(e) => setFormData({ ...formData, bedType: e.target.value as any })}
+                    required
+                  >
+                    <option value="Single">Single</option>
+                    <option value="Double">Double</option>
+                    <option value="Queen">Queen</option>
+                    <option value="King">King</option>
+                    <option value="Twin">Twin</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <Row>
-        <Col md={6}>
-          <Form.Group className="mb-3">
-            <Form.Label>Base Price (₹) *</Form.Label>
-            <Form.Control
-              type="number"
-              min="0"
-              step="0.01"
-              value={formData.price.basePrice}
-              onChange={(e) => setFormData({
-                ...formData,
-                price: {...formData.price, basePrice: parseFloat(e.target.value) || 0}
-              })}
-              required
-            />
-          </Form.Group>
-        </Col>
-        <Col md={6}>
-          <Form.Group className="mb-3">
-            <Form.Label>Floor *</Form.Label>
-            <Form.Control
-              type="number"
-              min="1"
-              value={formData.floor}
-              onChange={(e) => setFormData({...formData, floor: parseInt(e.target.value) || 1})}
-              required
-            />
-          </Form.Group>
-        </Col>
-      </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Base Price (₹) *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price.basePrice}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      price: { ...formData.price, basePrice: parseFloat(e.target.value) || 0 }
+                    })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Floor *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    value={formData.floor}
+                    onChange={(e) => setFormData({ ...formData, floor: parseInt(e.target.value) || 1 })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <Row>
-        <Col md={6}>
-          <Form.Group className="mb-3">
-            <Form.Label>Area (sq.ft) *</Form.Label>
-            <Form.Control
-              type="number"
-              min="0"
-              value={formData.area}
-              onChange={(e) => setFormData({...formData, area: parseFloat(e.target.value) || 0})}
-              required
-            />
-          </Form.Group>
-        </Col>
-      </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Area (sq.ft) *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    value={formData.area}
+                    onChange={(e) => setFormData({ ...formData, area: parseFloat(e.target.value) || 0 })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <Row>
-        <Col md={6}>
-          <Form.Group className="mb-3">
-            <Form.Label>Adults *</Form.Label>
-            <Form.Control
-              type="number"
-              min="1"
-              value={formData.capacity.adults}
-              onChange={(e) => setFormData({
-                ...formData,
-                capacity: {...formData.capacity, adults: parseInt(e.target.value) || 1}
-              })}
-              required
-            />
-          </Form.Group>
-        </Col>
-        <Col md={6}>
-          <Form.Group className="mb-3">
-            <Form.Label>Children</Form.Label>
-            <Form.Control
-              type="number"
-              min="0"
-              value={formData.capacity.children}
-              onChange={(e) => setFormData({
-                ...formData,
-                capacity: {...formData.capacity, children: parseInt(e.target.value) || 0}
-              })}
-            />
-          </Form.Group>
-        </Col>
-      </Row>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Adults *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    value={formData.capacity.adults}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      capacity: { ...formData.capacity, adults: parseInt(e.target.value) || 1 }
+                    })}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Children</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="0"
+                    value={formData.capacity.children}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      capacity: { ...formData.capacity, children: parseInt(e.target.value) || 0 }
+                    })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
-      <Form.Group className="mb-3">
-        <Form.Label>Description *</Form.Label>
-        <Form.Control
-          as="textarea"
-          rows={3}
-          value={formData.description}
-          onChange={(e) => setFormData({...formData, description: e.target.value})}
-          required
-          placeholder="Describe the room's features and amenities..."
-        />
-      </Form.Group>
-
-      <Form.Group className="mb-3">
-        <Form.Label>Room Features</Form.Label>
-        <div className="d-flex flex-wrap gap-3">
-          {Object.entries(formData.features).map(([key, value]) => (
-            <Form.Check
-              key={key}
-              type="checkbox"
-              id={`feature-${key}`}
-              label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-              checked={value as boolean}
-              onChange={(e) => setFormData({
-                ...formData,
-                features: {...formData.features, [key]: e.target.checked}
-              })}
-            />
-          ))}
-        </div>
-      </Form.Group>
-
-      <Form.Group className="mb-3">
-        <Form.Label>Room Images</Form.Label>
-        <Form.Control
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImageSelect}
-          className="mb-2"
-        />
-        <div className="text-muted small mb-3">You can upload up to 5 images</div>
-        
-        {/* Image preview */}
-        <div className="d-flex flex-wrap gap-2">
-          {imagePreview.map((src, index) => (
-            <div key={index} className="position-relative" style={{width: '100px', height: '80px'}}>
-              <img
-                src={src}
-                alt={`Preview ${index + 1}`}
-                className="img-thumbnail h-100 w-100"
-                style={{objectFit: 'cover'}}
+            <Form.Group className="mb-3">
+              <Form.Label>Description *</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                required
+                placeholder="Describe the room's features and amenities..."
               />
-              <Button
-                variant="danger"
-                size="sm"
-                className="position-absolute top-0 end-0 m-1 rounded-circle p-0"
-                style={{width: '24px', height: '24px'}}
-                onClick={() => removeImage(index)}
-              >
-                &times;
-              </Button>
-            </div>
-          ))}
-        </div>
-      </Form.Group>
-    </Modal.Body>
-    <Modal.Footer>
-      <Button variant="secondary" onClick={handleCloseModal} disabled={submitting}>
-        Cancel
-      </Button>
-      <Button variant="primary" type="submit" disabled={submitting}>
-        {submitting ? 'Saving...' : 'Save Room'}
-      </Button>
-    </Modal.Footer>
-  </Form>
-</Modal>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Room Features</Form.Label>
+              <div className="d-flex flex-wrap gap-3">
+                {Object.entries(formData.features).map(([key, value]) => (
+                  <Form.Check
+                    key={key}
+                    type="checkbox"
+                    id={`feature-${key}`}
+                    label={key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                    checked={value as boolean}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      features: { ...formData.features, [key]: e.target.checked }
+                    })}
+                  />
+                ))}
+              </div>
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Room Images</Form.Label>
+              <Form.Control
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="mb-2"
+              />
+              <div className="text-muted small mb-3">You can upload up to 5 images</div>
+
+              {/* Image preview */}
+              <div className="d-flex flex-wrap gap-2">
+                {imagePreview.map((src, index) => (
+                  <div key={index} className="position-relative" style={{ width: '100px', height: '80px' }}>
+                    <img
+                      src={src}
+                      alt={`Preview ${index + 1}`}
+                      className="img-thumbnail h-100 w-100"
+                      style={{ objectFit: 'cover' }}
+                    />
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      className="position-absolute top-0 end-0 m-1 rounded-circle p-0"
+                      style={{ width: '24px', height: '24px' }}
+                      onClick={() => removeImage(index)}
+                    >
+                      &times;
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleCloseModal} disabled={submitting}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={submitting}>
+              {submitting ? 'Saving...' : 'Save Room'}
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
 
       {/* Image Upload Modal */}
       {roomForImageUpload && (
