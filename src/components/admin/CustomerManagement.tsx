@@ -26,13 +26,9 @@ const CustomerManagement: React.FC = () => {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
-  // Pagination state
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0
-  });
+  // Client-side pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Debounce search term
   useEffect(() => {
@@ -48,32 +44,28 @@ const CustomerManagement: React.FC = () => {
       setLoading(true);
       setError('');
 
+      // Fetch all customers for client-side pagination
       const response = await adminAPI.getCustomers({
-        page: pagination.page,
-        limit: pagination.limit,
+        limit: 1000,
         search: debouncedSearchTerm || undefined
       });
 
       console.log('Customer API Response:', response);
 
       if (response && response.success) {
-        // The data structure is { customers: Customer[], pagination: any }
-        // or sometimes directly in data depending on API handling, but let's follow the standard response
-        const customerData = response.data?.customers || (Array.isArray(response.data) ? response.data : []) || [];
-        const paginationData = response.data?.pagination || {
-          page: 1,
-          limit: 10,
-          total: customerData.length,
-          pages: 1
-        };
+        // Handle potentially different response structures
+        let customerData: Customer[] = [];
+        if (Array.isArray(response.data)) {
+          customerData = response.data;
+        } else if (response.data?.customers && Array.isArray(response.data.customers)) {
+          customerData = response.data.customers;
+        } else if (Array.isArray((response.data as any).data)) {
+          customerData = (response.data as any).data;
+        }
 
         setCustomers(customerData);
-        setPagination(prev => ({
-          ...prev,
-          total: paginationData.total || 0,
-          pages: paginationData.pages || 0
-          // proper backend pagination handling
-        }));
+        // Reset to first page when data changes (e.g. search)
+        setCurrentPage(1);
       } else {
         setError(response?.message || 'No customer data available');
         setCustomers([]);
@@ -85,20 +77,19 @@ const CustomerManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [pagination.page, pagination.limit, debouncedSearchTerm]);
+  }, [debouncedSearchTerm]);
 
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
 
   const handlePageChange = (newPage: number) => {
-    if (newPage >= 1 && newPage <= pagination.pages) {
-      setPagination(prev => ({ ...prev, page: newPage }));
-    }
+    setCurrentPage(newPage);
   };
 
   const handleLimitChange = (newLimit: number) => {
-    setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+    setItemsPerPage(newLimit);
+    setCurrentPage(1);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -110,7 +101,7 @@ const CustomerManagement: React.FC = () => {
     }
 
     setSearchTerm(value);
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
+    // Debounce will trigger fetch
   };
 
   const handleAddCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -209,6 +200,12 @@ const CustomerManagement: React.FC = () => {
     return `₹${amount.toLocaleString()}`;
   };
 
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentCustomers = customers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(customers.length / itemsPerPage);
+
   return (
     <div className="admin-card">
       <div className="admin-card-header">
@@ -230,7 +227,7 @@ const CustomerManagement: React.FC = () => {
               {searchTerm && (
                 <button
                   className="btn btn-sm text-muted position-absolute top-50 end-0 translate-middle-y me-2 border-0 p-0"
-                  onClick={() => { setSearchTerm(''); setPagination(prev => ({ ...prev, page: 1 })); }}
+                  onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
                   style={{ background: 'transparent' }}
                 >
                   ×
@@ -304,7 +301,7 @@ const CustomerManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {customers.map((customer) => (
+                  {currentCustomers.map((customer) => (
                     <tr key={customer.id || customer._id}>
                       <td>
                         <div>
@@ -361,14 +358,14 @@ const CustomerManagement: React.FC = () => {
             </div>
 
             {/* Pagination Controls */}
-            {pagination.pages > 1 && (
+            {totalPages > 1 && (
               <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                 <div className="d-flex align-items-center gap-2">
                   <span className="text-muted small">Show</span>
                   <Form.Select
                     size="sm"
                     style={{ width: 'auto' }}
-                    value={pagination.limit}
+                    value={itemsPerPage}
                     onChange={(e) => handleLimitChange(Number(e.target.value))}
                   >
                     <option value={5}>5</option>
@@ -381,7 +378,7 @@ const CustomerManagement: React.FC = () => {
 
                 <div className="d-flex align-items-center gap-2">
                   <span className="text-muted small">
-                    Showing {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
+                    Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, customers.length)} of {customers.length} entries
                   </span>
                 </div>
 
@@ -389,18 +386,43 @@ const CustomerManagement: React.FC = () => {
                   <Button
                     variant="outline-secondary"
                     size="sm"
-                    disabled={pagination.page === 1}
-                    onClick={() => handlePageChange(pagination.page - 1)}
+                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
                     className="d-flex align-items-center"
                   >
                     <ChevronLeft size={14} /> Previous
                   </Button>
 
+                  {/* Page Numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum: number;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "primary" : "outline-secondary"}
+                        size="sm"
+                        onClick={() => handlePageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+
                   <Button
                     variant="outline-secondary"
                     size="sm"
-                    disabled={pagination.page === pagination.pages}
-                    onClick={() => handlePageChange(pagination.page + 1)}
+                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(currentPage + 1)}
                     className="d-flex align-items-center"
                   >
                     Next <ChevronRight size={14} />

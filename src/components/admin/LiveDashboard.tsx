@@ -100,6 +100,8 @@ const LiveDashboard: React.FC = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<RecentBooking | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Fetch bookings with search functionality
   const fetchBookings = useCallback(async (search?: string) => {
@@ -129,8 +131,8 @@ const LiveDashboard: React.FC = () => {
 
         console.log('Processed bookings:', bookings);
 
-        // Get recent bookings (increased to 20 for better search results)
-        const recentBookings = bookings.slice(0, 20) as RecentBooking[];
+        // Store all bookings for client-side pagination
+        const recentBookings = bookings as RecentBooking[];
 
         // Calculate stats
         const totalBookings = bookings.length;
@@ -146,6 +148,8 @@ const LiveDashboard: React.FC = () => {
           pendingCheckins,
           recentBookings
         });
+        // Reset to first page on new fetch
+        setCurrentPage(1);
       } else {
         setError('Failed to fetch booking data');
       }
@@ -280,6 +284,16 @@ const LiveDashboard: React.FC = () => {
       </Alert>
     );
   }
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = data?.recentBookings.slice(indexOfFirstItem, indexOfLastItem) || [];
+  const totalPages = Math.ceil((data?.recentBookings.length || 0) / itemsPerPage);
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
 
   return (
     <div>
@@ -427,8 +441,8 @@ const LiveDashboard: React.FC = () => {
                 <tbody>
                   {(loading || searchLoading) ? (
                     <DataLoader type="table" columns={9} count={5} />
-                  ) : data?.recentBookings && data.recentBookings.length > 0 ? (
-                    data.recentBookings.map((booking) => (
+                  ) : currentItems.length > 0 ? (
+                    currentItems.map((booking) => (
                       <tr key={booking._id}>
                         <td>
                           <strong>{booking.guestDetails.primaryGuest.name}</strong>
@@ -554,6 +568,80 @@ const LiveDashboard: React.FC = () => {
                   )}
                 </tbody>
               </Table>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-between align-items-center mt-3">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="text-muted">Show</span>
+                    <Form.Select
+                      size="sm"
+                      style={{ width: 'auto' }}
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </Form.Select>
+                    <span className="text-muted">entries</span>
+                  </div>
+
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="text-muted">
+                      Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, data?.recentBookings.length || 0)} of {data?.recentBookings.length || 0} entries
+                    </span>
+                  </div>
+
+                  <div className="d-flex gap-1">
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => handlePageChange(currentPage - 1)}
+                    >
+                      Previous
+                    </Button>
+
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      let pageNum: number;
+                      if (totalPages <= 5) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 3) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 2) {
+                        pageNum = totalPages - 4 + i;
+                      } else {
+                        pageNum = currentPage - 2 + i;
+                      }
+
+                      return (
+                        <Button
+                          key={pageNum}
+                          variant={currentPage === pageNum ? "primary" : "outline-secondary"}
+                          size="sm"
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Button>
+                      );
+                    })}
+
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => handlePageChange(currentPage + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Card.Body>
           </Card>
         </Col>
