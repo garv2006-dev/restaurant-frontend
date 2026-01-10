@@ -234,9 +234,15 @@ const LiveDashboard: React.FC = () => {
 
   // Handle search input change with debounce
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    let value = e.target.value;
+
+    // Prevent double spaces
+    if (value.includes('  ')) {
+      value = value.replace(/\s\s+/g, ' ');
+    }
+
     setSearchTerm(value);
-    debouncedSearch(value);
+    debouncedSearch(value.trim());
   };
 
   // Handle search clear
@@ -260,7 +266,7 @@ const LiveDashboard: React.FC = () => {
     };
   }, [searchTerm]);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <DataLoader type="card" count={4} />
     );
@@ -371,7 +377,6 @@ const LiveDashboard: React.FC = () => {
                         onChange={handleSearchChange}
                         className="border-start-0 ps-0"
                         style={{ boxShadow: 'none' }}
-                        disabled={loading}
                       />
                       {(searchLoading || loading) && (
                         <div className="position-absolute top-50 end-0 translate-middle-y me-2">
@@ -420,7 +425,9 @@ const LiveDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data?.recentBookings && data.recentBookings.length > 0 ? (
+                  {(loading || searchLoading) ? (
+                    <DataLoader type="table" columns={9} count={5} />
+                  ) : data?.recentBookings && data.recentBookings.length > 0 ? (
                     data.recentBookings.map((booking) => (
                       <tr key={booking._id}>
                         <td>
