@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Badge, Button, Alert, Spinner, Modal, Form } from 'react-bootstrap';
-import { Search, UserPlus, Trash2, User } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Badge, Button, Alert, Modal, Form, Spinner } from 'react-bootstrap';
+import { Search, UserPlus, Trash2, User, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { User as UserType } from '../../types';
 import { toast } from 'react-toastify';
@@ -19,28 +19,61 @@ const CustomerManagement: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [addLoading, setAddLoading] = useState<boolean>(false);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0
+  });
 
-  const fetchCustomers = async () => {
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm.trim());
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const fetchCustomers = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-      const response = await adminAPI.getCustomers();
+
+      const response = await adminAPI.getCustomers({
+        page: pagination.page,
+        limit: pagination.limit,
+        search: debouncedSearchTerm || undefined
+      });
+
       console.log('Customer API Response:', response);
 
-      if (response && response.success && response.data) {
+      if (response && response.success) {
         // The data structure is { customers: Customer[], pagination: any }
-        const customerData = response.data.customers || response.data || [];
-        console.log('Fetched customers:', customerData);
+        // or sometimes directly in data depending on API handling, but let's follow the standard response
+        const customerData = response.data?.customers || (Array.isArray(response.data) ? response.data : []) || [];
+        const paginationData = response.data?.pagination || {
+          page: 1,
+          limit: 10,
+          total: customerData.length,
+          pages: 1
+        };
+
         setCustomers(customerData);
+        setPagination(prev => ({
+          ...prev,
+          total: paginationData.total || 0,
+          pages: paginationData.pages || 0
+          // proper backend pagination handling
+        }));
       } else {
         setError(response?.message || 'No customer data available');
         setCustomers([]);
@@ -52,6 +85,32 @@ const CustomerManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }, [pagination.page, pagination.limit, debouncedSearchTerm]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= pagination.pages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
+    }
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setPagination(prev => ({ ...prev, limit: newLimit, page: 1 }));
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+
+    // Prevent double spaces
+    if (value.includes('  ')) {
+      value = value.replace(/\s\s+/g, ' ');
+    }
+
+    setSearchTerm(value);
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
   };
 
   const handleAddCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -88,8 +147,6 @@ const CustomerManagement: React.FC = () => {
   };
 
   const handleDeleteClick = (customer: Customer) => {
-    console.log('DELETE BUTTON CLICKED!', customer);
-    alert('Delete button clicked for: ' + customer.name);
     setCustomerToDelete(customer);
     setShowDeleteModal(true);
   };
@@ -97,22 +154,18 @@ const CustomerManagement: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (!customerToDelete) return;
 
-    console.log('Deleting customer:', customerToDelete);
-
     try {
       setDeleteLoading(true);
       setError(''); // Clear any previous errors
 
       // Use id first, then _id as fallback (MongoDB uses _id)
       const customerId = customerToDelete.id || customerToDelete._id;
-      console.log('Customer ID to delete:', customerId);
 
       if (!customerId) {
         throw new Error('Customer ID not found');
       }
 
       const response = await adminAPI.deleteCustomer(customerId);
-      console.log('Delete response:', response);
 
       if (response && response.success) {
         setShowDeleteModal(false);
@@ -138,11 +191,6 @@ const CustomerManagement: React.FC = () => {
     setShowDeleteModal(false);
     setCustomerToDelete(null);
   };
-
-  const filteredCustomers = customers.filter(customer =>
-    (customer.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (customer.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
@@ -170,15 +218,24 @@ const CustomerManagement: React.FC = () => {
             <p className="admin-card-subtitle">Manage your restaurant customers</p>
           </div>
           <div className="d-flex gap-3 align-items-center">
-            <div className="admin-search">
+            <div className="admin-search position-relative">
               <Search size={16} className="admin-search-icon" />
               <input
                 type="text"
-                className="admin-search-input"
+                className="admin-search-input pe-5"
                 placeholder="Search customers..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
               />
+              {searchTerm && (
+                <button
+                  className="btn btn-sm text-muted position-absolute top-50 end-0 translate-middle-y me-2 border-0 p-0"
+                  onClick={() => { setSearchTerm(''); setPagination(prev => ({ ...prev, page: 1 })); }}
+                  style={{ background: 'transparent' }}
+                >
+                  ×
+                </button>
+              )}
             </div>
             <button
               className="admin-btn admin-btn-primary"
@@ -198,8 +255,40 @@ const CustomerManagement: React.FC = () => {
           </div>
         )}
 
-        {
-          loading ? (
+        {loading ? (
+          <div className="admin-table-responsive">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>EMAIL</th>
+                  <th>PHONE</th>
+                  <th>ROLE</th>
+                  <th>STATUS</th>
+                  <th>TOTAL BOOKINGS</th>
+                  <th>TOTAL SPENT</th>
+                  <th>JOINED</th>
+                  <th>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                <DataLoader type="table" count={5} columns={8} />
+              </tbody>
+            </table>
+          </div>
+        ) : customers.length === 0 ? (
+          <div className="admin-empty">
+            <div className="admin-empty-icon">
+              <User size={48} />
+            </div>
+            <h4 className="admin-empty-title">
+              {debouncedSearchTerm ? 'No customers found' : 'No customers yet'}
+            </h4>
+            <p className="admin-empty-description">
+              {debouncedSearchTerm ? `No results for "${debouncedSearchTerm}"` : 'Start by adding your first customer.'}
+            </p>
+          </div>
+        ) : (
+          <>
             <div className="admin-table-responsive">
               <table className="admin-table">
                 <thead>
@@ -215,39 +304,7 @@ const CustomerManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <DataLoader type="table" count={5} columns={8} />
-                </tbody>
-              </table>
-            </div>
-          ) : filteredCustomers.length === 0 ? (
-            <div className="admin-empty">
-              <div className="admin-empty-icon">
-                <User size={48} />
-              </div>
-              <h4 className="admin-empty-title">
-                {searchTerm ? 'No customers found' : 'No customers yet'}
-              </h4>
-              <p className="admin-empty-description">
-                {searchTerm ? 'Try adjusting your search terms.' : 'Start by adding your first customer.'}
-              </p>
-            </div>
-          ) : (
-            <div className="admin-table-responsive">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>EMAIL</th>
-                    <th>PHONE</th>
-                    <th>ROLE</th>
-                    <th>STATUS</th>
-                    <th>TOTAL BOOKINGS</th>
-                    <th>TOTAL SPENT</th>
-                    <th>JOINED</th>
-                    <th>ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredCustomers.map((customer) => (
+                  {customers.map((customer) => (
                     <tr key={customer.id || customer._id}>
                       <td>
                         <div>
@@ -302,12 +359,61 @@ const CustomerManagement: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          )
-        }
-      </div >
+
+            {/* Pagination Controls */}
+            {pagination.pages > 1 && (
+              <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                <div className="d-flex align-items-center gap-2">
+                  <span className="text-muted small">Show</span>
+                  <Form.Select
+                    size="sm"
+                    style={{ width: 'auto' }}
+                    value={pagination.limit}
+                    onChange={(e) => handleLimitChange(Number(e.target.value))}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </Form.Select>
+                  <span className="text-muted small">entries</span>
+                </div>
+
+                <div className="d-flex align-items-center gap-2">
+                  <span className="text-muted small">
+                    Showing {Math.min((pagination.page - 1) * pagination.limit + 1, pagination.total)} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
+                  </span>
+                </div>
+
+                <div className="d-flex gap-1">
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    disabled={pagination.page === 1}
+                    onClick={() => handlePageChange(pagination.page - 1)}
+                    className="d-flex align-items-center"
+                  >
+                    <ChevronLeft size={14} /> Previous
+                  </Button>
+
+                  <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    disabled={pagination.page === pagination.pages}
+                    onClick={() => handlePageChange(pagination.page + 1)}
+                    className="d-flex align-items-center"
+                  >
+                    Next <ChevronRight size={14} />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Add Customer Modal */}
-      < Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Add New Customer</Modal.Title>
         </Modal.Header>
@@ -373,10 +479,10 @@ const CustomerManagement: React.FC = () => {
             </Button>
           </Modal.Footer>
         </Form>
-      </Modal >
+      </Modal>
 
       {/* Delete Confirmation Modal */}
-      < Modal show={showDeleteModal} onHide={handleDeleteCancel} >
+      <Modal show={showDeleteModal} onHide={handleDeleteCancel}>
         <Modal.Header closeButton>
           <Modal.Title>Delete Customer</Modal.Title>
         </Modal.Header>
@@ -411,8 +517,8 @@ const CustomerManagement: React.FC = () => {
             )}
           </Button>
         </Modal.Footer>
-      </Modal >
-    </div >
+      </Modal>
+    </div>
   );
 };
 

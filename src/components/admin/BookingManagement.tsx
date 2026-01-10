@@ -13,7 +13,8 @@ import {
   Printer,
   ChevronLeft,
   ChevronRight,
-  Loader2
+  Loader2,
+  Search
 } from 'lucide-react';
 import DataLoader from '../common/DataLoader';
 
@@ -86,7 +87,7 @@ const BookingManagement: React.FC = () => {
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(filters.search);
+      setDebouncedSearchTerm(filters.search.trim());
     }, 500);
 
     return () => clearTimeout(timer);
@@ -107,7 +108,17 @@ const BookingManagement: React.FC = () => {
   };
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
+
+    // Special validation for search input
+    if (name === 'search') {
+      // Prevent double spaces
+      if (value.includes('  ')) {
+        value = value.replace(/\s\s+/g, ' ');
+      }
+    }
+
     setFilters(prev => ({
       ...prev,
       [name]: value
@@ -118,6 +129,11 @@ const BookingManagement: React.FC = () => {
     if (name === 'search') {
       setSearchLoading(true);
     }
+  };
+
+  const handleClearSearch = () => {
+    setFilters(prev => ({ ...prev, search: '' }));
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleViewDetails = (booking: Booking) => {
@@ -279,6 +295,7 @@ const BookingManagement: React.FC = () => {
             </Col>
             <Col md={6}>
               <div className="position-relative">
+                <Search size={16} className="text-muted position-absolute top-50 start-0 translate-middle-y ms-2" style={{ zIndex: 5 }} />
                 <Form.Control
                   as="input"
                   type="search"
@@ -287,7 +304,18 @@ const BookingManagement: React.FC = () => {
                   onChange={handleFilterChange}
                   placeholder="Search by booking ID or guest name"
                   disabled={loading}
+                  className="ps-5 pe-5"
                 />
+                {filters.search && !searchLoading && !loading && (
+                  <button
+                    className="btn btn-sm text-muted position-absolute top-50 end-0 translate-middle-y me-2 border-0 p-0"
+                    onClick={handleClearSearch}
+                    style={{ background: 'transparent', zIndex: 5 }}
+                    type="button"
+                  >
+                    ×
+                  </button>
+                )}
                 {(searchLoading || loading) && (
                   <div className="position-absolute top-50 end-0 translate-middle-y me-2">
                     <Loader2 size={16} className="animate-spin text-muted" />
