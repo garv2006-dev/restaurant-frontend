@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Nav, Tab, Button, Dropdown } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Dropdown } from 'react-bootstrap';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Settings, User, BarChart, Home, Upload, Image, Gift, Percent } from 'lucide-react';
+import { LogOut, Settings, User, BarChart, Home, Percent } from 'lucide-react';
 import '../../styles/admin-panel.css';
 
 // Import actual admin components
@@ -14,7 +14,7 @@ import DiscountManagement from './DiscountManagement';
 import LiveDashboard from '../../components/admin/LiveDashboard';
 
 const AdminDashboard: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -70,54 +70,48 @@ const AdminDashboard: React.FC = () => {
           <div className="col-md-3">
             <div className="admin-sidebar">
               <nav className="admin-nav">
-                <a
-                  href="#"
+                <button
                   className={`admin-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab('overview'); }}
+                  onClick={() => setActiveTab('overview')}
                 >
                   <BarChart size={16} className="admin-nav-icon" />
                   Overview
-                </a>
-                <a
-                  href="#"
+                </button>
+                <button
                   className={`admin-nav-item ${activeTab === 'rooms' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab('rooms'); }}
+                  onClick={() => setActiveTab('rooms')}
                 >
                   <Home size={16} className="admin-nav-icon" />
                   Room Management
-                </a>
-                <a
-                  href="#"
+                </button>
+                <button
                   className={`admin-nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab('bookings'); }}
+                  onClick={() => setActiveTab('bookings')}
                 >
                   <BarChart size={16} className="admin-nav-icon" />
                   Booking Management
-                </a>
-                <a
-                  href="#"
+                </button>
+                <button
                   className={`admin-nav-item ${activeTab === 'customers' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab('customers'); }}
+                  onClick={() => setActiveTab('customers')}
                 >
                   <User size={16} className="admin-nav-icon" />
                   Customer Management
-                </a>
-                <a
-                  href="#"
+                </button>
+                <button
                   className={`admin-nav-item ${activeTab === 'discounts' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab('discounts'); }}
+                  onClick={() => setActiveTab('discounts')}
                 >
                   <Percent size={16} className="admin-nav-icon" />
                   Discount Management
-                </a>
-                <a
-                  href="#"
+                </button>
+                <button
                   className={`admin-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
-                  onClick={(e) => { e.preventDefault(); setActiveTab('reports'); }}
+                  onClick={() => setActiveTab('reports')}
                 >
                   <BarChart size={16} className="admin-nav-icon" />
                   Reports & Analytics
-                </a>
+                </button>
               </nav>
             </div>
           </div>

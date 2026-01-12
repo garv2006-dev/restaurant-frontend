@@ -3,7 +3,7 @@
  * Handles real-time notifications from backend and displays them with sound
  */
 
-import { notificationSoundService } from './NotificationSoundService';
+
 
 interface RealTimeNotification {
   id: string;
@@ -30,10 +30,10 @@ class RealTimeNotificationService {
 
     // Listen for socket notifications
     this.setupSocketListeners();
-    
+
     // Listen for backend notifications
     this.setupBackendListeners();
-    
+
     this.isInitialized = true;
     console.log('Real-time notification service initialized');
   }
@@ -44,16 +44,16 @@ class RealTimeNotificationService {
   private setupSocketListeners(): void {
     // Listen for custom socket events
     window.addEventListener('socketNotification', this.handleSocketNotification.bind(this) as EventListener);
-    
+
     // Listen for booking notifications
     window.addEventListener('bookingNotification', this.handleBookingNotification.bind(this) as EventListener);
-    
+
     // Listen for payment notifications
     window.addEventListener('paymentNotification', this.handlePaymentNotification.bind(this) as EventListener);
-    
+
     // Listen for promotion notifications
     window.addEventListener('promotionNotification', this.handlePromotionNotification.bind(this) as EventListener);
-    
+
     // Listen for system notifications
     window.addEventListener('systemNotification', this.handleSystemNotification.bind(this) as EventListener);
   }
@@ -221,16 +221,16 @@ class RealTimeNotificationService {
     try {
       const stored = localStorage.getItem('recentNotifications');
       const notifications = stored ? JSON.parse(stored) : [];
-      
+
       // Add new notification
       notifications.unshift({
         ...notification,
         timestamp: notification.timestamp.toISOString()
       });
-      
+
       // Keep only last 50 notifications
       const limited = notifications.slice(0, 50);
-      
+
       localStorage.setItem('recentNotifications', JSON.stringify(limited));
     } catch (error) {
       console.warn('Failed to store notification:', error);
@@ -297,7 +297,7 @@ class RealTimeNotificationService {
     try {
       const stored = localStorage.getItem('recentNotifications');
       if (!stored) return [];
-      
+
       const notifications = JSON.parse(stored);
       return notifications.map((n: any) => ({
         ...n,

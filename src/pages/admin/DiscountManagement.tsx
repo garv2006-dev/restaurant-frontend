@@ -13,7 +13,6 @@ import {
   Spinner,
   InputGroup
 } from 'react-bootstrap';
-import { toast } from 'react-toastify';
 import api from '../../services/api';
 
 interface DiscountFormData {
@@ -411,7 +410,7 @@ const DiscountManagement: React.FC = () => {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>
-                    Discount Value 
+                    Discount Value
                     {formData.type === 'percentage' && ' (%)'}
                     {formData.type === 'fixed' && ' (₹)'}
                   </Form.Label>
@@ -487,12 +486,12 @@ const DiscountManagement: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.usageLimit.total === null ? '' : formData.usageLimit.total.toString()}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      usageLimit: { 
-                        ...formData.usageLimit, 
-                        total: e.target.value === '' ? null : parseInt(e.target.value) 
-                      } 
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      usageLimit: {
+                        ...formData.usageLimit,
+                        total: e.target.value === '' ? null : parseInt(e.target.value)
+                      }
                     })}
                     required
                   />
@@ -505,12 +504,12 @@ const DiscountManagement: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.usageLimit.perUser.toString()}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      usageLimit: { 
-                        ...formData.usageLimit, 
-                        perUser: parseInt(e.target.value) 
-                      } 
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      usageLimit: {
+                        ...formData.usageLimit,
+                        perUser: parseInt(e.target.value)
+                      }
                     })}
                     required
                   />
@@ -521,12 +520,12 @@ const DiscountManagement: React.FC = () => {
                   <Form.Label>Loyalty Tier Required</Form.Label>
                   <Form.Select
                     value={formData.restrictions.loyaltyTierRequired}
-                    onChange={(e) => setFormData({ 
-                      ...formData, 
-                      restrictions: { 
-                        ...formData.restrictions, 
-                        loyaltyTierRequired: e.target.value 
-                      } 
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      restrictions: {
+                        ...formData.restrictions,
+                        loyaltyTierRequired: e.target.value
+                      }
                     })}
                   >
                     <option value="">No Requirement</option>
@@ -569,12 +568,12 @@ const DiscountManagement: React.FC = () => {
                 type="checkbox"
                 label="First-time customers only"
                 checked={formData.restrictions.firstTimeOnly}
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  restrictions: { 
-                    ...formData.restrictions, 
-                    firstTimeOnly: e.target.checked 
-                  } 
+                onChange={(e) => setFormData({
+                  ...formData,
+                  restrictions: {
+                    ...formData.restrictions,
+                    firstTimeOnly: e.target.checked
+                  }
                 })}
               />
             </Form.Group>
