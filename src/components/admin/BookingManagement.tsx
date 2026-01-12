@@ -708,6 +708,47 @@ const BookingManagement: React.FC = () => {
                   </div>
                 </Card.Body>
               </Card>
+
+              {/* Payment Information Card */}
+              <Card className="mt-3">
+                <Card.Header>Payment Information</Card.Header>
+                <Card.Body>
+                  <Row>
+                    <Col md={6}>
+                      <div className="info-item mb-2">
+                        <span className="info-label">Payment Status:</span>
+                        <span className="info-value">
+                          <Badge bg={selectedBooking.paymentStatus === 'Paid' ? 'success' : selectedBooking.paymentStatus === 'Pending' ? 'warning' : 'danger'}>
+                            {selectedBooking.paymentStatus}
+                          </Badge>
+                        </span>
+                      </div>
+                      <div className="info-item mb-2">
+                        <span className="info-label">Payment Method:</span>
+                        <span className="info-value">{selectedBooking.paymentDetails?.method || 'N/A'}</span>
+                      </div>
+                      <div className="info-item mb-2">
+                        <span className="info-label">Amount:</span>
+                        <span className="info-value">₹{selectedBooking.pricing?.totalAmount?.toFixed(2) || '0.00'}</span>
+                      </div>
+                    </Col>
+                    <Col md={6}>
+                      <div className="info-item mb-2">
+                        <span className="info-label">Transaction ID:</span>
+                        <span className="info-value">{selectedBooking.paymentDetails?.transactionId || 'N/A'}</span>
+                      </div>
+                      <div className="info-item mb-2">
+                        <span className="info-label">Payment Date:</span>
+                        <span className="info-value">
+                          {selectedBooking.paymentDetails?.paymentDate ?
+                            new Date(selectedBooking.paymentDetails.paymentDate).toLocaleDateString() :
+                            'N/A'}
+                        </span>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
             </div>
           ) : (
             <div className="text-center py-4">
