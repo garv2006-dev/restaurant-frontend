@@ -3,12 +3,19 @@ import { Container, Row, Col, Card, Button, Form, Alert, Badge, Modal, Spinner }
 import { Calendar, Users, XCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { bookingsAPI, roomsAPI } from '../services/api';
+import { bookingsAPI, roomsAPI, paymentsAPI } from '../services/api';
 import { differenceInDays } from 'date-fns';
 import type { Room, Booking as BookingType, BookingFormData } from '../types';
 import { triggerBookingNotification } from '../utils/bookingNotification';
 import DiscountCode from '../components/booking/DiscountCode';
 import { toast } from 'react-toastify';
+
+// TypeScript declarations for Razorpay
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const Booking: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -27,40 +34,10 @@ const Booking: React.FC = () => {
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [totalNights, setTotalNights] = useState(1);
   const [totalAmount, setTotalAmount] = useState(0);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'Cash' | 'Card' | 'UPI' | 'Online'>('Cash');
-  const [pendingBookingPayload, setPendingBookingPayload] = useState<any | null>(null);
-  
-  // Payment method specific modals
-  const [showCardPaymentModal, setShowCardPaymentModal] = useState(false);
-  const [showUPIPaymentModal, setShowUPIPaymentModal] = useState(false);
-  const [showOnlineBankingModal, setShowOnlineBankingModal] = useState(false);
-  
-  // Payment details state
-  const [cardDetails, setCardDetails] = useState({
-    cardNumber: '',
-    cardHolderName: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvv: ''
-  });
-  
-  const [upiDetails, setUpiDetails] = useState({
-    upiId: '',
-    upiName: ''
-  });
-  
-  const [bankingDetails, setBankingDetails] = useState({
-    bankName: '',
-    accountNumber: '',
-    ifscCode: ''
-  });
-  
-  const [processingPayment, setProcessingPayment] = useState(false);
-  
-  // Payment validation errors
-  const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
-  const [upiErrors, setUpiErrors] = useState<Record<string, string>>({});
-  const [bankingErrors, setBankingErrors] = useState<Record<string, string>>({});
+  // Razorpay state
+  const [razorpayOrderId, setRazorpayOrderId] = useState<string | null>(null);
+  const [razorpayKeyId, setRazorpayKeyId] = useState<string | null>(null);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   
   // Discount state
   const [appliedDiscount, setAppliedDiscount] = useState<{
@@ -148,6 +125,18 @@ const Booking: React.FC = () => {
 
     fetchRooms();
   }, [roomId]);
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   const handleBookRoom = (room: Room): void => {
     console.log('Booking room:', room);
@@ -310,7 +299,7 @@ const Booking: React.FC = () => {
     console.log('Form submitted');
     console.log('Current form state:', bookingForm);
     console.log('Selected room:', selectedRoom);
-    
+
     // Ensure we have a room selected
     if (!selectedRoom && bookingForm.roomId) {
       const room = rooms.find(r => r._id === bookingForm.roomId || r.id === bookingForm.roomId);
@@ -318,7 +307,7 @@ const Booking: React.FC = () => {
         setSelectedRoom(room);
       }
     }
-    
+
     // Validate form
     if (!validateForm() || !selectedRoom) {
       console.log('Form validation failed or no room selected');
@@ -327,8 +316,8 @@ const Booking: React.FC = () => {
       return;
     }
 
-    // Step 1: build payload and open payment modal instead of calling API directly
     try {
+      setSubmitting(true);
       setBookingError(null);
 
       const checkInDate = new Date(bookingForm.checkInDate);
@@ -337,7 +326,7 @@ const Booking: React.FC = () => {
       checkOutDate.setUTCHours(12, 0, 0, 0);
 
       const bookingData = {
-        roomId: selectedRoom._id || selectedRoom.id, // Use _id if available, fallback to id
+        roomId: selectedRoom._id || selectedRoom.id,
         checkInDate: checkInDate.toISOString(),
         checkOutDate: checkOutDate.toISOString(),
         guestDetails: {
@@ -349,15 +338,97 @@ const Booking: React.FC = () => {
           totalAdults: bookingForm.guests.adults,
           totalChildren: bookingForm.guests.children,
           additionalGuests: bookingForm.additionalGuests || []
-        }
+        },
+        specialRequests: bookingForm.specialRequests,
+        ...(appliedDiscount && { discountCode: appliedDiscount.code })
       };
 
-      setPendingBookingPayload(bookingData);
-      setShowBookingModal(false);
-      setShowPaymentModal(true);
+      // Create booking - backend returns Razorpay order details
+      const response = await bookingsAPI.createBooking(bookingData);
+
+      if (response?.success && response?.data) {
+        const { bookingId, orderId, amount, razorpayKeyId } = response.data;
+
+        setRazorpayOrderId(orderId);
+        setRazorpayKeyId(razorpayKeyId);
+        setShowBookingModal(false);
+
+        // Open Razorpay checkout
+        openRazorpayCheckout(orderId, amount, razorpayKeyId, bookingId);
+      } else {
+        throw new Error(response?.message || 'Failed to create booking');
+      }
     } catch (error: any) {
-      console.error('Error preparing booking payload:', error);
-      setBookingError('Failed to prepare booking. Please try again.');
+      console.error('Booking error:', error);
+      setBookingError(error.response?.data?.message || 'Failed to create booking');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const openRazorpayCheckout = (orderId: string, amount: number, keyId: string, bookingId: string) => {
+    const options = {
+      key: keyId,
+      amount: Math.round(amount * 100), // Convert to paise
+      currency: 'INR',
+      name: 'Room Booking System',
+      description: `Booking for ${selectedRoom?.name}`,
+      order_id: orderId,
+      handler: async function (response: any) {
+        // Payment successful - verify on backend
+        await verifyPayment(response, bookingId);
+      },
+      prefill: {
+        name: bookingForm.guestDetails.name,
+        email: bookingForm.guestDetails.email,
+        contact: bookingForm.guestDetails.phone
+      },
+      notes: {
+        bookingId: bookingId
+      },
+      theme: {
+        color: '#0d6efd'
+      },
+      modal: {
+        ondismiss: function() {
+          // User closed modal without paying
+          toast.warning('Payment cancelled. Your booking will expire in 15 minutes if not completed.');
+          navigate('/bookings');
+        }
+      }
+    };
+
+    const razorpay = new (window as any).Razorpay(options);
+    razorpay.open();
+  };
+
+  const verifyPayment = async (razorpayResponse: any, bookingId: string) => {
+    try {
+      setPaymentProcessing(true);
+
+      const verificationData = {
+        bookingId: bookingId,
+        paymentMethod: 'razorpay',
+        razorpay_order_id: razorpayResponse.razorpay_order_id,
+        razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+        razorpay_signature: razorpayResponse.razorpay_signature,
+        amount: finalAmount
+      };
+
+      const response = await paymentsAPI.confirmPayment(verificationData);
+
+      if (response?.success) {
+        setSuccess(true);
+        toast.success('Payment successful! Your booking is confirmed.');
+        navigate('/bookings');
+      } else {
+        throw new Error('Payment verification failed');
+      }
+    } catch (error: any) {
+      console.error('Payment verification error:', error);
+      toast.error('Payment verification failed. Please contact support with your payment ID.');
+    } finally {
+      setPaymentProcessing(false);
     }
   };
 
