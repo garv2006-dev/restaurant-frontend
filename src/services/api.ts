@@ -52,29 +52,29 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const config: any = error.config;
-    
+
     // Initialize retry count
     if (!config._retryCount) {
       config._retryCount = 0;
     }
-    
+
     // Check if we should retry
     if (config._retryCount < MAX_RETRIES && isRetryableError(error)) {
       config._retryCount += 1;
-      
+
       console.log(`Retrying request (${config._retryCount}/${MAX_RETRIES}):`, config.url);
-      
+
       // Exponential backoff: 2s, 4s, 8s...
       const delayTime = RETRY_DELAY * Math.pow(2, config._retryCount - 1);
       await delay(delayTime);
-      
+
       // Retry the request
       return api(config);
     }
-    
+
     // Only logout on 401 for specific API calls and not during app initialization
     const isAuthMeAPI = error.config?.url?.includes('/auth/me');
-    
+
     if (error.response?.status === 401 && !isAuthMeAPI) {
       // Clear token and redirect to login
       localStorage.removeItem('token');
@@ -82,7 +82,7 @@ api.interceptors.response.use(
       localStorage.removeItem('userType');
       window.location.href = '/login';
     }
-    
+
     // Enhance error message for timeouts
     if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
       const enhancedError: any = new Error(
@@ -92,7 +92,7 @@ api.interceptors.response.use(
       enhancedError.originalError = error;
       return Promise.reject(enhancedError);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -318,14 +318,14 @@ export const reviewsAPI = {
     const response: AxiosResponse<any> = await api.get('/reviews', {
       params: filters,
     });
-    
+
     // Backend returns: { success, count, total, pagination, data: Review[] }
     // We need to normalize this to match the expected format
     const raw = response.data || {};
-    
+
     let reviews: Review[] = [];
     let pagination: any = raw.pagination || null;
-    
+
     if (Array.isArray(raw.data)) {
       reviews = raw.data;
     } else if (Array.isArray(raw.reviews)) {
@@ -333,7 +333,7 @@ export const reviewsAPI = {
     } else if (Array.isArray(raw)) {
       reviews = raw;
     }
-    
+
     return {
       success: raw.success !== undefined ? raw.success : true,
       message: raw.message,
@@ -472,6 +472,54 @@ export const paymentsAPI = {
       reason,
       amount,
     });
+    return response.data;
+  },
+
+  // Razorpay integration
+  createRazorpayOrder: async (amount: number, currency: string = 'INR', bookingDetails?: any): Promise<ApiResponse<{
+    orderId: string;
+    amount: number;
+    currency: string;
+    keyId: string;
+  }>> => {
+    const response: AxiosResponse<ApiResponse<{
+      orderId: string;
+      amount: number;
+      currency: string;
+      keyId: string;
+    }>> = await api.post('/payments/razorpay/create-order', {
+      amount,
+      currency,
+      bookingDetails
+    });
+    return response.data;
+  },
+
+  verifyRazorpayPayment: async (paymentData: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    bookingData?: any;
+  }): Promise<ApiResponse<{
+    orderId: string;
+    paymentId: string;
+    amount: number;
+    currency: string;
+    status: string;
+    method: string;
+    email: string;
+    contact: string;
+  }>> => {
+    const response: AxiosResponse<ApiResponse<{
+      orderId: string;
+      paymentId: string;
+      amount: number;
+      currency: string;
+      status: string;
+      method: string;
+      email: string;
+      contact: string;
+    }>> = await api.post('/payments/razorpay/verify', paymentData);
     return response.data;
   },
 };
