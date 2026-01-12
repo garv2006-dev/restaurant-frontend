@@ -1054,9 +1054,9 @@ const Booking: React.FC = () => {
                       {room.features ? Object.entries(room.features)
                         .filter(([_, value]) => value)
                         .map(([feature]) => (
-                          <Badge key={feature} bg="light" text="dark" className="small me-1 mb-1">
+                          <span key={feature} className="feature-badge small me-1 mb-1">
                             {feature.split(/(?=[A-Z])/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                          </Badge>
+                          </span>
                         )) : null}
                     </div>
                   </div>
@@ -1357,7 +1357,7 @@ const Booking: React.FC = () => {
           )}
 
           {/* Discount Code Section */}
-          <Card className="mb-4">
+          <Card className="mb-4 discount-card">
             <Card.Body>
               <DiscountCode
                 subtotal={subtotalAmount}

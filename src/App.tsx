@@ -23,6 +23,7 @@ import './services/RealTimeNotificationService'; // Initialize real-time notific
 // Styles
 import './App.css';
 import './styles/settings-button.css';
+import './styles/dark-mode-buttons.css';
 
 // Pages
 import Login from './pages/Login';
@@ -63,7 +64,7 @@ function App() {
   // Load test utilities in development mode
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      import('./utils/testNotificationSound').catch(err => 
+      import('./utils/testNotificationSound').catch(err =>
         console.warn('Failed to load test utilities:', err)
       );
     }
@@ -104,7 +105,7 @@ function App() {
                   </ProtectedRoute>
                 } />
                 <Route path="/admin-test" element={<AdminTest />} />
-                
+
                 {/* Public routes - inside Layout */}
                 <Route path="/*" element={
                   <Layout>
@@ -121,7 +122,7 @@ function App() {
                       <Route path="/terms" element={<TermsConditions />} />
                       <Route path="/faq" element={<FAQ />} />
                       <Route path="/help" element={<Help />} />
-                      
+
                       {/* Protected routes - require authentication */}
                       <Route path="/order-success" element={
                         <ProtectedRoute>
@@ -148,7 +149,7 @@ function App() {
                           <MyReviews />
                         </ProtectedRoute>
                       } />
-             
+
                       <Route path="/notifications" element={
                         <ProtectedRoute>
                           <NotificationsPage />
@@ -172,19 +173,19 @@ function App() {
                 theme="colored"
                 aria-live="polite"
               />
-              
+
               {/* Enhanced Notification Display */}
-              <NotificationDisplay 
-                position="top-end" 
-                maxNotifications={5} 
+              <NotificationDisplay
+                position="top-end"
+                maxNotifications={5}
               />
-              
+
               {/* Sound Permission Toast - Browser-style permission prompt */}
-              <SoundPermissionToast 
+              <SoundPermissionToast
                 onPermissionGranted={() => console.log('✅ User granted sound permission')}
                 onPermissionDenied={() => console.log('🔇 User denied sound permission')}
               />
-              
+
               {/* Audio Status Indicator - Removed to hide alert message */}
               {/* <AudioStatusIndicator /> */}
             </NotificationProvider>

@@ -194,7 +194,7 @@ const Home: React.FC = () => {
                   Indulge in our exquisite cuisine and create unforgettable memories.
                 </p>
                 <div className="d-flex gap-4 justify-content-center">
-                  <Button variant="primary" size="lg" href="/rooms" className="btn-hero">
+                  <Button variant="primary" size="lg" href="/booking" className="btn-hero">
                     Explore Rooms
                   </Button>
                 </div>
@@ -261,7 +261,7 @@ const Home: React.FC = () => {
                         <div className="d-flex flex-wrap gap-1 gap-sm-2">
                           {Object.entries(room.features).map(([key, value]) =>
                             value ? (
-                              <span key={key} className="badge bg-light text-dark feature-badge" title={key.replace(/([A-Z])/g, ' $1')}>
+                              <span key={key} className="feature-badge" title={key.replace(/([A-Z])/g, ' $1')}>
                                 {getFeatureIcon(key)}
                               </span>
                             ) : null
