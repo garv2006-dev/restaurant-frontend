@@ -21,7 +21,7 @@ interface DiscountFormData {
   description: string;
   type: 'percentage' | 'fixed' | 'buy_one_get_one';
   value: number;
-  minOrderAmount: number;
+  minimumOrderAmount: number;
   maxDiscount: number;
   usageLimit: {
     total: number | null;
@@ -46,7 +46,7 @@ interface Discount {
   description: string;
   type: 'percentage' | 'fixed' | 'buy_one_get_one';
   value: number;
-  minOrderAmount: number;
+  minimumOrderAmount: number;
   maxDiscount: number;
   usageLimit: {
     total: number | null;
@@ -77,7 +77,7 @@ const DiscountManagement: React.FC = () => {
     description: '',
     type: 'percentage',
     value: 0,
-    minOrderAmount: 0,
+    minimumOrderAmount: 0,
     maxDiscount: 0,
     usageLimit: {
       total: 100,
@@ -102,7 +102,7 @@ const DiscountManagement: React.FC = () => {
       description: '',
       type: 'percentage',
       value: 0,
-      minOrderAmount: 0,
+      minimumOrderAmount: 0,
       maxDiscount: 0,
       usageLimit: {
         total: 100,
@@ -173,7 +173,7 @@ const DiscountManagement: React.FC = () => {
       description: discount.description || '',
       type: discount.type,
       value: discount.value,
-      minOrderAmount: discount.minOrderAmount || 0,
+      minimumOrderAmount: discount.minimumOrderAmount || 0,
       maxDiscount: discount.maxDiscount || 0,
       usageLimit: discount.usageLimit || { total: 100, perUser: 1 },
       userLimit: discount.userLimit || 1,
@@ -298,8 +298,8 @@ const DiscountManagement: React.FC = () => {
                           {discount.type === 'percentage' && `${discount.value}%`}
                           {discount.type === 'fixed' && `₹${discount.value}`}
                           {discount.type === 'buy_one_get_one' && 'BOGO'}
-                          {discount.minOrderAmount > 0 && (
-                            <><br /><small className="text-muted">Min: ₹{discount.minOrderAmount}</small></>
+                          {discount.minimumOrderAmount > 0 && (
+                            <><br /><small className="text-muted">Min: ₹{discount.minimumOrderAmount}</small></>
                           )}
                         </td>
                         <td>
@@ -445,8 +445,8 @@ const DiscountManagement: React.FC = () => {
                   <Form.Control
                     type="number"
                     min="0"
-                    value={formData.minOrderAmount}
-                    onChange={(e) => setFormData({ ...formData, minOrderAmount: parseFloat(e.target.value) })}
+                    value={formData.minimumOrderAmount}
+                    onChange={(e) => setFormData({ ...formData, minimumOrderAmount: parseFloat(e.target.value) })}
                   />
                 </Form.Group>
               </Col>
@@ -515,7 +515,7 @@ const DiscountManagement: React.FC = () => {
                   />
                 </Form.Group>
               </Col>
-              <Col md={4}>
+              {/* <Col md={4}>
                 <Form.Group className="mb-3">
                   <Form.Label>Loyalty Tier Required</Form.Label>
                   <Form.Select
@@ -535,7 +535,7 @@ const DiscountManagement: React.FC = () => {
                     <option value="Platinum">Platinum</option>
                   </Form.Select>
                 </Form.Group>
-              </Col>
+              </Col> */}
             </Row>
 
             <Row>
