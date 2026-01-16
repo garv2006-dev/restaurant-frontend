@@ -1,4 +1,4 @@
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, useCallback } from 'react';
 import { Button } from 'react-bootstrap';
 import { Settings } from 'lucide-react';
 import Header from './Header';
@@ -14,10 +14,10 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
   const [showAccessibilityModal, setShowAccessibilityModal] = useState(false);
   const { announceToScreenReader } = useAccessibility();
 
-  const openAccessibilitySettings = () => {
+  const openAccessibilitySettings = useCallback(() => {
     setShowAccessibilityModal(true);
     announceToScreenReader('Accessibility settings opened');
-  };
+  }, [announceToScreenReader]);
 
   // Global keyboard shortcut for Alt + A
   useEffect(() => {
@@ -37,27 +37,27 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
   return (
     <div className="d-flex flex-column min-vh-100">
       {/* Skip navigation link for screen readers */}
-      <a 
-        href="#main-content" 
+      <a
+        href="#main-content"
         className="skip-nav"
         onFocus={() => announceToScreenReader('Skip to main content link focused')}
       >
         Skip to main content
       </a>
-      
+
       <Header />
-      
-      <main 
+
+      <main
         id="main-content"
-        className="flex-grow-1 main-content-mobile" 
+        className="flex-grow-1 main-content-mobile"
         style={{ paddingTop: '80px' }}
         tabIndex={-1}
       >
         {children}
       </main>
-      
+
       {!hideFooter && <Footer />}
-      
+
       {/* Floating Accessibility Button */}
       <Button
         variant="primary"
@@ -82,9 +82,9 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
       >
         <Settings size={24} aria-hidden="true" />
       </Button>
-      
+
       {/* Accessibility Settings Modal */}
-      <AccessibilitySettingsModal 
+      <AccessibilitySettingsModal
         show={showAccessibilityModal}
         onHide={() => {
           setShowAccessibilityModal(false);

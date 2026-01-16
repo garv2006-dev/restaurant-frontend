@@ -3,7 +3,6 @@ import { Table, Alert, Spinner, Button, Modal, Form, Toast, ToastContainer, Badg
 import { Link, useNavigate } from 'react-router-dom';
 import { bookingsAPI, reviewsAPI } from '../services/api';
 import { Booking } from '../types';
-import MyReviews from './MyReviews';  
 import { useNotifications } from '../context/NotificationContext';
 
 const MyBookings: React.FC = () => {
@@ -16,8 +15,8 @@ const MyBookings: React.FC = () => {
   const [cancelReason, setCancelReason] = useState('');
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [reviewStatuses, setReviewStatuses] = useState<{[key: string]: any}>({});
-  
+  const [reviewStatuses, setReviewStatuses] = useState<{ [key: string]: any }>({});
+
   const { refreshNotifications } = useNotifications();
   const navigate = useNavigate();
 
@@ -41,7 +40,7 @@ const MyBookings: React.FC = () => {
 
           console.log('Normalized bookings data:', bookingsData);
           setBookings(bookingsData);
-          
+
           // Check review status for completed bookings
           checkReviewStatuses(bookingsData);
         } else {
@@ -64,12 +63,12 @@ const MyBookings: React.FC = () => {
 
   const checkReviewStatuses = async (bookings: Booking[]) => {
     console.log('🔍 Checking review statuses for bookings:', bookings.length);
-    const statuses: {[key: string]: any} = {};
-    
+    const statuses: { [key: string]: any } = {};
+
     // Only check review status for completed bookings
     const completedBookings = bookings.filter(b => b.status === 'CheckedOut');
     console.log('📋 Completed bookings to check:', completedBookings.length);
-    
+
     if (completedBookings.length === 0) {
       console.log('⚠️ No completed bookings found');
       setReviewStatuses({});
@@ -81,21 +80,21 @@ const MyBookings: React.FC = () => {
       console.log('📋 Fetching user reviews to check status...');
       const userReviewsResponse = await reviewsAPI.getUserReviews();
       console.log('📦 User reviews response:', userReviewsResponse);
-      
+
       let userReviews: any[] = [];
       if (userReviewsResponse.success && userReviewsResponse.data) {
         userReviews = Array.isArray(userReviewsResponse.data) ? userReviewsResponse.data : [];
       }
-      
+
       console.log(`📊 Found ${userReviews.length} user reviews`);
-      
+
       // Check each completed booking
       for (const booking of completedBookings) {
-        const existingReview = userReviews.find(review => 
-          review.booking === booking._id || 
+        const existingReview = userReviews.find(review =>
+          review.booking === booking._id ||
           (typeof review.booking === 'object' && review.booking?._id === booking._id)
         );
-        
+
         if (existingReview) {
           console.log(`✓ Found existing review for booking ${booking._id}`);
           statuses[booking._id] = {
@@ -114,14 +113,14 @@ const MyBookings: React.FC = () => {
           statuses[booking._id] = { canReview: true };
         }
       }
-      
+
       console.log('📊 Final review statuses:', statuses);
       setReviewStatuses(statuses);
-      
+
     } catch (error: any) {
       console.error('❌ Error checking review statuses:', error);
       // Fallback: allow all completed bookings to be reviewed
-      const defaultStatuses: {[key: string]: any} = {};
+      const defaultStatuses: { [key: string]: any } = {};
       completedBookings.forEach(booking => {
         defaultStatuses[booking._id] = { canReview: true };
       });
@@ -144,16 +143,16 @@ const MyBookings: React.FC = () => {
     try {
       console.log('Attempting to cancel booking:', selectedBooking._id);
       setCancelLoading(selectedBooking._id);
-      
+
       const response = await bookingsAPI.cancelBooking(selectedBooking._id, cancelReason || 'Customer cancellation');
       console.log('Cancel booking response:', response);
-      
+
       if (response?.success) {
         console.log('Booking cancelled successfully');
         // Update the booking in the local state
-        setBookings(prevBookings => 
-          prevBookings.map(booking => 
-            booking._id === selectedBooking._id 
+        setBookings(prevBookings =>
+          prevBookings.map(booking =>
+            booking._id === selectedBooking._id
               ? { ...booking, status: 'Cancelled' }
               : booking
           )
@@ -162,14 +161,14 @@ const MyBookings: React.FC = () => {
         setSelectedBooking(null);
         setCancelReason('');
         setError(null); // Clear any previous errors
-        
+
         // Show success message
         setSuccessMessage(`Booking ${selectedBooking.bookingId} has been cancelled successfully!`);
         setShowSuccessToast(true);
-        
+
         // Refresh notifications to show the cancellation notification
         refreshNotifications();
-        
+
         // Auto-hide success toast after 5 seconds
         setTimeout(() => setShowSuccessToast(false), 5000);
       } else {
@@ -198,7 +197,7 @@ const MyBookings: React.FC = () => {
 
   const renderReviewAction = (booking: Booking) => {
     console.log(`🎯 Rendering review action for booking ${booking._id}, status: ${booking.status}`);
-    
+
     if (booking.status !== 'CheckedOut') {
       console.log(`⏭️ Booking ${booking._id} not checked out, showing dash`);
       return <span className="text-muted">-</span>;
@@ -206,7 +205,7 @@ const MyBookings: React.FC = () => {
 
     const reviewStatus = reviewStatuses[booking._id];
     console.log(`📊 Review status for ${booking._id}:`, reviewStatus);
-    
+
     if (!reviewStatus) {
       console.log(`⏳ No review status yet for ${booking._id}, showing spinner`);
       return <Spinner animation="border" size="sm" />;
@@ -262,13 +261,13 @@ const MyBookings: React.FC = () => {
   return (
     <div className="container py-5">
       <h2 className="mb-4">My Bookings</h2>
-      
+
       {error && (
         <Alert variant="danger" dismissible onClose={() => setError(null)}>
           {error}
         </Alert>
       )}
-      
+
       {bookings && bookings.length === 0 ? (
         <Alert variant="info" className="d-flex align-items-center justify-content-between">
           <span>You have no bookings yet.</span>
@@ -295,7 +294,6 @@ const MyBookings: React.FC = () => {
               const roomLabel = room ? `${room.name || ''} ${room.type ? `(${room.type})` : ''}`.trim() : 'Unknown Room';
               const ci = new Date(b.bookingDates.checkInDate).toLocaleDateString();
               const co = new Date(b.bookingDates.checkOutDate).toLocaleDateString();
-              const nights = b.bookingDates.nights || 0;
               const total = `₹${b.pricing.totalAmount?.toFixed(2) || '0.00'}`;
               return (
                 <tr key={b._id}>
@@ -340,7 +338,7 @@ const MyBookings: React.FC = () => {
           </tbody>
         </Table>
       )}
-      
+
       {/* Cancel Confirmation Modal */}
       <Modal show={showCancelModal} onHide={handleCloseModal} centered>
         <Modal.Header closeButton>
@@ -352,8 +350,8 @@ const MyBookings: React.FC = () => {
             <div className="mb-3">
               <strong>Booking Details:</strong>
               <ul className="mt-2">
-                <li>Room: {typeof selectedBooking.room === 'object' && selectedBooking.room !== null 
-                  ? `${selectedBooking.room.name || ''}`.trim() 
+                <li>Room: {typeof selectedBooking.room === 'object' && selectedBooking.room !== null
+                  ? `${selectedBooking.room.name || ''}`.trim()
                   : 'Unknown Room'}</li>
                 <li>Check-in: {new Date(selectedBooking.bookingDates.checkInDate).toLocaleDateString()}</li>
                 <li>Check-out: {new Date(selectedBooking.bookingDates.checkOutDate).toLocaleDateString()}</li>
@@ -376,8 +374,8 @@ const MyBookings: React.FC = () => {
           <Button variant="secondary" onClick={handleCloseModal}>
             Keep Booking
           </Button>
-          <Button 
-            variant="danger" 
+          <Button
+            variant="danger"
             onClick={handleCancelConfirm}
             disabled={cancelLoading !== null}
           >

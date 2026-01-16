@@ -82,11 +82,7 @@ const ReportsAnalytics: React.FC = () => {
     endDate: new Date().toISOString().split('T')[0],
   });
 
-  useEffect(() => {
-    fetchReportData();
-  }, [dateRange]);
-
-  const fetchReportData = async () => {
+  const fetchReportData = React.useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await api.get('/admin/reports', {
@@ -99,34 +95,38 @@ const ReportsAnalytics: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dateRange]);
+
+  useEffect(() => {
+    fetchReportData();
+  }, [fetchReportData]);
 
   const handleDateRangeChange = (field: keyof DateRange, value: string) => {
     setDateRange((prev) => ({ ...prev, [field]: value }));
   };
 
-  const exportReport = async (format: 'pdf' | 'excel') => {
-    try {
-      const response = await api.get('/admin/reports/export', {
-        params: { format, startDate: dateRange.startDate, endDate: dateRange.endDate },
-        responseType: 'blob',
-      });
-
-      const blob = new Blob([response.data]);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `report_${dateRange.startDate}_to_${dateRange.endDate}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success(`Report exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('Error exporting report:', error);
-      toast.error('Failed to export report');
-    }
-  };
+  // const exportReport = async (format: 'pdf' | 'excel') => {
+  //   try {
+  //     const response = await api.get('/admin/reports/export', {
+  //       params: { format, startDate: dateRange.startDate, endDate: dateRange.endDate },
+  //       responseType: 'blob',
+  //     });
+  //
+  //     const blob = new Blob([response.data]);
+  //     const url = window.URL.createObjectURL(blob);
+  //     const a = document.createElement('a');
+  //     a.href = url;
+  //     a.download = `report_${dateRange.startDate}_to_${dateRange.endDate}.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+  //     document.body.appendChild(a);
+  //     a.click();
+  //     window.URL.revokeObjectURL(url);
+  //     document.body.removeChild(a);
+  //     toast.success(`Report exported as ${format.toUpperCase()}`);
+  //   } catch (error) {
+  //     console.error('Error exporting report:', error);
+  //     toast.error('Failed to export report');
+  //   }
+  // };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -162,7 +162,7 @@ const ReportsAnalytics: React.FC = () => {
               </Button>
             </div> */}
           </div>
-          
+
           {/* Date Range Filter */}
           <Card className="mb-4">
             <Card.Body>

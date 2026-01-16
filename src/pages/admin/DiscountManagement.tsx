@@ -10,7 +10,6 @@ import {
   Form,
   Badge,
   Alert,
-  Spinner,
   InputGroup
 } from 'react-bootstrap';
 import api from '../../services/api';
@@ -132,7 +131,7 @@ const DiscountManagement: React.FC = () => {
     setFormData({ ...formData, code: result });
   };
 
-  const fetchDiscounts = async () => {
+  const fetchDiscounts = React.useCallback(async () => {
     try {
       const { data } = await api.get('/discounts');
       setDiscounts(data.discounts || data.data || []);
@@ -143,11 +142,11 @@ const DiscountManagement: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDiscounts();
-  }, []);
+  }, [fetchDiscounts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,6 +1,6 @@
 import React from 'react';
 import '../../styles/skeleton.css';
-import { Card, Table } from 'react-bootstrap';
+import { Card } from 'react-bootstrap';
 
 interface DataLoaderProps {
     type?: 'table' | 'card' | 'list' | 'text' | 'image';

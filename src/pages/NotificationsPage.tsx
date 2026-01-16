@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Badge, Button, Nav, Tab, Dropdown, Spinner, Alert } from 'react-bootstrap';
-import { Bell, Check, ChevronDown, Trash2, X } from 'lucide-react';
+import { Bell, Check, ChevronDown, Trash2 } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import VolumeControl from '../components/notifications/VolumeControl';
 import '../styles/notifications-responsive.css';
 
 const NotificationsPage: React.FC = () => {
-  const { 
-    notifications, 
-    unreadCount, 
-    loading, 
-    error, 
-    fetchNotifications, 
-    markAsRead, 
-    markAllAsRead, 
-    deleteNotification, 
+  const {
+    notifications,
+    unreadCount,
+    loading,
+    error,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
     clearAllNotifications,
     getNotificationCount
   } = useNotifications();
-  
+
   const [activeTab, setActiveTab] = useState('all');
   const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
 
@@ -43,7 +43,7 @@ const NotificationsPage: React.FC = () => {
     } else {
       fetchNotifications(activeTab === 'booking' ? 'room_booking' : activeTab);
     }
-  }, [activeTab]);
+  }, [activeTab, fetchNotifications]);
 
   const filteredNotifications = notifications.filter(notif => {
     if (activeTab === 'all') return true;
@@ -56,7 +56,7 @@ const NotificationsPage: React.FC = () => {
   const formatTimestamp = (date: Date) => {
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 48) return 'Yesterday';
@@ -127,7 +127,7 @@ const NotificationsPage: React.FC = () => {
             <p>{error}</p>
           </Alert>
         )}
-        
+
         <div className="notifications-header">
           <div className="notifications-title">
             <h2>Notifications</h2>
@@ -140,45 +140,45 @@ const NotificationsPage: React.FC = () => {
             {unreadCount > 0 && (
               <Button variant="outline-primary" onClick={markAllAsRead}>
                 <Check size={16} className="me-1" />
-              
+
               </Button>
             )}
             {notifications.length > 0 && (
               <Button variant="outline-danger" onClick={clearAllNotifications}>
                 <Trash2 size={16} className="me-1" />
-                
+
               </Button>
             )}
           </div>
         </div>
 
         {/* Mobile Dropdown */}
-          <div className="notifications-dropdown d-lg-none">
-            <Dropdown>
-              <Dropdown.Toggle variant="outline-secondary" className="dropdown-toggle">
-                <span>{getTabLabel(activeTab)}</span>
-                <ChevronDown size={16} />
-              </Dropdown.Toggle>
-              <Dropdown.Menu>
-                {['all', 'unread', 'booking', 'promotion'].map((tabKey) => (
-                  <Dropdown.Item
-                    key={tabKey}
-                    active={activeTab === tabKey}
-                    onClick={() => {
-                      setActiveTab(tabKey);
-                    }}
-                  >
-                    <span>{getTabLabel(tabKey)}</span>
-                    <Badge bg={getTabBadgeVariant(tabKey)} text={tabKey === 'booking' || tabKey === 'promotion' ? 'dark' : undefined}>
-                      {getTabCount(tabKey)}
-                    </Badge>
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            </Dropdown>
-          </div>
+        <div className="notifications-dropdown d-lg-none">
+          <Dropdown>
+            <Dropdown.Toggle variant="outline-secondary" className="dropdown-toggle">
+              <span>{getTabLabel(activeTab)}</span>
+              <ChevronDown size={16} />
+            </Dropdown.Toggle>
+            <Dropdown.Menu>
+              {['all', 'unread', 'booking', 'promotion'].map((tabKey) => (
+                <Dropdown.Item
+                  key={tabKey}
+                  active={activeTab === tabKey}
+                  onClick={() => {
+                    setActiveTab(tabKey);
+                  }}
+                >
+                  <span>{getTabLabel(tabKey)}</span>
+                  <Badge bg={getTabBadgeVariant(tabKey)} text={tabKey === 'booking' || tabKey === 'promotion' ? 'dark' : undefined}>
+                    {getTabCount(tabKey)}
+                  </Badge>
+                </Dropdown.Item>
+              ))}
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
 
-          <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'all')}>
+        <Tab.Container activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'all')}>
 
           {/* Desktop Tabs */}
           <Nav variant="pills" className="notifications-tabs d-none d-lg-flex">
@@ -221,8 +221,8 @@ const NotificationsPage: React.FC = () => {
                   </div>
                   <h5>No notifications</h5>
                   <p>
-                    {activeTab === 'unread' 
-                      ? "You don't have any unread notifications." 
+                    {activeTab === 'unread'
+                      ? "You don't have any unread notifications."
                       : `No ${getTabLabel(activeTab).toLowerCase()} notifications found.`}
                   </p>
                 </div>
@@ -231,10 +231,10 @@ const NotificationsPage: React.FC = () => {
                   {filteredNotifications.map((notification) => {
                     const isExpanded = expandedNotifications.has(notification.id);
                     const isLongMessage = notification.message.length > 80;
-                    
+
                     return (
-                      <Card 
-                        key={notification.id} 
+                      <Card
+                        key={notification.id}
                         className={`notification-card ${!notification.read ? 'unread' : ''} ${isExpanded ? 'expanded' : 'collapsed'}`}
                       >
                         <Card.Body>
@@ -249,8 +249,8 @@ const NotificationsPage: React.FC = () => {
                                     )}
                                   </h6>
                                   <Badge bg={getTypeColor(notification.type)}>
-                                    {notification.type === 'room_booking' ? 'Room Booking' : 
-                                     notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
+                                    {notification.type === 'room_booking' ? 'Room Booking' :
+                                      notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
                                   </Badge>
                                 </div>
                                 <div className="notification-meta">
@@ -270,7 +270,7 @@ const NotificationsPage: React.FC = () => {
                                   </Button>
                                 </div>
                               </div>
-                              <div 
+                              <div
                                 className="notification-message-wrapper"
                                 onClick={() => {
                                   markAsRead(notification.id);

@@ -92,7 +92,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   };
 
-  const fetchNotifications = async (type?: string, isRead?: boolean) => {
+  const fetchNotifications = useCallback(async (type?: string, isRead?: boolean) => {
     try {
       setLoading(true);
       setError(null);
@@ -102,7 +102,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       if (typeof isRead === 'boolean') params.append('isRead', isRead.toString());
 
       const response = await axios.get(`${API_URL}/notifications?${params}`, getAuthConfig());
-      
+
       const notificationsData = response.data.data.map((notif: any) => ({
         id: notif._id,
         type: notif.type,
@@ -129,56 +129,56 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_URL]);
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     try {
       const response = await axios.get(`${API_URL}/notifications/unread-count`, getAuthConfig());
       setUnreadCount(response.data.data.unreadCount);
     } catch (err: any) {
       console.error('Error fetching unread count:', err);
     }
-  };
+  }, [API_URL]);
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = useCallback(async (id: string) => {
     try {
       await axios.put(`${API_URL}/notifications/${id}/read`, {}, getAuthConfig());
-      
-      setNotifications(prev => 
-        prev.map(notif => 
+
+      setNotifications(prev =>
+        prev.map(notif =>
           notif.id === id ? { ...notif, read: true } : notif
         )
       );
-      
+
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err: any) {
       console.error('Error marking notification as read:', err);
       setError(err.response?.data?.message || 'Failed to mark notification as read');
     }
-  };
+  }, [API_URL]);
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = useCallback(async () => {
     try {
       await axios.put(`${API_URL}/notifications/mark-all-read`, {}, getAuthConfig());
-      
-      setNotifications(prev => 
+
+      setNotifications(prev =>
         prev.map(notif => ({ ...notif, read: true }))
       );
-      
+
       setUnreadCount(0);
     } catch (err: any) {
       console.error('Error marking all notifications as read:', err);
       setError(err.response?.data?.message || 'Failed to mark all notifications as read');
     }
-  };
+  }, [API_URL]);
 
-  const deleteNotification = async (id: string) => {
+  const deleteNotification = useCallback(async (id: string) => {
     try {
       await axios.delete(`${API_URL}/notifications/${id}`, getAuthConfig());
-      
+
       const deletedNotif = notifications.find(n => n.id === id);
       setNotifications(prev => prev.filter(notif => notif.id !== id));
-      
+
       if (deletedNotif && !deletedNotif.read) {
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
@@ -186,37 +186,37 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       console.error('Error deleting notification:', err);
       setError(err.response?.data?.message || 'Failed to delete notification');
     }
-  };
+  }, [API_URL, notifications]);
 
-  const clearAllNotifications = async () => {
+  const clearAllNotifications = useCallback(async () => {
     try {
       await axios.delete(`${API_URL}/notifications/clear-all`, getAuthConfig());
-      
+
       setNotifications([]);
       setUnreadCount(0);
     } catch (err: any) {
       console.error('Error clearing all notifications:', err);
       setError(err.response?.data?.message || 'Failed to clear notifications');
     }
-  };
+  }, [API_URL]);
 
-  const refreshNotifications = async () => {
+  const refreshNotifications = useCallback(async () => {
     await fetchNotifications();
     await fetchUnreadCount();
-  };
+  }, [fetchNotifications, fetchUnreadCount]);
 
   // New counting functions
   const getNotificationCount = (type?: string, isRead?: boolean) => {
     let filtered = notifications;
-    
+
     if (type) {
       filtered = filtered.filter(notif => notif.type === type);
     }
-    
+
     if (typeof isRead === 'boolean') {
       filtered = filtered.filter(notif => notif.read === isRead);
     }
-    
+
     return filtered.length;
   };
 
@@ -240,9 +240,9 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Handle new real-time notifications
   const handleNewNotification = useCallback((socketNotif: any) => {
     console.log('📬 Processing socket notification:', socketNotif);
-    
+
     const notificationId = socketNotif.notificationId || socketNotif._id;
-    
+
     // CRITICAL: Check if we've already processed this notification ID
     // This prevents duplicates on socket reconnect and page refresh
     if (notificationId && processedNotificationIds.current.has(notificationId)) {
@@ -251,18 +251,18 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
 
     // Calculate notification age
-    const notificationCreatedAt = socketNotif.createdAt 
+    const notificationCreatedAt = socketNotif.createdAt
       ? new Date(socketNotif.createdAt).getTime()
       : Date.now();
     const notificationAge = Date.now() - notificationCreatedAt;
-    
+
     // CRITICAL: More lenient timing check for real-time notifications
     // Increased to 60 seconds to handle network delays and server processing time
     // This ensures notifications aren't missed due to timing issues
-    const isRealTimeNotification = 
+    const isRealTimeNotification =
       notificationAge < 60000 && // Created within last 60 seconds (increased from 30)
       initialFetchComplete.current; // Initial fetch has completed
-    
+
     console.log('📊 Notification timing analysis:', {
       notificationId,
       createdAt: socketNotif.createdAt,
@@ -276,7 +276,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (notificationId) {
       processedNotificationIds.current.add(notificationId);
     }
-    
+
     const newNotification: Notification = {
       id: notificationId || Date.now().toString(),
       type: socketNotif.type,
@@ -289,7 +289,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       roomId: socketNotif.roomId,
       bookingStatus: socketNotif.bookingStatus
     };
-    
+
     // Add notification to state (check for duplicates in state as well)
     setNotifications(prev => {
       const exists = prev.some(n => n.id === newNotification.id);
@@ -299,15 +299,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       }
       return [newNotification, ...prev];
     });
-    
+
     setUnreadCount(prev => prev + 1);
-    
+
     // Play sound ONLY for real-time notifications
     if (isRealTimeNotification) {
       const soundEnabledTypes = ['promotion', 'room_booking', 'payment', 'system'];
       if (soundEnabledTypes.includes(socketNotif.type)) {
         console.log('🔊 Attempting to play sound for real-time notification:', socketNotif.type);
-        
+
         // Use setTimeout with requestAnimationFrame for better timing
         setTimeout(() => {
           requestAnimationFrame(() => {
@@ -332,14 +332,14 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     if (isAuthenticated && user) {
       refreshNotifications();
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, refreshNotifications]);
 
   // Setup global click handler to initialize audio if permission was granted
   useEffect(() => {
     const handleGlobalClick = async () => {
       const permissionState = notificationSoundService.getPermissionState();
       const isReady = notificationSoundService.isReady();
-      
+
       // If permission was granted but audio not initialized, initialize it
       if (permissionState === 'granted' && !isReady) {
         console.log('🎵 Initializing audio on user interaction (permission already granted)');
@@ -355,7 +355,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     // Add listener with once: false to handle multiple attempts if needed
     document.addEventListener('click', handleGlobalClick, { passive: true });
     document.addEventListener('touchstart', handleGlobalClick, { passive: true });
-    
+
     return () => {
       document.removeEventListener('click', handleGlobalClick);
       document.removeEventListener('touchstart', handleGlobalClick);
@@ -368,11 +368,11 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   // Socket.io real-time notification listener
   useEffect(() => {
     if (!socket || !isAuthenticated || !user) {
-      console.log('Socket listener not ready:', { 
-        hasSocket: !!socket, 
-        isConnected, 
-        isAuthenticated, 
-        hasUser: !!user 
+      console.log('Socket listener not ready:', {
+        hasSocket: !!socket,
+        isConnected,
+        isAuthenticated,
+        hasUser: !!user
       });
       return;
     }
@@ -418,7 +418,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
     // Listen for socket notifications
     window.addEventListener('socketNotification', handleSocketNotification as EventListener);
-    
+
     return () => {
       window.removeEventListener('socketNotification', handleSocketNotification as EventListener);
     };

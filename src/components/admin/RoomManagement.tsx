@@ -13,10 +13,9 @@ import {
   Dropdown,
   ButtonGroup
 } from 'react-bootstrap';
-import { Plus, Edit2, Trash2, X, RefreshCw, ExternalLink, ChevronDown, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, RefreshCw, ExternalLink, Upload } from 'lucide-react';
 import api from '../../services/api';
 import ImageUploadModal from './ImageUploadModal';
-import ImageGallery from './ImageGallery';
 import DataLoader from '../common/DataLoader';
 
 interface Room {
@@ -255,7 +254,8 @@ const RoomManagement: React.FC = () => {
         const payload = {
           ...formData,
         };
-        response = await api.put(`/rooms/${editingRoom._id}`, payload);
+        // response = await api.put(`/rooms/${editingRoom._id}`, payload);
+        await api.put(`/rooms/${editingRoom._id}`, payload);
       } else {
         // Build FormData for creating a new room with optional images
         const formDataToSend = new FormData();
@@ -281,7 +281,8 @@ const RoomManagement: React.FC = () => {
           formDataToSend.append('images', file);
         });
 
-        response = await api.post('/rooms', formDataToSend, {
+        // response = await api.post('/rooms', formDataToSend, {
+        await api.post('/rooms', formDataToSend, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
@@ -349,7 +350,7 @@ const RoomManagement: React.FC = () => {
       setDeletingRoomId(roomId);
       setError('');
 
-      const response = await api.delete(`/rooms/${roomId}`);
+      await api.delete(`/rooms/${roomId}`);
 
       setSuccess('Room deleted successfully!');
       setDeletingRoomId(null);
@@ -397,7 +398,7 @@ const RoomManagement: React.FC = () => {
       const failed = results.filter(r => r.status === 'rejected').length;
 
       if (failed > 0) {
-        const failedRoomIds = selectedRooms.filter((_, i) => results[i].status === 'rejected');
+        // const failedRoomIds = selectedRooms.filter((_, i) => results[i].status === 'rejected');
         const failureReasons = results
           .map((r, i) => r.status === 'rejected' ? r.reason?.response?.data?.message : null)
           .filter(Boolean);
