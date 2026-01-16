@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Toast, ToastContainer, Badge } from 'react-bootstrap';
-import { X, Bell, Calendar, Star, ShoppingBag, Clock } from 'lucide-react';
+import { X } from 'lucide-react';
 import { notificationSoundService } from '../../services/NotificationSoundService';
 import '../../styles/notification-display.css';
 
@@ -19,9 +19,9 @@ interface NotificationDisplayProps {
   maxNotifications?: number;
 }
 
-const NotificationDisplay: React.FC<NotificationDisplayProps> = ({ 
+const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
   position = 'top-end',
-  maxNotifications = 5 
+  maxNotifications = 5
 }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
@@ -42,7 +42,7 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
     // Listen for new notifications from various sources
     const handleNewNotification = (event: CustomEvent) => {
       const notificationData = event.detail;
-      
+
       const newNotification: NotificationItem = {
         id: notificationData.id || Date.now().toString(),
         type: notificationData.type || 'system',
@@ -91,20 +91,7 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
     setNotifications(prev => prev.filter(notif => notif.id !== id));
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'room_booking':
-        return <Calendar size={18} className="notification-icon booking" />;
-      case 'promotion':
-        return <Star size={18} className="notification-icon promotion" />;
-      case 'payment':
-        return <ShoppingBag size={18} className="notification-icon payment" />;
-      case 'system':
-        return <Clock size={18} className="notification-icon system" />;
-      default:
-        return <Bell size={18} className="notification-icon default" />;
-    }
-  };
+
 
   const getNotificationVariant = (type: string) => {
     switch (type) {
@@ -139,7 +126,7 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - timestamp.getTime()) / 1000);
-    
+
     if (diffInSeconds < 60) return 'Just now';
     if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
     if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
@@ -147,14 +134,14 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
   };
 
   return (
-    <ToastContainer 
-      position={position} 
+    <ToastContainer
+      position={position}
       className="notification-display-container"
       style={{ zIndex: 9999 }}
     >
       {notifications.map((notification) => {
         const isExpanded = expandedNotifications.has(notification.id);
-        
+
         return (
           <Toast
             key={notification.id}
@@ -170,8 +157,8 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
                   <strong className="notification-title">
                     {notification.title}
                   </strong>
-                  <Badge 
-                    bg={getNotificationVariant(notification.type)} 
+                  <Badge
+                    bg={getNotificationVariant(notification.type)}
                     className="notification-type-badge"
                   >
                     {getTypeLabel(notification.type)}
@@ -195,7 +182,7 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
                 </button>
               </div>
             </Toast.Header>
-            <Toast.Body 
+            <Toast.Body
               className="notification-toast-body"
               onClick={() => toggleExpanded(notification.id)}
               style={{ cursor: 'pointer' }}
@@ -228,7 +215,7 @@ export const showNotification = (notification: Partial<NotificationItem>) => {
       ...notification
     }
   });
-  
+
   window.dispatchEvent(event);
 };
 
@@ -272,10 +259,10 @@ export const NotificationHelpers = {
 
   // Test notifications
   showTestNotification: () => {
-    const types: Array<'room_booking' | 'promotion' | 'payment' | 'system'> = 
+    const types: Array<'room_booking' | 'promotion' | 'payment' | 'system'> =
       ['room_booking', 'promotion', 'payment', 'system'];
     const randomType = types[Math.floor(Math.random() * types.length)];
-    
+
     const messages = {
       room_booking: {
         title: 'New Booking Confirmed',

@@ -407,7 +407,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       socket.off('new_notification', handleNotification);
       socket.off('user_notification', handleNotification);
     };
-  }, [socket, isConnected, isAuthenticated, user, handleNewNotification]); // Added handleNewNotification to deps
+  }, [socket, isConnected, isAuthenticated, user, handleNewNotification, connectionTimestamp]); // Added handleNewNotification and connectionTimestamp to deps
 
   // Legacy: Listen for custom events (backward compatibility)
   useEffect(() => {

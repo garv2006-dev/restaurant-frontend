@@ -11,7 +11,7 @@ import {
     Alert,
     Spinner
 } from 'react-bootstrap';
-import { Plus, Search, Filter, RefreshCw, Home, User, Calendar, UserPlus } from 'lucide-react';
+import { Plus, Filter, RefreshCw, Home, User, Calendar, UserPlus } from 'lucide-react';
 import api from '../../services/api';
 import { getSocket } from '../../services/socket';
 import DataLoader from '../common/DataLoader';

@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { Container, Accordion, Card } from 'react-bootstrap';
-import { FaChevronDown, FaChevronUp } from 'react-icons/fa';
+
 import { useTheme } from '../context/ThemeContext';
 
-// Icon wrapper component
-const IconWrapper = ({ icon: Icon, className, size }: { icon: any; className?: string; size?: number }) => (
-  <Icon className={className} size={size} />
-);
 
 const FAQ: React.FC = () => {
   const { theme } = useTheme();
@@ -77,18 +73,18 @@ const FAQ: React.FC = () => {
 
   return (
     <>
-      
+
       <Container className="py-5">
         <div className="max-content mx-auto">
           <h1 className={`${theme === 'dark' ? 'text-gold' : 'text-primary'} mb-4`}>Frequently Asked Questions</h1>
-          
+
           <p className={theme === 'dark' ? 'text-light' : 'text-dark'} mb-5>
-            Find answers to common questions about our hotel, services, and policies. Can't find what you're looking for? 
+            Find answers to common questions about our hotel, services, and policies. Can't find what you're looking for?
             <a href="/contact" className={theme === 'dark' ? 'text-gold' : 'text-primary'}>Contact our support team</a>.
           </p>
 
-          <Accordion 
-            activeKey={activeKey} 
+          <Accordion
+            activeKey={activeKey}
             onSelect={(key) => setActiveKey(key as string | null)}
             className="faq-accordion"
           >
@@ -112,9 +108,9 @@ const FAQ: React.FC = () => {
               Our customer service team is available 24/7 to assist you.
             </p>
             <div className="d-flex justify-content-center gap-3 flex-wrap">
-             
-              <a 
-                href="/contact" 
+
+              <a
+                href="/contact"
                 className="btn btn-primary"
               >
                 Send Message

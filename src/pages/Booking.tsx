@@ -5,13 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI, paymentsAPI } from '../services/api';
 import { differenceInDays } from 'date-fns';
-import type { Room, Booking as BookingType, BookingFormData } from '../types';
+import type { Room, BookingFormData } from '../types';
 import { triggerBookingNotification } from '../utils/bookingNotification';
 import DiscountCode from '../components/booking/DiscountCode';
 import { toast } from 'react-toastify';
 
 const Booking: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -22,45 +22,15 @@ const Booking: React.FC = () => {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
+  // submitting and success states removed as they were unused/redundant
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [totalNights, setTotalNights] = useState(1);
   const [totalAmount, setTotalAmount] = useState(0);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'Cash' | 'Razorpay'>('Cash');
   const [pendingBookingPayload, setPendingBookingPayload] = useState<any | null>(null);
 
-  // Payment method specific modals
-  const [showCardPaymentModal, setShowCardPaymentModal] = useState(false);
-  const [showUPIPaymentModal, setShowUPIPaymentModal] = useState(false);
-  const [showOnlineBankingModal, setShowOnlineBankingModal] = useState(false);
-
-  // Payment details state
-  const [cardDetails, setCardDetails] = useState({
-    cardNumber: '',
-    cardHolderName: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvv: ''
-  });
-
-  const [upiDetails, setUpiDetails] = useState({
-    upiId: '',
-    upiName: ''
-  });
-
-  const [bankingDetails, setBankingDetails] = useState({
-    bankName: '',
-    accountNumber: '',
-    ifscCode: ''
-  });
-
+  // Removed unused payment specific modals and state references
   const [processingPayment, setProcessingPayment] = useState(false);
-
-  // Payment validation errors
-  const [cardErrors, setCardErrors] = useState<Record<string, string>>({});
-  const [upiErrors, setUpiErrors] = useState<Record<string, string>>({});
-  const [bankingErrors, setBankingErrors] = useState<Record<string, string>>({});
 
   // Discount state
   const [appliedDiscount, setAppliedDiscount] = useState<{
@@ -518,24 +488,17 @@ const Booking: React.FC = () => {
       console.log('Booking API response:', response);
 
       if (response?.success) {
-        setSuccess(true);
+        // Success state removed
 
         // Close all modals
         setShowPaymentModal(false);
-        setShowCardPaymentModal(false);
-        setShowUPIPaymentModal(false);
-        setShowOnlineBankingModal(false);
+        // Payment specific modals removed as they were unused
 
         // Clear form and reset state
         setPendingBookingPayload(null);
         setAppliedDiscount(null);
         setSelectedPaymentMethod('Cash');
-        setCardDetails({ cardNumber: '', cardHolderName: '', expiryMonth: '', expiryYear: '', cvv: '' });
-        setUpiDetails({ upiId: '', upiName: '' });
-        setBankingDetails({ bankName: '', accountNumber: '', ifscCode: '' });
-        setCardErrors({});
-        setUpiErrors({});
-        setBankingErrors({});
+
 
         const bookingId = response.data?.bookingId || 'your booking';
         toast.success(`Booking received successfully! Your booking ID is ${bookingId}. Awaiting admin confirmation.`, {
@@ -590,339 +553,13 @@ const Booking: React.FC = () => {
 
       // Reopen payment modal on error
       setShowPaymentModal(true);
-      setShowCardPaymentModal(false);
-      setShowUPIPaymentModal(false);
-      setShowOnlineBankingModal(false);
+      // Payment specific modals removed
     } finally {
       setProcessingPayment(false);
     }
   };
 
-  // Handle card payment submission
-  const handleCardPaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate all card fields
-    const newErrors: Record<string, string> = {};
-
-    const cardNumberError = validateCardNumber(cardDetails.cardNumber);
-    if (cardNumberError) newErrors.cardNumber = cardNumberError;
-
-    const nameError = validateCardHolderName(cardDetails.cardHolderName);
-    if (nameError) newErrors.cardHolderName = nameError;
-
-    const expiryError = validateExpiryDate(cardDetails.expiryMonth, cardDetails.expiryYear);
-    if (expiryError) newErrors.expiry = expiryError;
-
-    const cvvError = validateCVV(cardDetails.cvv, cardDetails.cardNumber);
-    if (cvvError) newErrors.cvv = cvvError;
-
-    if (Object.keys(newErrors).length > 0) {
-      setCardErrors(newErrors);
-      toast.error('Please fix all validation errors before proceeding');
-      return;
-    }
-
-    // Simulate payment processing and generate transaction ID
-    const transactionId = `CARD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    const paymentData = {
-      transactionId,
-      cardLast4: cardDetails.cardNumber.slice(-4),
-      cardHolderName: cardDetails.cardHolderName,
-      cardBrand: getCardBrand(cardDetails.cardNumber)
-    };
-
-    await processBookingWithPayment(paymentData);
-  };
-
-  // Handle UPI payment submission
-  const handleUPIPaymentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate UPI details
-    const upiError = validateUPIId(upiDetails.upiId);
-    if (upiError) {
-      setUpiErrors({ upiId: upiError });
-      toast.error('Please fix validation errors before proceeding');
-      return;
-    }
-
-    // Simulate payment processing and generate transaction ID
-    const transactionId = `UPI_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    const paymentData = {
-      transactionId,
-      upiId: upiDetails.upiId,
-      upiName: upiDetails.upiName || 'UPI User'
-    };
-
-    await processBookingWithPayment(paymentData);
-  };
-
-  // Handle online banking payment submission
-  const handleOnlineBankingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validate banking details
-    const newErrors: Record<string, string> = {};
-
-    const bankError = validateBankName(bankingDetails.bankName);
-    if (bankError) newErrors.bankName = bankError;
-
-    if (bankingDetails.accountNumber) {
-      const accError = validateAccountNumber(bankingDetails.accountNumber);
-      if (accError) newErrors.accountNumber = accError;
-    }
-
-    if (bankingDetails.ifscCode) {
-      const ifscError = validateIFSC(bankingDetails.ifscCode);
-      if (ifscError) newErrors.ifscCode = ifscError;
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setBankingErrors(newErrors);
-      toast.error('Please fix validation errors before proceeding');
-      return;
-    }
-
-    // Simulate payment processing and generate transaction ID
-    const transactionId = `BANK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    const paymentData = {
-      transactionId,
-      bankName: bankingDetails.bankName,
-      accountLast4: bankingDetails.accountNumber ? bankingDetails.accountNumber.slice(-4) : 'XXXX'
-    };
-
-    await processBookingWithPayment(paymentData);
-  };
-
-  // Get card brand from card number
-  const getCardBrand = (cardNumber: string): string => {
-    const number = cardNumber.replace(/\s/g, '');
-    if (/^4/.test(number)) return 'Visa';
-    if (/^5[1-5]/.test(number)) return 'Mastercard';
-    if (/^3[47]/.test(number)) return 'American Express';
-    if (/^6(?:011|5)/.test(number)) return 'Discover';
-    return 'Unknown';
-  };
-
-  // Real-time Card Validation
-  const validateCardNumber = (cardNumber: string): string => {
-    const number = cardNumber.replace(/\s/g, '');
-    if (!number) return 'Card number is required';
-    if (number.length < 13) return 'Card number must be at least 13 digits';
-    if (number.length > 19) return 'Card number is too long';
-    if (!/^\d+$/.test(number)) return 'Card number must contain only digits';
-
-    // Luhn algorithm validation
-    let sum = 0;
-    let isEven = false;
-    for (let i = number.length - 1; i >= 0; i--) {
-      let digit = parseInt(number[i]);
-      if (isEven) {
-        digit *= 2;
-        if (digit > 9) digit -= 9;
-      }
-      sum += digit;
-      isEven = !isEven;
-    }
-    if (sum % 10 !== 0) return 'Invalid card number';
-
-    return '';
-  };
-
-  const validateCardHolderName = (name: string): string => {
-    if (!name.trim()) return 'Card holder name is required';
-    if (name.trim().length < 3) return 'Name must be at least 3 characters';
-    if (!/^[a-zA-Z\s]+$/.test(name)) return 'Name must contain only letters';
-    return '';
-  };
-
-  const validateExpiryDate = (month: string, year: string): string => {
-    if (!month) return 'Expiry month is required';
-    if (!year) return 'Expiry year is required';
-
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth() + 1;
-
-    const expYear = parseInt(year);
-    const expMonth = parseInt(month);
-
-    if (expYear < currentYear) return 'Card has expired';
-    if (expYear === currentYear && expMonth < currentMonth) return 'Card has expired';
-
-    return '';
-  };
-
-  const validateCVV = (cvv: string, cardNumber: string): string => {
-    if (!cvv) return 'CVV is required';
-    const number = cardNumber.replace(/\s/g, '');
-    const isAmex = /^3[47]/.test(number);
-    const requiredLength = isAmex ? 4 : 3;
-
-    if (cvv.length !== requiredLength) {
-      return `CVV must be ${requiredLength} digits for ${isAmex ? 'American Express' : 'this card'}`;
-    }
-    if (!/^\d+$/.test(cvv)) return 'CVV must contain only digits';
-
-    return '';
-  };
-
-  // Real-time UPI Validation
-  const validateUPIId = (upiId: string): string => {
-    if (!upiId.trim()) return 'UPI ID is required';
-
-    // UPI ID format: username@provider
-    const upiRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/;
-    if (!upiRegex.test(upiId)) {
-      return 'Invalid UPI ID format (e.g., yourname@paytm)';
-    }
-
-    const [username, provider] = upiId.split('@');
-    if (username.length < 3) return 'UPI username must be at least 3 characters';
-
-    const validProviders = ['paytm', 'googlepay', 'phonepe', 'amazonpay', 'bhim', 'ybl', 'okaxis', 'oksbi', 'okicici', 'okhdfcbank', 'axl', 'ibl', 'icici'];
-    if (!validProviders.includes(provider.toLowerCase())) {
-      return 'Please use a valid UPI provider (e.g., paytm, googlepay, phonepe)';
-    }
-
-    return '';
-  };
-
-  // Real-time Banking Validation
-  const validateBankName = (bankName: string): string => {
-    if (!bankName) return 'Please select a bank';
-    return '';
-  };
-
-  const validateAccountNumber = (accountNumber: string): string => {
-    if (!accountNumber) return ''; // Optional field
-
-    const number = accountNumber.replace(/\s/g, '');
-    if (number.length < 9) return 'Account number must be at least 9 digits';
-    if (number.length > 18) return 'Account number is too long';
-    if (!/^\d+$/.test(number)) return 'Account number must contain only digits';
-
-    return '';
-  };
-
-  const validateIFSC = (ifscCode: string): string => {
-    if (!ifscCode) return ''; // Optional field
-
-    // IFSC format: 4 letters + 0 + 6 alphanumeric
-    const ifscRegex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-    if (!ifscRegex.test(ifscCode)) {
-      return 'Invalid IFSC code format (e.g., SBIN0001234)';
-    }
-
-    return '';
-  };
-
-  // Handle card input changes with validation
-  const handleCardInputChange = (field: string, value: string) => {
-    const newCardDetails = { ...cardDetails, [field]: value };
-    setCardDetails(newCardDetails);
-
-    const newErrors = { ...cardErrors };
-
-    switch (field) {
-      case 'cardNumber':
-        const error = validateCardNumber(value);
-        if (error) {
-          newErrors.cardNumber = error;
-        } else {
-          delete newErrors.cardNumber;
-        }
-        break;
-      case 'cardHolderName':
-        const nameError = validateCardHolderName(value);
-        if (nameError) {
-          newErrors.cardHolderName = nameError;
-        } else {
-          delete newErrors.cardHolderName;
-        }
-        break;
-      case 'cvv':
-        const cvvError = validateCVV(value, newCardDetails.cardNumber);
-        if (cvvError) {
-          newErrors.cvv = cvvError;
-        } else {
-          delete newErrors.cvv;
-        }
-        break;
-      case 'expiryMonth':
-      case 'expiryYear':
-        const expiryError = validateExpiryDate(
-          field === 'expiryMonth' ? value : newCardDetails.expiryMonth,
-          field === 'expiryYear' ? value : newCardDetails.expiryYear
-        );
-        if (expiryError) {
-          newErrors.expiry = expiryError;
-        } else {
-          delete newErrors.expiry;
-        }
-        break;
-    }
-
-    setCardErrors(newErrors);
-  };
-
-  // Handle UPI input changes with validation
-  const handleUPIInputChange = (field: string, value: string) => {
-    setUpiDetails({ ...upiDetails, [field]: value });
-
-    const newErrors = { ...upiErrors };
-
-    if (field === 'upiId') {
-      const error = validateUPIId(value);
-      if (error) {
-        newErrors.upiId = error;
-      } else {
-        delete newErrors.upiId;
-      }
-    }
-
-    setUpiErrors(newErrors);
-  };
-
-  // Handle banking input changes with validation
-  const handleBankingInputChange = (field: string, value: string) => {
-    setBankingDetails({ ...bankingDetails, [field]: value });
-
-    const newErrors = { ...bankingErrors };
-
-    switch (field) {
-      case 'bankName':
-        const bankError = validateBankName(value);
-        if (bankError) {
-          newErrors.bankName = bankError;
-        } else {
-          delete newErrors.bankName;
-        }
-        break;
-      case 'accountNumber':
-        const accError = validateAccountNumber(value);
-        if (accError) {
-          newErrors.accountNumber = accError;
-        } else {
-          delete newErrors.accountNumber;
-        }
-        break;
-      case 'ifscCode':
-        const ifscError = validateIFSC(value);
-        if (ifscError) {
-          newErrors.ifscCode = ifscError;
-        } else {
-          delete newErrors.ifscCode;
-        }
-        break;
-    }
-
-    setBankingErrors(newErrors);
-  };
+  // Unused payment handlers removed
 
   // Calculate total price when dates or room changes
   useEffect(() => {
@@ -1362,7 +999,7 @@ const Booking: React.FC = () => {
               <DiscountCode
                 subtotal={subtotalAmount}
                 onDiscountApplied={handleDiscountApplied}
-                disabled={submitting}
+                disabled={processingPayment}
               />
             </Card.Body>
           </Card>
@@ -1382,7 +1019,7 @@ const Booking: React.FC = () => {
                       setSelectedPaymentMethod(e.target.value as any);
                       setBookingError(null); // Clear errors when changing payment method
                     }}
-                    disabled={submitting}
+                    disabled={processingPayment}
                     required
                   >
                     <option value="Cash">💰 Cash on Arrival - Pay at hotel during check-in</option>
@@ -1423,17 +1060,17 @@ const Booking: React.FC = () => {
               setShowPaymentModal(false);
               setShowBookingModal(true);
             }}
-            disabled={submitting || processingPayment}
+            disabled={processingPayment}
           >
             Back
           </Button>
           <Button
             variant="primary"
             onClick={handleConfirmPayment}
-            disabled={submitting || processingPayment}
+            disabled={processingPayment}
             size="lg"
           >
-            {submitting || processingPayment ? (
+            {processingPayment ? (
               <>
                 <Spinner size="sm" className="me-2" />
                 Processing...

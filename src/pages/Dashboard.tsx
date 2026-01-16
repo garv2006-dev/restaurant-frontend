@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Spinner, Alert, ListGroup, Badge } from 'react-bootstrap';
+import { Row, Col, Card, Spinner, Alert, ListGroup } from 'react-bootstrap';
 import { authAPI } from '../services/api';
 import api from '../services/api';
 
@@ -73,7 +73,7 @@ const Dashboard: React.FC = () => {
           <Card className="p-3">
             <h5 className="mb-2">Bookings</h5>
             <ListGroup.Item className="d-flex justify-content-between">Total<strong>{bookingSummary.total}</strong></ListGroup.Item>
-              
+
           </Card>
         </Col>
         <Col md={4}>
