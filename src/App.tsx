@@ -23,7 +23,6 @@ import './services/RealTimeNotificationService'; // Initialize real-time notific
 // Styles
 import './App.css';
 import './styles/settings-button.css';
-import './styles/dark-mode-buttons.css';
 
 // Pages
 import Login from './pages/Login';
@@ -52,10 +51,10 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 // Styles
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
-import './App.css';
 import './styles/components.css';
 import './styles/responsive.css';
 import './styles/mobile-menu-fix.css';
+import './styles/dark-mode-buttons.css';
 
 import { useAuth } from './context/AuthContext';
 import { useEffect } from 'react';

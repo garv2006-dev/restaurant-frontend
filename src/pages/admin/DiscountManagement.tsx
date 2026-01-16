@@ -14,6 +14,7 @@ import {
   InputGroup
 } from 'react-bootstrap';
 import api from '../../services/api';
+import DataLoader from '../../components/common/DataLoader';
 
 interface DiscountFormData {
   code: string;
@@ -217,14 +218,7 @@ const DiscountManagement: React.FC = () => {
     discount.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <Container className="py-5 text-center">
-        <Spinner animation="border" variant="primary" />
-        <p className="mt-3">Loading discount management...</p>
-      </Container>
-    );
-  }
+
 
   return (
     <Container fluid className="py-4">
@@ -256,7 +250,7 @@ const DiscountManagement: React.FC = () => {
               </Row>
             </Card.Header>
             <Card.Body>
-              {filteredDiscounts.length === 0 ? (
+              {!loading && filteredDiscounts.length === 0 ? (
                 <Alert variant="info">
                   {searchTerm ? 'No discounts found matching your search.' : 'No discount codes found. Create your first discount!'}
                 </Alert>
@@ -275,77 +269,81 @@ const DiscountManagement: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredDiscounts.map((discount) => (
-                      <tr key={discount._id}>
-                        <td>
-                          <strong>{discount.code}</strong>
-                        </td>
-                        <td>
-                          <div>
-                            <strong>{discount.name}</strong>
-                            <br />
-                            <small className="text-muted">{discount.description}</small>
-                          </div>
-                        </td>
-                        <td>
-                          <Badge bg="info">
-                            {discount.type === 'percentage' && `${discount.value}% OFF`}
-                            {discount.type === 'fixed' && `₹${discount.value} OFF`}
+                    {loading ? (
+                      <DataLoader type="table" count={5} columns={8} />
+                    ) : (
+                      filteredDiscounts.map((discount) => (
+                        <tr key={discount._id}>
+                          <td>
+                            <strong>{discount.code}</strong>
+                          </td>
+                          <td>
+                            <div>
+                              <strong>{discount.name}</strong>
+                              <br />
+                              <small className="text-muted">{discount.description}</small>
+                            </div>
+                          </td>
+                          <td>
+                            <Badge bg="info">
+                              {discount.type === 'percentage' && `${discount.value}% OFF`}
+                              {discount.type === 'fixed' && `₹${discount.value} OFF`}
+                              {discount.type === 'buy_one_get_one' && 'BOGO'}
+                            </Badge>
+                          </td>
+                          <td>
+                            {discount.type === 'percentage' && `${discount.value}%`}
+                            {discount.type === 'fixed' && `₹${discount.value}`}
                             {discount.type === 'buy_one_get_one' && 'BOGO'}
-                          </Badge>
-                        </td>
-                        <td>
-                          {discount.type === 'percentage' && `${discount.value}%`}
-                          {discount.type === 'fixed' && `₹${discount.value}`}
-                          {discount.type === 'buy_one_get_one' && 'BOGO'}
-                          {discount.minimumOrderAmount > 0 && (
-                            <><br /><small className="text-muted">Min: ₹{discount.minimumOrderAmount}</small></>
-                          )}
-                        </td>
-                        <td>
-                          {discount.usedCount}/{discount.usageLimit.total === null ? '∞' : discount.usageLimit.total}
-                          <br />
-                          <small className="text-muted">Per user: {discount.usageLimit.perUser}</small>
-                        </td>
-                        <td>
-                          {new Date(discount.validUntil).toLocaleDateString()}
-                          <br />
-                          <small className={`text-${new Date(discount.validUntil) > new Date() ? 'success' : 'danger'}`}>
-                            {new Date(discount.validUntil) > new Date() ? 'Active' : 'Expired'}
-                          </small>
-                        </td>
-                        <td>
-                          <Badge bg={discount.isActive ? 'success' : 'danger'}>
-                            {discount.isActive ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </td>
-                        <td>
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            className="me-2"
-                            onClick={() => handleEdit(discount)}
-                          >
-                            Edit
-                          </Button>
-                          <Button
-                            variant={discount.isActive ? 'outline-warning' : 'outline-success'}
-                            size="sm"
-                            className="me-2"
-                            onClick={() => toggleStatus(discount._id, discount.isActive)}
-                          >
-                            {discount.isActive ? 'Deactivate' : 'Activate'}
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleDelete(discount._id)}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                            {discount.minimumOrderAmount > 0 && (
+                              <><br /><small className="text-muted">Min: ₹{discount.minimumOrderAmount}</small></>
+                            )}
+                          </td>
+                          <td>
+                            {discount.usedCount}/{discount.usageLimit.total === null ? '∞' : discount.usageLimit.total}
+                            <br />
+                            <small className="text-muted">Per user: {discount.usageLimit.perUser}</small>
+                          </td>
+                          <td>
+                            {new Date(discount.validUntil).toLocaleDateString()}
+                            <br />
+                            <small className={`text-${new Date(discount.validUntil) > new Date() ? 'success' : 'danger'}`}>
+                              {new Date(discount.validUntil) > new Date() ? 'Active' : 'Expired'}
+                            </small>
+                          </td>
+                          <td>
+                            <Badge bg={discount.isActive ? 'success' : 'danger'}>
+                              {discount.isActive ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </td>
+                          <td>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => handleEdit(discount)}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant={discount.isActive ? 'outline-warning' : 'outline-success'}
+                              size="sm"
+                              className="me-2"
+                              onClick={() => toggleStatus(discount._id, discount.isActive)}
+                            >
+                              {discount.isActive ? 'Deactivate' : 'Activate'}
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDelete(discount._id)}
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </Table>
               )}

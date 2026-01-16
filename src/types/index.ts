@@ -118,6 +118,12 @@ export interface Booking {
   status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow';
   paymentStatus: 'Pending' | 'Paid' | 'PartiallyPaid' | 'Refunded' | 'Failed';
   specialRequests?: string;
+  roomNumber?: string;
+  roomNumberInfo?: {
+    number: string;
+    floor: number;
+    allocatedAt: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
