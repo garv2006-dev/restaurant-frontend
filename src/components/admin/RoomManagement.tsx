@@ -247,7 +247,6 @@ const RoomManagement: React.FC = () => {
       setSubmitting(true);
 
       // Create or update room
-      let response;
 
       if (editingRoom) {
         // For now, keep updates as JSON payloads

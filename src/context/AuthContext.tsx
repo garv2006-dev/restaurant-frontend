@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
-import { User, AuthState, LoginCredentials, RegisterData } from '../types';
+import { AuthState, LoginCredentials, RegisterData } from '../types';
 import { authAPI } from '../services/api';
 import { toast } from 'react-toastify';
 

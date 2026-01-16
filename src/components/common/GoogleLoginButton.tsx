@@ -1,6 +1,5 @@
-import React from 'react';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import axios from 'axios';
+
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -11,7 +10,7 @@ const GOOGLE_CLIENT_ID = '897986200614-2lbsiml3p06gou0jis1ndlldrd3um8ib.apps.goo
 function GoogleLoginButton() {
     const { setAuthState } = useAuth()
     const { theme } = useTheme()
-    
+
     const handleSuccess = async (credentialResponse: any) => {
         try {
             // credentialResponse.credential is the id_token

@@ -5,7 +5,6 @@ import { FaEye, FaEyeSlash, FaSignInAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { LoginCredentials } from '../types';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import SocialLogin from '../components/auth/SocialLogin';
 import { GoogleLoginButton } from '../components/common/GoogleLoginButton';
 import '../styles/dark-mode-buttons.css';
 
@@ -22,7 +21,7 @@ const Login: React.FC = () => {
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [socialError, setSocialError] = useState<string | null>(null);
+  const [socialError] = useState<string | null>(null);
 
   const { login, loading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
@@ -96,129 +95,129 @@ const Login: React.FC = () => {
                   <p className="text-muted">Sign in to your account</p>
                 </div>
 
-              {socialError && (
-                <Alert variant="danger" className="mb-3">
-                  {socialError}
-                </Alert>
-              )}
+                {socialError && (
+                  <Alert variant="danger" className="mb-3">
+                    {socialError}
+                  </Alert>
+                )}
 
-              <div className="mb-3">
-                <GoogleLoginButton />
-              </div>
+                <div className="mb-3">
+                  <GoogleLoginButton />
+                </div>
 
-              <div className="position-relative mb-4">
-                <hr />
-                <span className="position-absolute top-50 start-50 translate-middle px-3 text-muted small" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
-                  OR
-                </span>
-              </div>
+                <div className="position-relative mb-4">
+                  <hr />
+                  <span className="position-absolute top-50 start-50 translate-middle px-3 text-muted small" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
+                    OR
+                  </span>
+                </div>
 
-              <Form onSubmit={handleSubmit}>
-                {/* Email Field */}
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-semibold">Email Address</Form.Label>
-                  <Form.Control
-                    type="email"
-                    name="email"
-                    value={credentials.email}
-                    onChange={handleChange}
-                    placeholder="Enter your email"
-                    isInvalid={!!errors.email}
-                    autoComplete="email"
-                    className="py-2"
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.email}
-                  </Form.Control.Feedback>
-                </Form.Group>
-
-                {/* Password Field */}
-                <Form.Group className="mb-3">
-                  <Form.Label className="fw-semibold">Password</Form.Label>
-                  <div className="position-relative">
+                <Form onSubmit={handleSubmit}>
+                  {/* Email Field */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Email Address</Form.Label>
                     <Form.Control
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      value={credentials.password}
+                      type="email"
+                      name="email"
+                      value={credentials.email}
                       onChange={handleChange}
-                      placeholder="Enter your password"
-                      isInvalid={!!errors.password}
-                      autoComplete="current-password"
+                      placeholder="Enter your email"
+                      isInvalid={!!errors.email}
+                      autoComplete="email"
                       className="py-2"
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {errors.email}
+                    </Form.Control.Feedback>
+                  </Form.Group>
+
+                  {/* Password Field */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Password</Form.Label>
+                    <div className="position-relative">
+                      <Form.Control
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        value={credentials.password}
+                        onChange={handleChange}
+                        placeholder="Enter your password"
+                        isInvalid={!!errors.password}
+                        autoComplete="current-password"
+                        className="py-2"
+                      />
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="position-absolute end-0 top-50 translate-middle-y border-0 text-muted"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{ transform: 'translateY(-50%) translateX(-10px)' }}
+                      >
+                        {showPassword ? <IconWrapper icon={FaEyeSlash} /> : <IconWrapper icon={FaEye} />}
+                      </Button>
+                    </div>
+                    <Form.Control.Feedback type="invalid">
+                      {errors.password}
+                    </Form.Control.Feedback>
+                  </Form.Group>
+
+                  {/* Remember Me & Forgot Password */}
+                  <Row className="mb-4">
+                    <Col>
+                      <Form.Check
+                        type="checkbox"
+                        id="remember-me"
+                        label="Remember me"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                      />
+                    </Col>
+                    <Col className="text-end">
+                      <Link to="/forgot-password" className="text-decoration-none">
+                        Forgot Password?
+                      </Link>
+                    </Col>
+                  </Row>
+
+                  {/* Submit Button */}
+                  <div className="d-grid">
                     <Button
-                      variant="link"
-                      size="sm"
-                      className="position-absolute end-0 top-50 translate-middle-y border-0 text-muted"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{ transform: 'translateY(-50%) translateX(-10px)' }}
+                      type="submit"
+                      variant="primary"
+                      size="lg"
+                      disabled={loading}
+                      className="d-flex align-items-center justify-content-center py-3 fw-semibold"
                     >
-                      {showPassword ? <IconWrapper icon={FaEyeSlash} /> : <IconWrapper icon={FaEye} />}
+                      {loading ? (
+                        <LoadingSpinner size="sm" message="" />
+                      ) : (
+                        <>
+                          <IconWrapper icon={FaSignInAlt} className="me-2" />
+                          Sign In
+                        </>
+                      )}
                     </Button>
                   </div>
-                  <Form.Control.Feedback type="invalid">
-                    {errors.password}
-                  </Form.Control.Feedback>
-                </Form.Group>
+                </Form>
 
-                {/* Remember Me & Forgot Password */}
-                <Row className="mb-4">
-                  <Col>
-                    <Form.Check
-                      type="checkbox"
-                      id="remember-me"
-                      label="Remember me"
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                    />
-                  </Col>
-                  <Col className="text-end">
-                    <Link to="/forgot-password" className="text-decoration-none">
-                      Forgot Password?
-                    </Link>
-                  </Col>
-                </Row>
+                <hr className="my-4" />
 
-                {/* Submit Button */}
-                <div className="d-grid">
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="lg"
-                    disabled={loading}
-                    className="d-flex align-items-center justify-content-center py-3 fw-semibold"
-                  >
-                    {loading ? (
-                      <LoadingSpinner size="sm" message="" />
-                    ) : (
-                      <>
-                        <IconWrapper icon={FaSignInAlt} className="me-2" />
-                        Sign In
-                      </>
-                    )}
-                  </Button>
+                {/* Sign Up Link */}
+                <div className="text-center">
+                  <span className="text-muted">Don't have an account? </span>
+                  <Link to="/register" className="text-decoration-none fw-semibold text-primary">
+                    Create Account
+                  </Link>
                 </div>
-              </Form>
 
-              <hr className="my-4" />
-
-              {/* Sign Up Link */}
-              <div className="text-center">
-                <span className="text-muted">Don't have an account? </span>
-                <Link to="/register" className="text-decoration-none fw-semibold text-primary">
-                  Create Account
-                </Link>
-              </div>
-
-              {/* Email Verification Alert */}
-              <Alert variant="info" className="mt-3 small">
-                <strong>Note:</strong> Please verify your email address after registration to access all features.
-              </Alert>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                {/* Email Verification Alert */}
+                <Alert variant="info" className="mt-3 small">
+                  <strong>Note:</strong> Please verify your email address after registration to access all features.
+                </Alert>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
     </div>
   );
 };

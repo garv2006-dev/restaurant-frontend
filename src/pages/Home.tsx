@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Carousel, Col, Container, Row, Alert } from 'react-bootstrap';
-import { FaCar, FaCoffee, FaSnowflake, FaStar, FaTv, FaWifi, FaUser, FaLock } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom';
+import { Button, Card, Col, Container, Row, Alert } from 'react-bootstrap';
+import { FaCar, FaCoffee, FaSnowflake, FaStar, FaTv, FaWifi, FaLock } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CustomerReviews from '../components/CustomerReviews';
@@ -42,7 +42,6 @@ interface Room {
 const Home: React.FC = () => {
   const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
