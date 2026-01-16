@@ -623,6 +623,16 @@ export const adminAPI = {
     });
     return response.data;
   },
+
+  getSettings: async (): Promise<ApiResponse<{ gstPercentage: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ gstPercentage: number }>> = await api.get('/admin/settings');
+    return response.data;
+  },
+
+  updateSettings: async (settings: { gstPercentage: number }): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.put('/admin/settings', settings);
+    return response.data;
+  },
 };
 
 // Contact API

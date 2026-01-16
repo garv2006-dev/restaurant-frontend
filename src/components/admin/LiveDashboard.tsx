@@ -14,6 +14,7 @@ import {
   Search
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
+import api from '../../services/api';
 import '../../styles/admin-panel.css';
 import DataLoader from '../common/DataLoader';
 
@@ -91,8 +92,17 @@ interface DashboardData {
   recentBookings: RecentBooking[];
 }
 
+interface RoomMetrics {
+  total: number;
+  available: number;
+  allocated: number;
+  occupied: number;
+  maintenance: number;
+}
+
 const LiveDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [roomMetrics, setRoomMetrics] = useState<RoomMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
@@ -183,7 +193,37 @@ const LiveDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchBookings();
+    fetchRoomMetrics();
   }, [fetchBookings]);
+
+  // Fetch room number metrics
+  const fetchRoomMetrics = async () => {
+    try {
+      // Create dates for "Today" query to get real-time status
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+
+      const checkInDate = today.toISOString().split('T')[0];
+      const checkOutDate = tomorrow.toISOString().split('T')[0];
+
+      const response = await api.get(`/room-numbers?checkInDate=${checkInDate}&checkOutDate=${checkOutDate}`);
+      if (response?.data?.data) {
+        const roomNumbers = response.data.data;
+        const metrics = {
+          total: roomNumbers.length,
+          available: roomNumbers.filter((r: any) => (r.dateWiseStatus || r.status) === 'Available').length,
+          allocated: roomNumbers.filter((r: any) => (r.dateWiseStatus || r.status) === 'Allocated').length,
+          occupied: roomNumbers.filter((r: any) => (r.dateWiseStatus || r.status) === 'Occupied').length,
+          maintenance: roomNumbers.filter((r: any) => (r.dateWiseStatus || r.status) === 'Maintenance' || (r.dateWiseStatus || r.status) === 'Out of Service').length,
+        };
+        setRoomMetrics(metrics);
+      }
+    } catch (err) {
+      console.error('Error fetching room metrics:', err);
+      // Don't set error state, just log it
+    }
+  };
 
   const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
     // Add confirmation for destructive actions
@@ -362,6 +402,54 @@ const LiveDashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Room Availability Metrics */}
+      {roomMetrics && (
+        <Row className="g-4 mb-4">
+          <Col md={12}>
+            <Card className="border-start border-primary border-4">
+              <Card.Body>
+                <h6 className="mb-3">Room Availability Overview</h6>
+                <Row>
+                  <Col md={2}>
+                    <div className="text-center">
+                      <h4 className="mb-1 text-primary">{roomMetrics.total}</h4>
+                      <small className="text-muted">Total Rooms</small>
+                    </div>
+                  </Col>
+
+                  <Col md={2}>
+                    <div className="text-center">
+                      <h4 className="mb-1 text-warning">{roomMetrics.allocated}</h4>
+                      <small className="text-muted">Allocated</small>
+                    </div>
+                  </Col>
+                  <Col md={2}>
+                    <div className="text-center">
+                      <h4 className="mb-1 text-danger">{roomMetrics.occupied}</h4>
+                      <small className="text-muted">Occupied</small>
+                    </div>
+                  </Col>
+                  <Col md={2}>
+                    <div className="text-center">
+                      <h4 className="mb-1 text-secondary">{roomMetrics.maintenance}</h4>
+                      <small className="text-muted">Maintenance</small>
+                    </div>
+                  </Col>
+                  <Col md={2}>
+                    <div className="text-center">
+                      <h4 className="mb-1 text-info">
+                        {roomMetrics.total > 0 ? Math.round(((roomMetrics.occupied + roomMetrics.allocated) / roomMetrics.total) * 100) : 0}%
+                      </h4>
+                      <small className="text-muted">Occupancy</small>
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      )}
 
       <Row>
         <Col md={12}>

@@ -7,11 +7,15 @@ import '../../styles/admin-panel.css';
 
 // Import actual admin components
 import RoomManagement from '../../components/admin/RoomManagement';
+import RoomNumberManagement from '../../components/admin/RoomNumberManagement';
 import BookingManagement from '../../components/admin/BookingManagement';
 import CustomerManagement from '../../components/admin/CustomerManagement';
 import ReportsAnalytics from '../../components/admin/ReportsAnalytics';
 import DiscountManagement from './DiscountManagement';
+import SystemSettings from '../../components/admin/SystemSettings';
 import LiveDashboard from '../../components/admin/LiveDashboard';
+
+// ... (keep existing imports)
 
 const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -50,7 +54,7 @@ const AdminDashboard: React.FC = () => {
                 Account
               </Dropdown.Toggle>
               <Dropdown.Menu align="end">
-                <Dropdown.Item href="#/settings">
+                <Dropdown.Item onClick={() => setActiveTab('settings')}>
                   <Settings size={16} className="me-2" />
                   Settings
                 </Dropdown.Item>
@@ -85,6 +89,13 @@ const AdminDashboard: React.FC = () => {
                   Room Management
                 </button>
                 <button
+                  className={`admin-nav-item ${activeTab === 'room-numbers' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('room-numbers')}
+                >
+                  <Home size={16} className="admin-nav-icon" />
+                  Room Numbers
+                </button>
+                <button
                   className={`admin-nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
                   onClick={() => setActiveTab('bookings')}
                 >
@@ -112,6 +123,13 @@ const AdminDashboard: React.FC = () => {
                   <BarChart size={16} className="admin-nav-icon" />
                   Reports & Analytics
                 </button>
+                <button
+                  className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('settings')}
+                >
+                  <Settings size={16} className="admin-nav-icon" />
+                  System Settings
+                </button>
               </nav>
             </div>
           </div>
@@ -120,10 +138,12 @@ const AdminDashboard: React.FC = () => {
             <div className="admin-content">
               {activeTab === 'overview' && <LiveDashboard />}
               {activeTab === 'rooms' && <RoomManagement />}
+              {activeTab === 'room-numbers' && <RoomNumberManagement />}
               {activeTab === 'bookings' && <BookingManagement />}
               {activeTab === 'customers' && <CustomerManagement />}
               {activeTab === 'discounts' && <DiscountManagement />}
               {activeTab === 'reports' && <ReportsAnalytics />}
+              {activeTab === 'settings' && <SystemSettings />}
             </div>
           </div>
         </div>

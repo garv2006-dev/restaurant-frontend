@@ -9,7 +9,9 @@ import {
   Col,
   Badge,
   Alert,
-  Spinner
+  Spinner,
+  Dropdown,
+  ButtonGroup
 } from 'react-bootstrap';
 import { Plus, Edit2, Trash2, X, RefreshCw, ExternalLink, ChevronDown, Upload } from 'lucide-react';
 import api from '../../services/api';
@@ -45,6 +47,9 @@ interface Room {
   }>;
   status: 'Available' | 'Occupied' | 'Maintenance' | 'Out of Order';
   floor: number;
+  totalRooms: number;
+  totalRoomNumbers?: number;
+  availableCount?: number;
   isActive: boolean;
 }
 
@@ -80,6 +85,7 @@ const RoomManagement: React.FC = () => {
     bedType: 'Single' | 'Double' | 'Queen' | 'King' | 'Twin';
     area: number;
     floor: number;
+    totalRooms: number;
   }>({
     name: '',
     type: 'Standard',
@@ -98,6 +104,7 @@ const RoomManagement: React.FC = () => {
     bedType: 'Double',
     area: 200,
     floor: 1,
+    totalRooms: 1,
   });
 
   const fetchRooms = async () => {
@@ -169,6 +176,7 @@ const RoomManagement: React.FC = () => {
       bedType: room.bedType,
       area: room.area,
       floor: room.floor,
+      totalRooms: room.totalRooms || 1,
     });
     setSelectedImages([]);
     setImagePreview([]);
@@ -197,6 +205,7 @@ const RoomManagement: React.FC = () => {
       bedType: 'Double',
       area: 200,
       floor: 1,
+      totalRooms: 1,
     });
     setSelectedImages([]);
     setImagePreview([]);
@@ -260,6 +269,7 @@ const RoomManagement: React.FC = () => {
         formDataToSend.append('isActive', String(formData.isActive));
         formDataToSend.append('area', String(formData.area));
         formDataToSend.append('floor', String(formData.floor));
+        formDataToSend.append('totalRooms', String(formData.totalRooms));
 
         // Nested objects as JSON strings (parsed on backend)
         formDataToSend.append('capacity', JSON.stringify(formData.capacity));
@@ -446,25 +456,25 @@ const RoomManagement: React.FC = () => {
                 <Trash2 size={14} className="me-1" />
                 Delete Selected
               </Button>
-              <div className="dropdown">
-                <Button variant="outline-primary" size="sm">
-                  Change Status <ChevronDown size={12} className="ms-1" />
-                </Button>
-                <div className="dropdown-menu">
-                  <button className="dropdown-item" onClick={() => handleBulkStatusChange('Available')}>
+              <Dropdown as={ButtonGroup} className="me-2">
+                <Dropdown.Toggle variant="outline-primary" size="sm" id="dropdown-status">
+                  Change Status
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => handleBulkStatusChange('Available')}>
                     Mark as Available
-                  </button>
-                  <button className="dropdown-item" onClick={() => handleBulkStatusChange('Occupied')}>
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => handleBulkStatusChange('Occupied')}>
                     Mark as Occupied
-                  </button>
-                  <button className="dropdown-item" onClick={() => handleBulkStatusChange('Maintenance')}>
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => handleBulkStatusChange('Maintenance')}>
                     Mark as Maintenance
-                  </button>
-                  <button className="dropdown-item" onClick={() => handleBulkStatusChange('Out of Order')}>
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => handleBulkStatusChange('Out of Order')}>
                     Mark as Out of Order
-                  </button>
-                </div>
-              </div>
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
             </div>
           )}
           <Button variant="outline-secondary" onClick={fetchRooms} disabled={loading}>
@@ -541,6 +551,7 @@ const RoomManagement: React.FC = () => {
                 <th>Type</th>
                 <th>Capacity</th>
                 <th>Base Price</th>
+                <th>Room Numbers</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -548,7 +559,7 @@ const RoomManagement: React.FC = () => {
             <tbody>
               {rooms.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-4">
+                  <td colSpan={8} className="text-center py-4">
                     No rooms found. <Button variant="link" onClick={handleAddRoom}>Add your first room</Button>
                   </td>
                 </tr>
@@ -568,6 +579,19 @@ const RoomManagement: React.FC = () => {
                     </td>
                     <td>{room.capacity.adults} Adults, {room.capacity.children} Children</td>
                     <td>₹{room.price.basePrice}</td>
+                    <td>
+                      {room.totalRoomNumbers !== undefined ? (
+                        <span>
+                          <Badge bg={room.availableCount && room.availableCount > 0 ? 'success' : 'secondary'}>
+                            {room.availableCount || 0} Available
+                          </Badge>
+                          {' / '}
+                          <Badge bg="info">{room.totalRoomNumbers} Total</Badge>
+                        </span>
+                      ) : (
+                        <Badge bg="warning">Not Created</Badge>
+                      )}
+                    </td>
                     <td>{getStatusBadge(room.status)}</td>
                     <td>
                       <Button variant="outline-primary" size="sm" className="me-1" onClick={() => handleEditRoom(room)}>
@@ -704,6 +728,21 @@ const RoomManagement: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, area: parseFloat(e.target.value) || 0 })}
                     required
                   />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Total Rooms *</Form.Label>
+                  <Form.Control
+                    type="number"
+                    min="1"
+                    value={formData.totalRooms}
+                    onChange={(e) => setFormData({ ...formData, totalRooms: parseInt(e.target.value) || 1 })}
+                    required
+                  />
+                  <Form.Text className="text-muted">
+                    Number of room instances for this room type (create actual room numbers in Room Numbers page)
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>

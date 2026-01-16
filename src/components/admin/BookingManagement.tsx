@@ -332,6 +332,7 @@ const BookingManagement: React.FC = () => {
                   <th>Booking ID</th>
                   <th>Guest</th>
                   <th>Room</th>
+                  <th>Room Number</th>
                   <th>Check-in</th>
                   <th>Check-out</th>
                   <th>Amount</th>
@@ -341,7 +342,7 @@ const BookingManagement: React.FC = () => {
               </thead>
               <tbody>
                 {loading && bookings.length === 0 ? (
-                  <DataLoader type="table" columns={8} count={5} />
+                  <DataLoader type="table" columns={9} count={5} />
                 ) : bookings.length > 0 ? (
                   bookings.map((booking) => {
                     const room = typeof booking.room === 'object' && booking.room !== null ? booking.room : null;
@@ -363,6 +364,17 @@ const BookingManagement: React.FC = () => {
                           </small>
                         </td>
                         <td>{roomLabel}</td>
+                        <td>
+                          {booking.roomNumberInfo?.number ? (
+                            <Badge bg="info">{booking.roomNumberInfo.number}</Badge>
+                          ) : (
+                            ['Cancelled', 'NoShow'].includes(booking.status) ? (
+                              <span className="text-muted">-</span>
+                            ) : (
+                              <Badge bg="secondary">Not Allocated</Badge>
+                            )
+                          )}
+                        </td>
                         <td>
                           <div>{formatDate(booking.bookingDates.checkInDate)}</div>
                           <small className="text-muted">
@@ -458,7 +470,7 @@ const BookingManagement: React.FC = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-4">
+                    <td colSpan={9} className="text-center py-4">
                       {loading ? (
                         <div className="d-flex justify-content-center align-items-center">
                           <Loader2 size={24} className="animate-spin text-primary me-2" />

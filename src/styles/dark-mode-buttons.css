@@ -150,9 +150,56 @@
 }
 
 /* Button with icons */
-[data-bs-theme="dark"] .btn [class*="fa-"] + span,
-[data-bs-theme="dark"] .btn [class*="lucide-"] + span,
-[data-bs-theme="dark"] .btn span + [class*="fa-"],
-[data-bs-theme="dark"] .btn span + [class*="lucide-"] {
+[data-bs-theme="dark"] .btn [class*="fa-"]+span,
+[data-bs-theme="dark"] .btn [class*="lucide-"]+span,
+[data-bs-theme="dark"] .btn span+[class*="fa-"],
+[data-bs-theme="dark"] .btn span+[class*="lucide-"] {
   color: inherit !important;
+}
+
+/* Global Dark Mode Modal Overrides */
+[data-bs-theme="dark"] .modal-content {
+  background-color: #1e293b;
+  /* admin-gray-100 */
+  border-color: #334155;
+  /* admin-gray-200 */
+  color: #f1f5f9;
+  /* admin-gray-800 */
+}
+
+[data-bs-theme="dark"] .modal-header {
+  border-bottom-color: #334155;
+  /* admin-gray-200 */
+  background-color: #0f172a;
+  /* admin-gray-50 */
+}
+
+[data-bs-theme="dark"] .modal-footer {
+  border-top-color: #334155;
+  /* admin-gray-200 */
+  background-color: #0f172a;
+  /* admin-gray-50 */
+}
+
+[data-bs-theme="dark"] .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Global Dark Mode Card Overrides */
+[data-bs-theme="dark"] .card {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .card-header {
+  background-color: #0f172a;
+  border-bottom-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-bs-theme="dark"] .card-footer {
+  background-color: #0f172a;
+  border-top-color: #334155;
+  color: #f1f5f9;
 }
