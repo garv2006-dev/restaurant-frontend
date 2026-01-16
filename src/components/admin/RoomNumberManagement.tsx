@@ -9,8 +9,7 @@ import {
     Col,
     Badge,
     Alert,
-    Spinner,
-    InputGroup
+    Spinner
 } from 'react-bootstrap';
 import { Plus, Search, Filter, RefreshCw, Home, User, Calendar, UserPlus } from 'lucide-react';
 import api from '../../services/api';
@@ -119,20 +118,41 @@ const RoomNumberManagement: React.FC = () => {
         return () => clearTimeout(timer);
     }, [filters]);
 
+
+
+    // Socket listeners
+
+    // Ideally fetchRoomNumbers should access the latest state. 
+    // Since we're in a functional component, we might have closure staleness.
+    // For now, keeping it simpler.
+
+    const fetchRoomNumbers = React.useCallback(async () => {
+        try {
+            setLoading(true);
+            const queryParams = new URLSearchParams();
+
+            // Use debouncedFilters for the API call
+            Object.entries(debouncedFilters).forEach(([key, value]) => {
+                if (value) queryParams.append(key, value);
+            });
+
+            const response = await api.get(`/room-numbers?${queryParams.toString()}`);
+            setRoomNumbers(response.data.data);
+            setError('');
+        } catch (err: any) {
+            console.error('Error fetching room numbers:', err);
+            setError(err.response?.data?.message || 'Failed to fetch room numbers');
+        } finally {
+            setLoading(false);
+        }
+    }, [debouncedFilters]);
+
     useEffect(() => {
-        // Only fetch if dates are valid (both present or both empty)
-        // If one is present and other missing, wait? Or just fetch?
-        // Logic: If checkInDate is present, we need checkOutDate for the date-wise logic to work fully.
-        // But the backend handles partial dates gracefully? No, the backend usually needs both for the "range" check.
-        // Let's enforce that if one date is set, both must be valid to trigger the "date-wise" fetch.
-
-        const datesValid = (!debouncedFilters.checkInDate && !debouncedFilters.checkOutDate) ||
-            (debouncedFilters.checkInDate && debouncedFilters.checkOutDate && debouncedFilters.checkOutDate >= debouncedFilters.checkInDate);
-
+        const datesValid = debouncedFilters.checkInDate && debouncedFilters.checkOutDate;
         if (datesValid) {
             fetchRoomNumbers();
         }
-    }, [debouncedFilters]);
+    }, [debouncedFilters, fetchRoomNumbers]);
 
     // Socket listeners
     useEffect(() => {
@@ -152,31 +172,7 @@ const RoomNumberManagement: React.FC = () => {
             socket.off('newBooking', handleRefresh);
             socket.off('bookingUpdated', handleRefresh);
         };
-    }, [debouncedFilters]); // Re-attach if filters change? Actually socket listeners don't need to depend on filters if fetchRoomNumbers uses current state ref, but here fetchRoomNumbers uses state... 
-    // Ideally fetchRoomNumbers should access the latest state. 
-    // Since we're in a functional component, we might have closure staleness.
-    // For now, keeping it simpler.
-
-    const fetchRoomNumbers = async () => {
-        try {
-            setLoading(true);
-            const queryParams = new URLSearchParams();
-
-            // Use debouncedFilters for the API call
-            Object.entries(debouncedFilters).forEach(([key, value]) => {
-                if (value) queryParams.append(key, value);
-            });
-
-            const response = await api.get(`/room-numbers?${queryParams.toString()}`);
-            setRoomNumbers(response.data.data);
-            setError('');
-        } catch (err: any) {
-            console.error('Error fetching room numbers:', err);
-            setError(err.response?.data?.message || 'Failed to fetch room numbers');
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [fetchRoomNumbers]);
 
     const fetchRoomTypes = async () => {
         try {

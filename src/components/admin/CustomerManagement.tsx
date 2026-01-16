@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Badge, Button, Alert, Modal, Form, Spinner } from 'react-bootstrap';
-import { Search, UserPlus, Trash2, User, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Search, UserPlus, Trash2, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { User as UserType } from '../../types';
 import { toast } from 'react-toastify';

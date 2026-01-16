@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Table, Button, Form, Row, Col, Badge, Modal } from 'react-bootstrap';
 import { adminAPI } from '../../services/api';
-import { Booking, BookingFormData } from '../../types';
+import { Booking } from '../../types';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
 import {
@@ -13,8 +13,8 @@ import {
   Printer,
   ChevronLeft,
   ChevronRight,
-  Loader2,
-  Search
+  Search,
+  Loader2
 } from 'lucide-react';
 import DataLoader from '../common/DataLoader';
 
@@ -48,7 +48,7 @@ const BookingManagement: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      console.log('Fetching bookings with filters:', { ...filters, search: debouncedSearchTerm }); // Debug log
+      console.log('Fetching bookings with filters:', { status: filters.status, date: filters.date, search: debouncedSearchTerm }); // Debug log
 
       const response = await adminAPI.getAllBookings({
         status: filters.status !== 'all' ? filters.status : undefined,
