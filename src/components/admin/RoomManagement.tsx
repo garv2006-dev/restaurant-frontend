@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Card,
-  Table,
   Button,
   Modal,
   Form,
@@ -445,190 +443,217 @@ const RoomManagement: React.FC = () => {
   };
 
   return (
-    <Card>
-      <Card.Header className="d-flex justify-content-between align-items-center">
-        <h5 className="mb-0">Room Management</h5>
-        <div className="d-flex gap-2">
+    <div className="admin-card">
+      <div className="admin-card-header d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+        <h5 className="admin-card-title mb-0">Room Management</h5>
+        <div className="d-flex flex-wrap gap-2 justify-content-end">
           {selectedRooms.length > 0 && (
-            <div className="d-flex gap-2 align-items-center">
-              <span className="text-muted">{selectedRooms.length} selected</span>
-              <Button variant="outline-danger" size="sm" onClick={handleBulkDelete}>
+            <div className="d-flex gap-2 align-items-center bg-light p-1 rounded border">
+              <span className="text-muted small fw-medium px-2">{selectedRooms.length} selected</span>
+              <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={handleBulkDelete}>
                 <Trash2 size={14} className="me-1" />
-                Delete Selected
-              </Button>
-              <Dropdown as={ButtonGroup} className="me-2">
-                <Dropdown.Toggle variant="outline-primary" size="sm" id="dropdown-status">
+                Delete
+              </button>
+              <Dropdown as={ButtonGroup}>
+                <Dropdown.Toggle as="button" className="admin-btn admin-btn-sm admin-btn-outline dropdown-toggle" id="dropdown-status">
                   Change Status
                 </Dropdown.Toggle>
-                <Dropdown.Menu>
+                <Dropdown.Menu className="shadow-sm border-0">
                   <Dropdown.Item onClick={() => handleBulkStatusChange('Available')}>
-                    Mark as Available
+                    <Badge bg="success" className="me-2">●</Badge> Available
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => handleBulkStatusChange('Occupied')}>
-                    Mark as Occupied
+                    <Badge bg="warning" className="me-2">●</Badge> Occupied
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => handleBulkStatusChange('Maintenance')}>
-                    Mark as Maintenance
+                    <Badge bg="info" className="me-2">●</Badge> Maintenance
                   </Dropdown.Item>
                   <Dropdown.Item onClick={() => handleBulkStatusChange('Out of Order')}>
-                    Mark as Out of Order
+                    <Badge bg="danger" className="me-2">●</Badge> Out of Order
                   </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             </div>
           )}
-          <Button variant="outline-secondary" onClick={fetchRooms} disabled={loading}>
+
+          <button className="admin-btn admin-btn-outline" onClick={fetchRooms} disabled={loading}>
             <RefreshCw size={16} className={`me-1 ${loading ? 'spin' : ''}`} />
             Refresh
-          </Button>
-          <Button
-            variant="primary"
+          </button>
+
+          <button
+            className="admin-btn admin-btn-primary position-relative"
             onClick={handleAddRoom}
             type="button"
             disabled={showModal || submitting}
-            className="position-relative"
           >
             <Plus size={16} className="me-1" />
             Add Room
             {showModal && (
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                Modal Open
+              <span className="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                <span className="visually-hidden">New alerts</span>
               </span>
             )}
-          </Button>
+          </button>
         </div>
-      </Card.Header>
+      </div>
 
-      <Card.Body>
+      <div className="admin-card-body p-0">
         {error && (
-          <Alert variant="danger" dismissible onClose={() => setError('')}>
-            {error}
-          </Alert>
+          <div className="m-4">
+            <Alert variant="danger" dismissible onClose={() => setError('')}>
+              {error}
+            </Alert>
+          </div>
         )}
+
         {success && (
-          <Alert variant="success" dismissible onClose={() => setSuccess('')}>
-            {success}
-            {success.includes('added successfully') && (
-              <div className="mt-2">
-                <Button
-                  variant="outline-success"
-                  size="sm"
-                  href="/"
-                  target="_blank"
-                  className="me-2"
-                >
-                  <ExternalLink size={14} className="me-1" />
-                  View on Home Page
-                </Button>
-                <Button
-                  variant="outline-success"
-                  size="sm"
-                  href="/rooms"
-                  target="_blank"
-                >
-                  <ExternalLink size={14} className="me-1" />
-                  View on Rooms Page
-                </Button>
-              </div>
-            )}
-          </Alert>
+          <div className="m-4">
+            <Alert variant="success" dismissible onClose={() => setSuccess('')}>
+              {success}
+              {success.includes('added successfully') && (
+                <div className="mt-2 d-flex gap-2">
+                  <a href="/" target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-success d-flex align-items-center">
+                    <ExternalLink size={14} className="me-1" /> View Home
+                  </a>
+                  <a href="/rooms" target="_blank" rel="noreferrer" className="btn btn-sm btn-outline-success d-flex align-items-center">
+                    <ExternalLink size={14} className="me-1" /> View Rooms
+                  </a>
+                </div>
+              )}
+            </Alert>
+          </div>
         )}
 
         {loading ? (
-          <DataLoader type="table" count={5} columns={7} />
+          <div className="p-5">
+            <DataLoader type="table" count={5} columns={7} />
+          </div>
         ) : (
-          <Table responsive hover>
-            <thead>
-              <tr>
-                <th>
-                  <Form.Check
-                    type="checkbox"
-                    checked={selectedRooms.length === rooms.length && rooms.length > 0}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                  />
-                </th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Capacity</th>
-                <th>Base Price</th>
-                <th>Room Numbers</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rooms.length === 0 ? (
+          <div className="table-responsive">
+            <table className="admin-table table-hover mb-0">
+              <thead>
                 <tr>
-                  <td colSpan={8} className="text-center py-4">
-                    No rooms found. <Button variant="link" onClick={handleAddRoom}>Add your first room</Button>
-                  </td>
+                  <th style={{ width: '40px' }}>
+                    <Form.Check
+                      type="checkbox"
+                      checked={selectedRooms.length === rooms.length && rooms.length > 0}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                    />
+                  </th>
+                  <th>Room Name</th>
+                  <th>Type</th>
+                  <th>Capacity</th>
+                  <th>Price</th>
+                  <th>Availability</th>
+                  <th>Status</th>
+                  <th className="text-end">Actions</th>
                 </tr>
-              ) : (
-                rooms.map((room) => (
-                  <tr key={room._id}>
-                    <td>
-                      <Form.Check
-                        type="checkbox"
-                        checked={selectedRooms.includes(room._id)}
-                        onChange={(e) => handleSelectRoom(room._id, e.target.checked)}
-                      />
-                    </td>
-                    <td>{room.name}</td>
-                    <td>
-                      <Badge bg="secondary">{room.type}</Badge>
-                    </td>
-                    <td>{room.capacity.adults} Adults, {room.capacity.children} Children</td>
-                    <td>₹{room.price.basePrice}</td>
-                    <td>
-                      {room.totalRoomNumbers !== undefined ? (
-                        <span>
-                          <Badge bg={room.availableCount && room.availableCount > 0 ? 'success' : 'secondary'}>
-                            {room.availableCount || 0} Available
-                          </Badge>
-                          {' / '}
-                          <Badge bg="info">{room.totalRoomNumbers} Total</Badge>
-                        </span>
-                      ) : (
-                        <Badge bg="warning">Not Created</Badge>
-                      )}
-                    </td>
-                    <td>{getStatusBadge(room.status)}</td>
-                    <td>
-                      <Button variant="outline-primary" size="sm" className="me-1" onClick={() => handleEditRoom(room)}>
-                        <Edit2 size={14} />
-                      </Button>
-                      <Button
-                        variant="outline-success"
-                        size="sm"
-                        className="me-1"
-                        onClick={() => handleOpenImageUploadModal(room)}
-                        title="Upload images"
-                      >
-                        <Upload size={14} />
-                      </Button>
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => handleDeleteRoom(room._id)}
-                        disabled={deletingRoomId === room._id}
-                      >
-                        {deletingRoomId === room._id ? (
-                          <>
-                            <Spinner animation="border" size="sm" className="me-1" />
-                            Deleting...
-                          </>
-                        ) : (
-                          <Trash2 size={14} />
-                        )}
-                      </Button>
+              </thead>
+              <tbody>
+                {rooms.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="text-center py-5">
+                      <div className="text-muted mb-3">No rooms found in the system.</div>
+                      <button className="admin-btn admin-btn-primary" onClick={handleAddRoom}>
+                        <Plus size={16} className="me-1" /> Add Your First Room
+                      </button>
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </Table>
+                ) : (
+                  rooms.map((room) => (
+                    <tr key={room._id}>
+                      <td>
+                        <Form.Check
+                          type="checkbox"
+                          checked={selectedRooms.includes(room._id)}
+                          onChange={(e) => handleSelectRoom(room._id, e.target.checked)}
+                        />
+                      </td>
+                      <td>
+                        <div className="fw-semibold text-dark">{room.name}</div>
+                        <div className="small text-muted text-truncate" style={{ maxWidth: '200px' }}>{room.description}</div>
+                      </td>
+                      <td>
+                        <span className="badge bg-light text-dark border fw-normal">{room.type}</span>
+                      </td>
+                      <td>
+                        <div className="small text-dark">
+                          <span className="fw-medium">{room.capacity.adults}</span> Adults
+                          {room.capacity.children > 0 && <span>, <span className="fw-medium">{room.capacity.children}</span> Kids</span>}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="fw-bold text-dark">₹{room.price.basePrice}</span>
+                      </td>
+                      <td>
+                        {room.totalRoomNumbers !== undefined ? (
+                          <div className="d-flex flex-column gap-1">
+                            <div className="d-flex align-items-center justify-content-between mb-2">
+                              <div>
+                                <div className="text-muted small" style={{ fontSize: '0.75rem', lineHeight: 1 }}>Available</div>
+                                <div className={`fw-bold mt-1 ${room.availableCount && room.availableCount > 0 ? 'text-success' : 'text-danger'}`} style={{ fontSize: '1.1rem' }}>
+                                  {room.availableCount || 0}
+                                </div>
+                              </div>
+                              <div className="text-end ps-3 border-start">
+                                <div className="text-muted small" style={{ fontSize: '0.75rem', lineHeight: 1 }}>Total</div>
+                                <div className="fw-semibold mt-1 text-dark" style={{ fontSize: '0.9rem' }}>
+                                  {room.totalRoomNumbers}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="progress" style={{ height: '4px' }}>
+                              <div
+                                className={`progress-bar ${room.availableCount && room.availableCount > 0 ? 'bg-success' : 'bg-danger'}`}
+                                role="progressbar"
+                                style={{ width: `${(room.availableCount || 0) / (room.totalRoomNumbers || 1) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ) : (
+                          <Badge bg="warning" className="fw-normal">No Rooms Added</Badge>
+                        )}
+                      </td>
+                      <td>{getStatusBadge(room.status)}</td>
+                      <td className="text-end">
+                        <div className="admin-action-buttons justify-content-end">
+                          <button
+                            className="admin-action-btn edit"
+                            onClick={() => handleEditRoom(room)}
+                            title="Edit Room"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            className="admin-action-btn upload"
+                            onClick={() => handleOpenImageUploadModal(room)}
+                            title="Manage Images"
+                          >
+                            <Upload size={16} />
+                          </button>
+                          <button
+                            className="admin-action-btn delete"
+                            onClick={() => handleDeleteRoom(room._id)}
+                            disabled={deletingRoomId === room._id}
+                            title="Delete Room"
+                          >
+                            {deletingRoomId === room._id ? (
+                              <Spinner animation="border" size="sm" />
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
-      </Card.Body>
+      </div>
 
       {/* Add/Edit Room Modal */}
       <Modal show={showModal} onHide={handleCloseModal} size="lg">
@@ -871,7 +896,7 @@ const RoomManagement: React.FC = () => {
           maxFiles={5}
         />
       )}
-    </Card>
+    </div>
   );
 };
 

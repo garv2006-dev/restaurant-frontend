@@ -12,33 +12,33 @@
   --bs-primary-rgb: 200, 164, 86;
   --bs-secondary: #2c1810;
   --bs-secondary-rgb: 44, 24, 16;
-  
+
   /* Supporting Colors */
   --bs-success: #28a745;
   --bs-danger: #dc3545;
   --bs-warning: #ffc107;
   --bs-info: #17a2b8;
-  
+
   /* Neutral Colors */
   --bs-light: #f8f9fa;
   --bs-dark: #1a1a1a;
-  
+
   /* Theme Colors */
   --color-gold: #c8a456;
   --color-gold-light: #e2c178;
   --color-gold-dark: #ab8838;
   --color-brown: #2c1810;
   --color-cream: #f5f0e6;
-  
+
   /* Typography */
   --font-primary: 'Jost', sans-serif;
   --font-secondary: 'Jost', sans-serif;
-  
+
   /* Transitions */
   --transition-fast: 0.2s ease;
   --transition-medium: 0.3s ease;
   --transition-slow: 0.5s ease;
-  
+
   /* Shadows */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.12);
@@ -70,7 +70,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-primary);
   font-weight: 600;
   line-height: 1.3;
@@ -132,25 +137,34 @@ p {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bs-light);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--bs-primary);
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--bs-secondary);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* Dark mode scrollbar */
 [data-bs-theme="dark"] ::-webkit-scrollbar-track {
-  background: var(--bs-dark);
+  background: transparent;
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+[data-bs-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
 }
 
 /* Loading spinner */
@@ -289,6 +303,7 @@ p {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -299,9 +314,11 @@ p {
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
+
   100% {
     transform: scale(1);
   }
@@ -327,7 +344,7 @@ p {
   .featured-rooms-section {
     padding: 3.5rem 0;
   }
-  
+
   .room-card {
     border-radius: 14px;
   }
@@ -337,15 +354,15 @@ p {
   .featured-rooms-section {
     padding: 3rem 0;
   }
-  
+
   .room-card {
     border-radius: 12px;
   }
-  
+
   .rating-stars .text-warning {
     font-size: 0.8rem;
   }
-  
+
   .feature-badge {
     font-size: 0.7rem !important;
     padding: 0.3rem 0.4rem !important;
@@ -358,23 +375,23 @@ p {
   .hero-section {
     padding: 60px 0;
   }
-  
+
   .hero-section h1 {
     font-size: 2rem;
   }
-  
+
   .featured-rooms-section {
     padding: 2.5rem 0;
   }
-  
+
   .room-card {
     border-radius: 10px;
   }
-  
+
   .rating-stars .text-warning {
     font-size: 0.75rem;
   }
-  
+
   .feature-badge {
     font-size: 0.65rem !important;
     padding: 0.25rem 0.35rem !important;
@@ -387,19 +404,19 @@ p {
   .featured-rooms-section {
     padding: 2rem 0;
   }
-  
+
   .featured-rooms-section .container {
     padding: 0 1rem;
   }
-  
+
   .room-card {
     border-radius: 8px;
   }
-  
+
   .rating-stars .text-warning {
     font-size: 0.7rem;
   }
-  
+
   .feature-badge {
     font-size: 0.6rem !important;
     padding: 0.2rem 0.3rem !important;
@@ -412,19 +429,19 @@ p {
   .featured-rooms-section {
     padding: 1.5rem 0;
   }
-  
+
   .featured-rooms-section .container {
     padding: 0 0.75rem;
   }
-  
+
   .room-card {
     border-radius: 6px;
   }
-  
+
   .rating-stars .text-warning {
     font-size: 0.65rem;
   }
-  
+
   .feature-badge {
     font-size: 0.55rem !important;
     padding: 0.15rem 0.25rem !important;
@@ -435,25 +452,26 @@ p {
 
 /* Print styles */
 @media print {
+
   .navbar,
   .btn,
   footer {
     display: none !important;
   }
-  
+
   body {
     font-size: 12pt;
     line-height: 1.4;
   }
-  
+
   h1 {
     font-size: 18pt;
   }
-  
+
   h2 {
     font-size: 16pt;
   }
-  
+
   h3 {
     font-size: 14pt;
   }
@@ -506,11 +524,25 @@ body {
   font-size: 1.2em;
 }
 
-.large-text h1 { font-size: 2.5rem !important; }
-.large-text h2 { font-size: 2rem !important; }
-.large-text h3 { font-size: 1.75rem !important; }
-.large-text .btn { font-size: 1.1rem !important; }
-.large-text .form-control { font-size: 1.1rem !important; }
+.large-text h1 {
+  font-size: 2.5rem !important;
+}
+
+.large-text h2 {
+  font-size: 2rem !important;
+}
+
+.large-text h3 {
+  font-size: 1.75rem !important;
+}
+
+.large-text .btn {
+  font-size: 1.1rem !important;
+}
+
+.large-text .form-control {
+  font-size: 1.1rem !important;
+}
 
 /* Focus styles for keyboard navigation */
 body.focus-visible *:focus {
@@ -536,12 +568,12 @@ body.reduce-motion *::after {
     min-width: 44px;
     padding: 0.75rem 1.5rem;
   }
-  
+
   .form-control {
     min-height: 44px;
     padding: 0.75rem;
   }
-  
+
   .nav-link {
     min-height: 44px;
     padding: 0.75rem 1rem;
@@ -592,11 +624,12 @@ body.reduce-motion *::after {
 
 /* Mobile Footer Styles */
 @media (max-width: 768px) {
+
   /* Hide all footer content except copyright on mobile */
   .footer-desktop-content {
     display: none !important;
   }
-  
+
   /* Mobile sticky footer */
   .footer-mobile {
     position: fixed !important;
@@ -611,7 +644,7 @@ body.reduce-motion *::after {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   }
-  
+
   .footer-mobile .copyright-text {
     color: rgba(255, 255, 255, 0.75) !important;
     font-size: 0.8rem !important;
@@ -619,12 +652,12 @@ body.reduce-motion *::after {
     text-align: center !important;
     line-height: 1.2 !important;
   }
-  
+
   /* Add bottom padding to main content to prevent footer overlap */
   .main-content-mobile {
     padding-bottom: 60px !important;
   }
-  
+
   /* Adjust accessibility button position to avoid footer overlap */
   .accessibility-button {
     bottom: 80px !important;
@@ -636,11 +669,11 @@ body.reduce-motion *::after {
   .footer-mobile {
     display: none !important;
   }
-  
+
   .footer-desktop-content {
     display: block !important;
   }
-  
+
   /* Reset main content padding on desktop */
   .main-content-mobile {
     padding-bottom: 0 !important;
@@ -751,11 +784,11 @@ body.reduce-motion *::after {
     padding: 0;
     pointer-events: auto;
   }
-  
+
   .navbar-custom .navbar-collapse.show {
     right: 0;
   }
-  
+
   /* Menu header */
   .navbar-custom .navbar-header {
     padding: 1.5rem;
@@ -767,11 +800,11 @@ body.reduce-motion *::after {
     pointer-events: auto;
     z-index: 999;
   }
-  
+
   .navbar-custom .navbar-header .navbar-close {
     pointer-events: auto;
   }
-  
+
   .navbar-custom .navbar-brand {
     font-family: var(--bs-primary-font-family);
     font-size: 1.5rem;
@@ -781,17 +814,17 @@ body.reduce-motion *::after {
     cursor: pointer;
     transition: all 0.3s ease;
   }
-  
+
   .navbar-custom .navbar-brand:hover {
     color: var(--bs-primary);
     opacity: 0.8;
   }
-  
+
   .navbar-custom .navbar-brand.clickable-brand {
     pointer-events: auto;
     cursor: pointer;
   }
-  
+
   /* Close button */
   .navbar-custom .navbar-close {
     background: none;
@@ -809,23 +842,23 @@ body.reduce-motion *::after {
     line-height: 1;
     pointer-events: auto;
   }
-  
+
   .navbar-custom .navbar-close:hover {
     background-color: rgba(0, 0, 0, 0.1);
     transform: rotate(90deg);
   }
-  
+
   /* Menu content */
   .navbar-custom .navbar-nav {
     padding: 1.5rem 0;
     flex-direction: column;
     pointer-events: auto;
   }
-  
+
   .navbar-custom .nav-item {
     pointer-events: auto;
   }
-  
+
   .navbar-custom .nav-link {
     padding: 1rem 1.5rem !important;
     font-size: 1.1rem;
@@ -839,7 +872,7 @@ body.reduce-motion *::after {
     cursor: pointer;
     text-decoration: none;
   }
-  
+
   .navbar-custom .nav-link:hover {
     background-color: rgba(212, 175, 55, 0.1);
     color: var(--bs-primary);
@@ -847,18 +880,18 @@ body.reduce-motion *::after {
     transform: translateX(4px);
     text-decoration: none;
   }
-  
+
   .navbar-custom .nav-link.active {
     background-color: rgba(212, 175, 55, 0.15);
     color: var(--bs-primary);
     font-weight: 600;
     text-decoration: none;
   }
-  
+
   .navbar-custom .nav-item:last-child .nav-link {
     border-bottom: none;
   }
-  
+
   /* Action buttons section */
   .navbar-custom .navbar-actions {
     padding: 1.5rem;
@@ -866,12 +899,12 @@ body.reduce-motion *::after {
     background: rgba(0, 0, 0, 0.02);
     pointer-events: auto;
   }
-  
+
   .navbar-custom .navbar-actions .btn,
   .navbar-custom .navbar-actions .dropdown {
     pointer-events: auto;
   }
-  
+
   .navbar-custom .btn {
     margin: 0.5rem 0;
     min-height: 48px;
@@ -881,15 +914,15 @@ body.reduce-motion *::after {
     cursor: pointer;
     pointer-events: auto;
   }
-  
+
   .navbar-custom .nav-dropdown {
     pointer-events: auto;
   }
-  
+
   .navbar-custom .dropdown-menu {
     pointer-events: auto;
   }
-  
+
   .navbar-custom .dropdown-item {
     pointer-events: auto;
     cursor: pointer;
@@ -901,34 +934,34 @@ body.reduce-motion *::after {
   .navbar-custom .navbar-collapse {
     width: 280px;
   }
-  
+
   .navbar-custom .navbar-header {
     padding: 1rem;
   }
-  
+
   .navbar-custom .navbar-brand {
     font-size: 1.3rem;
   }
-  
+
   .navbar-custom .navbar-close {
     width: 40px;
     height: 40px;
     font-size: 1.8rem;
   }
-  
+
   .navbar-custom .navbar-nav {
     padding: 1rem 0;
   }
-  
+
   .navbar-custom .nav-link {
     padding: 0.875rem 1.25rem !important;
     font-size: 1rem;
   }
-  
+
   .navbar-custom .navbar-actions {
     padding: 1rem;
   }
-  
+
   .navbar-custom .btn {
     min-height: 44px;
     font-size: 0.9rem;
@@ -940,40 +973,41 @@ body.reduce-motion *::after {
   .navbar-custom .navbar-collapse {
     width: 260px;
   }
-  
+
   .navbar-custom .navbar-header {
     padding: 0.875rem;
   }
-  
+
   .navbar-custom .navbar-brand {
     font-size: 1.2rem;
   }
-  
+
   .navbar-custom .navbar-close {
     width: 36px;
     height: 36px;
     font-size: 1.6rem;
   }
-  
+
   .navbar-custom .navbar-nav {
     padding: 0.875rem 0;
   }
-  
+
   .navbar-custom .nav-link {
     padding: 0.75rem 1rem !important;
     font-size: 0.95rem;
   }
-  
+
   .navbar-custom .navbar-actions {
     padding: 0.875rem;
   }
-  
+
   .navbar-custom .btn {
     min-height: 40px;
     font-size: 0.875rem;
     padding: 0.5rem 1rem;
   }
 }
+
 /* .navbar-overlay {
   position: fixed;
   top: 0;
@@ -999,11 +1033,11 @@ body.reduce-motion *::after {
   .navbar-custom .navbar-collapse {
     z-index: 1060;
   }
-  
+
   /* .navbar-overlay {
     display: block;
   } */
-  
+
   /* Add a clickable overlay area outside the menu */
   /* .navbar-overlay.show::before {
     content: '';
@@ -1020,7 +1054,7 @@ body.reduce-motion *::after {
   .navbar-overlay {
     display: none;
   }
-  
+
   .navbar-custom .navbar-collapse {
     position: static;
     top: auto;
@@ -1031,20 +1065,20 @@ body.reduce-motion *::after {
     box-shadow: none;
     padding: 0;
   }
-  
+
   .navbar-custom .navbar-header,
   .navbar-custom .navbar-actions {
     display: none;
   }
-  
+
   .navbar-custom .navbar-nav {
     pointer-events: auto;
   }
-  
+
   .navbar-custom .nav-item {
     pointer-events: auto;
   }
-  
+
   .navbar-custom .nav-link {
     pointer-events: auto;
   }
@@ -1083,7 +1117,12 @@ body.reduce-motion *::after {
 }
 
 /* Professional typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--bs-primary-font-family);
   font-weight: 700;
   line-height: 1.2;
@@ -1240,7 +1279,7 @@ h6 {
   .card-body {
     padding: 1.5rem;
   }
-  
+
   .card-title {
     font-size: 1.3rem;
   }
@@ -1250,11 +1289,11 @@ h6 {
   .card-body {
     padding: 1.4rem;
   }
-  
+
   .card-title {
     font-size: 1.25rem;
   }
-  
+
   .card-text {
     font-size: 0.9rem;
   }
@@ -1265,21 +1304,21 @@ h6 {
     border-radius: 12px;
     margin-bottom: 1.5rem;
   }
-  
+
   .card-body {
     padding: 1.25rem;
   }
-  
+
   .card-title {
     font-size: 1.2rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .card-text {
     font-size: 0.9rem;
     margin-bottom: 1rem;
   }
-  
+
   .card-img-top {
     height: 200px;
   }
@@ -1290,21 +1329,21 @@ h6 {
     border-radius: 8px;
     margin-bottom: 1rem;
   }
-  
+
   .card-body {
     padding: 1rem;
   }
-  
+
   .card-title {
     font-size: 1.1rem;
     margin-bottom: 0.5rem;
   }
-  
+
   .card-text {
     font-size: 0.85rem;
     margin-bottom: 0.75rem;
   }
-  
+
   .card-img-top {
     height: 180px;
   }
@@ -1314,15 +1353,15 @@ h6 {
   .card-body {
     padding: 0.875rem;
   }
-  
+
   .card-title {
     font-size: 1rem;
   }
-  
+
   .card-text {
     font-size: 0.8rem;
   }
-  
+
   .card-img-top {
     height: 160px;
   }
@@ -1478,7 +1517,7 @@ h6 {
   .customer-reviews-section {
     padding: 3.5rem 0;
   }
-  
+
   .review-card {
     border-radius: 14px;
   }
@@ -1488,15 +1527,15 @@ h6 {
   .customer-reviews-section {
     padding: 3rem 0;
   }
-  
+
   .review-card {
     border-radius: 12px;
   }
-  
+
   .review-title {
     font-size: 0.95rem;
   }
-  
+
   .review-comment {
     font-size: 0.9rem;
   }
@@ -1506,25 +1545,25 @@ h6 {
   .customer-reviews-section {
     padding: 2.5rem 0;
   }
-  
+
   .review-card {
     border-radius: 10px;
     margin-bottom: 1.5rem;
   }
-  
+
   .review-card .card-body {
     padding: 1.25rem !important;
   }
-  
+
   .review-avatar img {
     width: 45px !important;
     height: 45px !important;
   }
-  
+
   .review-title {
     font-size: 0.9rem;
   }
-  
+
   .review-comment {
     font-size: 0.85rem;
   }
@@ -1534,29 +1573,29 @@ h6 {
   .customer-reviews-section {
     padding: 2rem 0;
   }
-  
+
   .review-card {
     border-radius: 8px;
     margin-bottom: 1rem;
   }
-  
+
   .review-card .card-body {
     padding: 1rem !important;
   }
-  
+
   .review-avatar img {
     width: 40px !important;
     height: 40px !important;
   }
-  
+
   .review-title {
     font-size: 0.85rem;
   }
-  
+
   .review-comment {
     font-size: 0.8rem;
   }
-  
+
   .customer-reviews-section .section-description {
     font-size: 1rem;
   }

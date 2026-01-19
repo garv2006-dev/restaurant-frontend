@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Button, Alert, Row, Col, Spinner } from 'react-bootstrap';
-import { Save, Settings } from 'lucide-react';
+import { Spinner } from 'react-bootstrap';
+import { Save, Settings, CheckCircle, XCircle } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 
 const SystemSettings: React.FC = () => {
@@ -59,42 +59,69 @@ const SystemSettings: React.FC = () => {
     }
 
     return (
-        <div className="system-settings">
-            <h2 className="mb-4">System Settings</h2>
+        <div className="container-fluid px-4">
+            <div className="d-flex justify-content-between align-items-center mb-4 mt-4">
+                <div>
+                    <h2 className="admin-page-title mb-1">System Settings</h2>
+                    <p className="text-muted mb-0">Configure global application settings</p>
+                </div>
+            </div>
 
-            {error && <Alert variant="danger">{error}</Alert>}
-            {success && <Alert variant="success">{success}</Alert>}
+            {error && (
+                <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                    <XCircle size={18} className="me-2" />
+                    {error}
+                </div>
+            )}
+            {success && (
+                <div className="alert alert-success d-flex align-items-center mb-4" role="alert">
+                    <CheckCircle size={18} className="me-2" />
+                    {success}
+                </div>
+            )}
 
-            <Row>
-                <Col md={6}>
-                    <Card>
-                        <Card.Header className="bg-primary text-white d-flex align-items-center">
-                            <Settings size={20} className="me-2" />
-                            <h5 className="mb-0">Tax Configuration</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            <Form onSubmit={handleSubmit}>
-                                <Form.Group className="mb-3">
-                                    <Form.Label>GST Percentage (%)</Form.Label>
-                                    <Form.Control
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        step="0.01"
-                                        value={settings.gstPercentage}
-                                        onChange={(e) => setSettings({ ...settings, gstPercentage: parseFloat(e.target.value) })}
-                                        required
-                                    />
-                                    <Form.Text className="text-muted">
-                                        This percentage will be applied to all room bookings.
-                                    </Form.Text>
-                                </Form.Group>
+            <div className="row">
+                <div className="col-lg-6">
+                    <div className="admin-card h-100">
+                        <div className="admin-card-header">
+                            <div className="d-flex align-items-center">
+                                <div className="bg-primary bg-opacity-10 p-2 rounded-circle me-3">
+                                    <Settings size={20} className="text-primary" />
+                                </div>
+                                <h5 className="admin-card-title mb-0">Tax Configuration</h5>
+                            </div>
+                        </div>
+                        <div className="admin-card-body">
+                            <form onSubmit={handleSubmit}>
+                                <div className="mb-4">
+                                    <label className="form-label small fw-semibold text-muted">GST Percentage (%)</label>
+                                    <div className="input-group">
+                                        <input
+                                            type="number"
+                                            className="admin-form-control"
+                                            min="0"
+                                            max="100"
+                                            step="0.01"
+                                            value={settings.gstPercentage}
+                                            onChange={(e) => setSettings({ ...settings, gstPercentage: parseFloat(e.target.value) })}
+                                            required
+                                        />
+                                        <span className="input-group-text bg-light border-start-0 text-muted">%</span>
+                                    </div>
+                                    <div className="form-text text-muted mt-2">
+                                        <small>This percentage will be applied to all room bookings automatically.</small>
+                                    </div>
+                                </div>
 
-                                <div className="d-flex justify-content-end">
-                                    <Button type="submit" variant="primary" disabled={saving}>
+                                <div className="d-flex justify-content-end pt-3 border-top">
+                                    <button
+                                        type="submit"
+                                        className="admin-btn admin-btn-primary"
+                                        disabled={saving}
+                                    >
                                         {saving ? (
                                             <>
-                                                <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" className="me-2" />
+                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                                 Saving...
                                             </>
                                         ) : (
@@ -103,13 +130,13 @@ const SystemSettings: React.FC = () => {
                                                 Save Settings
                                             </>
                                         )}
-                                    </Button>
+                                    </button>
                                 </div>
-                            </Form>
-                        </Card.Body>
-                    </Card>
-                </Col>
-            </Row>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

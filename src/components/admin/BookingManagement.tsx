@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, Form, Row, Col, Badge, Modal } from 'react-bootstrap';
-import { adminAPI } from '../../services/api';
-import { Booking } from '../../types';
+import { Card, Table, Button, Row, Col, Badge, Modal } from 'react-bootstrap';
+import { adminAPI, roomsAPI } from '../../services/api';
+import { Booking, Room } from '../../types';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
 import {
@@ -14,9 +14,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Loader2
+  Loader2,
+  PlusCircle
 } from 'lucide-react';
 import DataLoader from '../common/DataLoader';
+import OfflineBookingModal from './OfflineBookingModal';
+import { getSocket } from '../../services/socket';
 
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -42,6 +45,8 @@ const BookingManagement: React.FC = () => {
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [searchLoading, setSearchLoading] = useState(false);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(filters.search);
+  const [showOfflineModal, setShowOfflineModal] = useState(false);
+  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -83,6 +88,25 @@ const BookingManagement: React.FC = () => {
       setSearchLoading(false);
     }
   }, [filters.status, filters.date, debouncedSearchTerm, pagination.page, pagination.limit]);
+
+  // Socket listeners for real-time updates
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleRefresh = () => {
+      fetchBookings();
+    };
+
+    socket.on('newBooking', handleRefresh);
+    socket.on('bookingStatusChange', handleRefresh);
+    socket.on('bookingUpdated', handleRefresh);
+
+    return () => {
+      socket.off('newBooking', handleRefresh);
+      socket.off('bookingStatusChange', handleRefresh);
+      socket.off('bookingUpdated', handleRefresh);
+    };
+  }, [fetchBookings]);
 
   // Debounce search term
   useEffect(() => {
@@ -243,20 +267,42 @@ const BookingManagement: React.FC = () => {
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
 
+  const handleOpenOfflineModal = async () => {
+    try {
+      setLoading(true);
+      const response = await roomsAPI.getAllRooms();
+      if (response.success && response.data) {
+        setAvailableRooms(response.data.rooms);
+        setShowOfflineModal(true);
+      }
+    } catch (err) {
+      console.error("Failed to fetch rooms for offline booking", err);
+      setError("Failed to load room types. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const handleOfflineSuccess = () => {
+    fetchBookings(); // Refresh list
+    // show success toast or message
+  };
 
   return (
     <>
-      <Card className="mb-4">
-        <Card.Header className="d-flex justify-content-between align-items-center">
-          <h5 className="mb-0">Booking Management</h5>
-          <div>
-            <Button variant="primary" size="sm" onClick={() => window.print()}>
+      <div className="admin-card mb-4">
+        <div className="admin-card-header d-flex justify-content-between align-items-center">
+          <h5 className="admin-card-title mb-0">Booking Management</h5>
+          <div className="d-flex gap-2">
+            <button className="admin-btn admin-btn-success admin-btn-sm" onClick={handleOpenOfflineModal} title="Create Walk-in/Offline Booking">
+              <PlusCircle size={16} className="me-1" /> New Offline Booking
+            </button>
+            <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={() => window.print()}>
               <Printer size={16} className="me-1" /> Print
-            </Button>
+            </button>
           </div>
-        </Card.Header>
-        <Card.Body>
+        </div>
+        <div className="admin-card-body">
           {error && (
             <div className="alert alert-danger alert-dismissible fade show" role="alert">
               <strong>Error:</strong> {error}
@@ -268,12 +314,14 @@ const BookingManagement: React.FC = () => {
               ></button>
             </div>
           )}
-          <Row className="mb-3 g-3">
-            <Col md={3}>
-              <Form.Select
+          <div className="row g-3 mb-4 align-items-end">
+            <div className="col-md-3">
+              <label className="form-label small fw-semibold text-muted mb-1">Status</label>
+              <select
                 name="status"
+                className="admin-form-select w-100"
                 value={filters.status}
-                onChange={handleFilterChange}
+                onChange={(e) => handleFilterChange(e as any)}
               >
                 <option value="all">All Status</option>
                 <option value="Pending">Pending</option>
@@ -282,29 +330,30 @@ const BookingManagement: React.FC = () => {
                 <option value="CheckedOut">Checked Out</option>
                 <option value="Cancelled">Cancelled</option>
                 <option value="NoShow">No Show</option>
-              </Form.Select>
-            </Col>
-            <Col md={3}>
-              <Form.Control
-                as="input"
+              </select>
+            </div>
+            <div className="col-md-3">
+              <label className="form-label small fw-semibold text-muted mb-1">Date</label>
+              <input
                 type="date"
                 name="date"
+                className="admin-form-control w-100"
                 value={filters.date}
-                onChange={handleFilterChange}
+                onChange={(e) => handleFilterChange(e as any)}
               />
-            </Col>
-            <Col md={6}>
+            </div>
+            <div className="col-md-6">
+              <label className="form-label small fw-semibold text-muted mb-1">Search Booking</label>
               <div className="position-relative">
-                <Search size={16} className="text-muted position-absolute top-50 start-0 translate-middle-y ms-2" style={{ zIndex: 5 }} />
-                <Form.Control
-                  as="input"
+                <Search size={18} className="text-muted position-absolute top-50 start-0 translate-middle-y ms-3" style={{ zIndex: 5 }} />
+                <input
                   type="search"
                   name="search"
                   value={filters.search}
-                  onChange={handleFilterChange}
-                  placeholder="Search by booking ID or guest name"
+                  onChange={(e) => handleFilterChange(e as any)}
+                  placeholder="Search by booking ID, guest name or phone..."
                   disabled={loading}
-                  className="ps-5 pe-5"
+                  className="admin-form-control ps-5 pe-5 w-100"
                 />
                 {filters.search && !searchLoading && !loading && (
                   <button
@@ -313,7 +362,7 @@ const BookingManagement: React.FC = () => {
                     style={{ background: 'transparent', zIndex: 5 }}
                     type="button"
                   >
-                    ×
+                    <XCircle size={16} />
                   </button>
                 )}
                 {(searchLoading || loading) && (
@@ -322,12 +371,12 @@ const BookingManagement: React.FC = () => {
                   </div>
                 )}
               </div>
-            </Col>
-          </Row>
+            </div>
+          </div>
 
           <div className="table-responsive">
-            <Table hover className="align-middle">
-              <thead className="table-light">
+            <table className="admin-table table-hover align-middle">
+              <thead>
                 <tr>
                   <th>Booking ID</th>
                   <th>Guest</th>
@@ -342,7 +391,13 @@ const BookingManagement: React.FC = () => {
               </thead>
               <tbody>
                 {loading && bookings.length === 0 ? (
-                  <DataLoader type="table" columns={9} count={5} />
+                  <tr>
+                    <td colSpan={9} className="p-5 text-center">
+                      <div className="d-flex justify-content-center">
+                        <DataLoader type="spinner" />
+                      </div>
+                    </td>
+                  </tr>
                 ) : bookings.length > 0 ? (
                   bookings.map((booking) => {
                     const room = typeof booking.room === 'object' && booking.room !== null ? booking.room : null;
@@ -352,116 +407,107 @@ const BookingManagement: React.FC = () => {
                     return (
                       <tr key={booking.id || booking._id}>
                         <td>
-                          <div className="fw-semibold">{booking.bookingId}</div>
-                          <small className="text-muted">
+                          <div className="fw-semibold text-dark">{booking.bookingId}</div>
+                          <div className="small text-muted">
                             {formatDate(booking.createdAt)}
-                          </small>
+                          </div>
                         </td>
                         <td>
-                          <div>{guestName}</div>
-                          <small className="text-muted">
+                          <div className="fw-medium text-dark">{guestName}</div>
+                          <div className="small text-muted">
                             {booking.guestDetails?.primaryGuest?.phone}
-                          </small>
+                          </div>
                         </td>
-                        <td>{roomLabel}</td>
+                        <td><span className="badge bg-light text-dark border fw-normal">{roomLabel}</span></td>
                         <td>
                           {booking.roomNumberInfo?.number ? (
-                            <Badge bg="info">{booking.roomNumberInfo.number}</Badge>
+                            <Badge bg="info" className="fw-normal">{booking.roomNumberInfo.number}</Badge>
                           ) : (
                             ['Cancelled', 'NoShow'].includes(booking.status) ? (
-                              <span className="text-muted">-</span>
+                              <span className="text-muted small">-</span>
                             ) : (
-                              <Badge bg="secondary">Not Allocated</Badge>
+                              <Badge bg="secondary" className="fw-normal">Not Allocated</Badge>
                             )
                           )}
                         </td>
                         <td>
-                          <div>{formatDate(booking.bookingDates.checkInDate)}</div>
-                          <small className="text-muted">
+                          <div className="fw-medium text-dark">{formatDate(booking.bookingDates.checkInDate)}</div>
+                          <div className="small text-muted">
                             {booking.bookingDates.nights} nights
-                          </small>
+                          </div>
                         </td>
-                        <td>{formatDate(booking.bookingDates.checkOutDate)}</td>
-                        <td>₹{getTotalPrice(booking)}</td>
+                        <td><div className="text-dark">{formatDate(booking.bookingDates.checkOutDate)}</div></td>
+                        <td><span className="fw-bold text-dark">₹{getTotalPrice(booking)}</span></td>
                         <td>{getStatusBadge(booking.status)}</td>
                         <td className="text-end">
-                          <div className="d-flex justify-content-end gap-1">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
+                          <div className="admin-action-buttons justify-content-end">
+                            <button
+                              className="admin-action-btn view"
                               onClick={() => handleViewDetails(booking)}
                               title="View Details"
                               disabled={actionLoading[booking.id] || actionLoading[booking._id]}
                             >
                               <Eye size={16} />
-                            </Button>
+                            </button>
 
                             {booking.status === 'Pending' && (
-                              <Button
-                                variant="outline-success"
-                                size="sm"
+                              <button
+                                className="admin-action-btn confirm"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'Confirmed')}
                                 disabled={actionLoading[booking.id] || actionLoading[booking._id]}
                                 title="Confirm this booking"
-                                className="d-flex align-items-center"
                               >
                                 {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
                                   <Loader2 size={16} className="animate-spin" />
                                 ) : (
                                   <CheckCircle size={16} />
                                 )}
-                              </Button>
+                              </button>
                             )}
 
                             {['Pending', 'Confirmed'].includes(booking.status) && (
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
+                              <button
+                                className="admin-action-btn delete"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'Cancelled')}
                                 disabled={actionLoading[booking.id] || actionLoading[booking._id]}
                                 title="Cancel this booking"
-                                className="d-flex align-items-center"
                               >
                                 {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
                                   <Loader2 size={16} className="animate-spin" />
                                 ) : (
                                   <XCircle size={16} />
                                 )}
-                              </Button>
+                              </button>
                             )}
 
                             {booking.status === 'Confirmed' && (
-                              <Button
-                                variant="outline-info"
-                                size="sm"
+                              <button
+                                className="admin-action-btn checkin"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'CheckedIn')}
                                 disabled={actionLoading[booking.id] || actionLoading[booking._id]}
                                 title="Check in guest"
-                                className="d-flex align-items-center"
                               >
                                 {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
                                   <Loader2 size={16} className="animate-spin" />
                                 ) : (
                                   <LogIn size={16} />
                                 )}
-                              </Button>
+                              </button>
                             )}
 
                             {booking.status === 'CheckedIn' && (
-                              <Button
-                                variant="outline-secondary"
-                                size="sm"
+                              <button
+                                className="admin-action-btn checkout"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'CheckedOut')}
                                 disabled={actionLoading[booking.id] || actionLoading[booking._id]}
                                 title="Check out guest"
-                                className="d-flex align-items-center"
                               >
                                 {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
                                   <Loader2 size={16} className="animate-spin" />
                                 ) : (
                                   <LogOut size={16} />
                                 )}
-                              </Button>
+                              </button>
                             )}
                           </div>
                         </td>
@@ -470,95 +516,94 @@ const BookingManagement: React.FC = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-center py-4">
+                    <td colSpan={9} className="text-center py-5">
                       {loading ? (
                         <div className="d-flex justify-content-center align-items-center">
                           <Loader2 size={24} className="animate-spin text-primary me-2" />
                           <span>Loading bookings...</span>
                         </div>
                       ) : (
-                        <div className="text-muted">No bookings found</div>
+                        <div className="text-muted">No bookings found matching your criteria</div>
                       )}
                     </td>
                   </tr>
                 )}
               </tbody>
-            </Table>
+            </table>
           </div>
 
           {/* Pagination Controls */}
           {pagination.pages > 1 && (
-            <div className="d-flex justify-content-between align-items-center mt-3">
-              <div className="d-flex align-items-center gap-2">
-                <span className="text-muted">Show</span>
-                <Form.Select
-                  size="sm"
-                  style={{ width: 'auto' }}
-                  value={pagination.limit}
-                  onChange={(e) => handleLimitChange(Number(e.target.value))}
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={20}>20</option>
-                  <option value={50}>50</option>
-                </Form.Select>
-                <span className="text-muted">entries</span>
-              </div>
+            <div className="admin-card-footer mt-0">
+              <div className="d-flex justify-content-between align-items-center w-100">
+                <div className="d-flex align-items-center gap-2">
+                  <span className="text-muted small">Show</span>
+                  <select
+                    className="form-select form-select-sm"
+                    style={{ width: 'auto', borderColor: 'var(--admin-border)' }}
+                    value={pagination.limit}
+                    onChange={(e) => handleLimitChange(Number(e.target.value))}
+                  >
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="text-muted small">entries</span>
+                </div>
 
-              <div className="d-flex align-items-center gap-2">
-                <span className="text-muted">
-                  Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
-                </span>
-              </div>
+                <div className="d-flex align-items-center gap-2">
+                  <span className="text-muted small me-2">
+                    Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
+                  </span>
 
-              <div className="d-flex gap-1">
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  disabled={pagination.page === 1}
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                >
-                  <ChevronLeft size={16} /> Previous
-                </Button>
-
-                {/* Page Numbers */}
-                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-                  let pageNum: number;
-                  if (pagination.pages <= 5) {
-                    pageNum = i + 1;
-                  } else if (pagination.page <= 3) {
-                    pageNum = i + 1;
-                  } else if (pagination.page >= pagination.pages - 2) {
-                    pageNum = pagination.pages - 4 + i;
-                  } else {
-                    pageNum = pagination.page - 2 + i;
-                  }
-
-                  return (
-                    <Button
-                      key={pageNum}
-                      variant={pagination.page === pageNum ? "primary" : "outline-secondary"}
-                      size="sm"
-                      onClick={() => handlePageChange(pageNum)}
+                  <div className="d-flex gap-1">
+                    <button
+                      className="admin-btn admin-btn-sm admin-btn-outline"
+                      disabled={pagination.page === 1}
+                      onClick={() => handlePageChange(pagination.page - 1)}
                     >
-                      {pageNum}
-                    </Button>
-                  );
-                })}
+                      <ChevronLeft size={16} /> Previous
+                    </button>
 
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  disabled={pagination.page === pagination.pages}
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                >
-                  Next <ChevronRight size={16} />
-                </Button>
+                    {/* Page Numbers */}
+                    {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                      let pageNum: number;
+                      if (pagination.pages <= 5) {
+                        pageNum = i + 1;
+                      } else if (pagination.page <= 3) {
+                        pageNum = i + 1;
+                      } else if (pagination.page >= pagination.pages - 2) {
+                        pageNum = pagination.pages - 4 + i;
+                      } else {
+                        pageNum = pagination.page - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          className={`admin-btn admin-btn-sm ${pagination.page === pageNum ? 'admin-btn-primary' : 'admin-btn-outline'}`}
+                          onClick={() => handlePageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      className="admin-btn admin-btn-sm admin-btn-outline"
+                      disabled={pagination.page === pagination.pages}
+                      onClick={() => handlePageChange(pagination.page + 1)}
+                    >
+                      Next <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
-        </Card.Body>
-      </Card>
+        </div>
+      </div>
 
       {/* Booking Details Modal */}
       <Modal
@@ -738,6 +783,13 @@ const BookingManagement: React.FC = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <OfflineBookingModal
+        show={showOfflineModal}
+        onHide={() => setShowOfflineModal(false)}
+        onSuccess={handleOfflineSuccess}
+        rooms={availableRooms}
+      />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, Row, Col, Badge, Table, Alert, Button, Form, InputGroup, Modal } from 'react-bootstrap';
+import { Card, Row, Col, Badge, Modal, Alert } from 'react-bootstrap';
 import {
   TrendingUp,
   Book,
@@ -11,7 +11,9 @@ import {
   LogIn,
   LogOut,
   Loader2,
-  Search
+  Search,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import api from '../../services/api';
@@ -337,403 +339,352 @@ const LiveDashboard: React.FC = () => {
 
   return (
     <div>
-      <Row className="g-4 mb-4">
-        <Col md={3}>
-          <Card className="border-start border-primary border-4">
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-shrink-0 bg-primary bg-opacity-10 p-3 rounded">
-                  <Book size={24} className="text-primary" />
-                </div>
-                <div className="flex-grow-1 ms-3">
-                  <h5 className="mb-1">{data?.totalBookings || 0}</h5>
-                  <p className="mb-0 text-muted small">Total Bookings</p>
-                </div>
+      <div className="row g-4 mb-4">
+        <div className="col-xl-3 col-md-6">
+          <div className="admin-card h-100">
+            <div className="admin-card-body d-flex align-items-center">
+              <div className="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-3 p-3 me-3" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
+                <Book size={24} />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
+              <div style={{ minWidth: 0 }}>
+                <h6 className="text-uppercase text-muted small fw-semibold mb-1">Total Bookings</h6>
+                <h5 className="mb-0 fw-bold text-dark">{data?.totalBookings || 0}</h5>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <Col md={3}>
-          <Card className="border-start border-success border-4">
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-shrink-0 bg-success bg-opacity-10 p-3 rounded">
-                  <DollarSign size={24} className="text-success" />
-                </div>
-                <div className="flex-grow-1 ms-3">
-                  <h5 className="mb-1">₹{data?.totalRevenue.toLocaleString() || 0}</h5>
-                  <p className="mb-0 text-muted small">Total Revenue</p>
-                </div>
+        <div className="col-xl-3 col-md-6">
+          <div className="admin-card h-100">
+            <div className="admin-card-body d-flex align-items-center">
+              <div className="d-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-3 p-3 me-3" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
+                <DollarSign size={24} />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
+              <div style={{ minWidth: 0 }}>
+                <h6 className="text-uppercase text-muted small fw-semibold mb-1">Total Revenue</h6>
+                <h5 className="mb-0 fw-bold text-dark text-nowrap">₹{data?.totalRevenue.toLocaleString() || 0}</h5>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <Col md={3}>
-          <Card className="border-start border-info border-4">
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-shrink-0 bg-info bg-opacity-10 p-3 rounded">
-                  <TrendingUp size={24} className="text-info" />
-                </div>
-                <div className="flex-grow-1 ms-3">
-                  <h5 className="mb-1">{data?.occupancyRate || 0}%</h5>
-                  <p className="mb-0 text-muted small">Occupancy Rate</p>
-                </div>
+        <div className="col-xl-3 col-md-6">
+          <div className="admin-card h-100">
+            <div className="admin-card-body d-flex align-items-center">
+              <div className="d-flex align-items-center justify-content-center bg-info bg-opacity-10 text-info rounded-3 p-3 me-3" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
+                <TrendingUp size={24} />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
+              <div style={{ minWidth: 0 }}>
+                <h6 className="text-uppercase text-muted small fw-semibold mb-1">Occupancy Rate</h6>
+                <h5 className="mb-0 fw-bold text-dark">{data?.occupancyRate || 0}%</h5>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <Col md={3}>
-          <Card className="border-start border-warning border-4">
-            <Card.Body>
-              <div className="d-flex align-items-center">
-                <div className="flex-shrink-0 bg-warning bg-opacity-10 p-3 rounded">
-                  <Calendar size={24} className="text-warning" />
-                </div>
-                <div className="flex-grow-1 ms-3">
-                  <h5 className="mb-1">{data?.pendingCheckins || 0}</h5>
-                  <p className="mb-0 text-muted small">Pending Check-ins</p>
-                </div>
+        <div className="col-xl-3 col-md-6">
+          <div className="admin-card h-100">
+            <div className="admin-card-body d-flex align-items-center">
+              <div className="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning rounded-3 p-3 me-3" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
+                <Calendar size={24} />
               </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+              <div style={{ minWidth: 0 }}>
+                <h6 className="text-uppercase text-muted small fw-semibold mb-1">Pending Check-ins</h6>
+                <h5 className="mb-0 fw-bold text-dark">{data?.pendingCheckins || 0}</h5>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Room Availability Metrics */}
       {roomMetrics && (
-        <Row className="g-4 mb-4">
-          <Col md={12}>
-            <Card className="border-start border-primary border-4">
-              <Card.Body>
-                <h6 className="mb-3">Room Availability Overview</h6>
-                <Row>
-                  <Col md={2}>
-                    <div className="text-center">
-                      <h4 className="mb-1 text-primary">{roomMetrics.total}</h4>
-                      <small className="text-muted">Total Rooms</small>
+        <div className="row g-4 mb-4">
+          <div className="col-12">
+            <div className="admin-card">
+              <div className="admin-card-header">
+                <h5 className="admin-card-title mb-0">Room Availability Overview</h5>
+              </div>
+              <div className="admin-card-body">
+                <div className="row text-center">
+                  <div className="col">
+                    <div className="p-3 rounded-3 border border-light bg-light bg-opacity-50">
+                      <h3 className="fw-bold text-primary mb-1">{roomMetrics.total}</h3>
+                      <span className="text-muted small text-uppercase fw-semibold">Total Rooms</span>
                     </div>
-                  </Col>
-
-                  <Col md={2}>
-                    <div className="text-center">
-                      <h4 className="mb-1 text-warning">{roomMetrics.allocated}</h4>
-                      <small className="text-muted">Allocated</small>
+                  </div>
+                  <div className="col">
+                    <div className="p-3 rounded-3 border border-light bg-light bg-opacity-50">
+                      <h3 className="fw-bold text-success mb-1">{roomMetrics.available}</h3>
+                      <span className="text-muted small text-uppercase fw-semibold">Available</span>
                     </div>
-                  </Col>
-                  <Col md={2}>
-                    <div className="text-center">
-                      <h4 className="mb-1 text-danger">{roomMetrics.occupied}</h4>
-                      <small className="text-muted">Occupied</small>
+                  </div>
+                  <div className="col">
+                    <div className="p-3 rounded-3 border border-light bg-light bg-opacity-50">
+                      <h3 className="fw-bold text-warning mb-1">{roomMetrics.allocated}</h3>
+                      <span className="text-muted small text-uppercase fw-semibold">Allocated</span>
                     </div>
-                  </Col>
-                  <Col md={2}>
-                    <div className="text-center">
-                      <h4 className="mb-1 text-secondary">{roomMetrics.maintenance}</h4>
-                      <small className="text-muted">Maintenance</small>
+                  </div>
+                  <div className="col">
+                    <div className="p-3 rounded-3 border border-light bg-light bg-opacity-50">
+                      <h3 className="fw-bold text-danger mb-1">{roomMetrics.occupied}</h3>
+                      <span className="text-muted small text-uppercase fw-semibold">Occupied</span>
                     </div>
-                  </Col>
-                  <Col md={2}>
-                    <div className="text-center">
-                      <h4 className="mb-1 text-info">
+                  </div>
+                  <div className="col">
+                    <div className="p-3 rounded-3 border border-light bg-light bg-opacity-50">
+                      <h3 className="fw-bold text-secondary mb-1">{roomMetrics.maintenance}</h3>
+                      <span className="text-muted small text-uppercase fw-semibold">Maintenance</span>
+                    </div>
+                  </div>
+                  <div className="col">
+                    <div className="p-3 rounded-3 border border-light bg-light bg-opacity-50">
+                      <h3 className="fw-bold text-info mb-1">
                         {roomMetrics.total > 0 ? Math.round(((roomMetrics.occupied + roomMetrics.allocated) / roomMetrics.total) * 100) : 0}%
-                      </h4>
-                      <small className="text-muted">Occupancy</small>
+                      </h3>
+                      <span className="text-muted small text-uppercase fw-semibold">Occupancy</span>
                     </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
-      )}
-
-      <Row>
-        <Col md={12}>
-          <Card>
-            <Card.Header>
-              <Row className="align-items-center">
-                <Col md={6}>
-                  <div className="d-flex align-items-center">
-                    <Badge bg="danger">Live</Badge>
-                    {searchTerm && (
-                      <Badge bg="info" className="ms-2">
-                        {data?.recentBookings?.length || 0} found
-                      </Badge>
-                    )}
-                  </div>
-                </Col>
-                <Col md={6}>
-                  <div className="position-relative">
-                    <InputGroup className="search-input-group">
-                      <InputGroup.Text className="bg-light border-end-0">
-                        <Search size={16} className="text-muted" />
-                      </InputGroup.Text>
-                      <Form.Control
-                        type="text"
-                        placeholder="Search bookings by name, email, phone, room, or status..."
-                        value={searchTerm}
-                        onChange={handleSearchChange}
-                        className="border-start-0 ps-0"
-                        style={{ boxShadow: 'none' }}
-                      />
-                      {(searchLoading || loading) && (
-                        <div className="position-absolute top-50 end-0 translate-middle-y me-2">
-                          <Loader2 size={16} className="animate-spin text-muted" />
-                        </div>
-                      )}
-                      {searchTerm && !searchLoading && (
-                        <Button
-                          variant="outline-secondary"
-                          onClick={handleClearSearch}
-                          title="Clear search"
-                          className="border-start-0"
-                          style={{
-                            borderTopLeftRadius: 0,
-                            borderBottomLeftRadius: 0,
-                            fontSize: '18px',
-                            lineHeight: 1
-                          }}
-                        >
-                          ×
-                        </Button>
-                      )}
-                    </InputGroup>
-                  </div>
-                </Col>
-              </Row>
-            </Card.Header>
-            <Card.Body>
-              {error && (
-                <Alert variant="danger" dismissible onClose={() => setError(null)}>
-                  <strong>Error:</strong> {error}
-                </Alert>
-              )}
-              <Table responsive hover>
-                <thead>
-                  <tr>
-                    <th>Guest Name</th>
-                    <th>Email</th>
-                    <th>Phone</th>
-                    <th>Room</th>
-                    <th>Check-in</th>
-                    <th>Check-out</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(loading || searchLoading) ? (
-                    <DataLoader type="table" columns={9} count={5} />
-                  ) : currentItems.length > 0 ? (
-                    currentItems.map((booking) => (
-                      <tr key={booking._id}>
-                        <td>
-                          <strong>{booking.guestDetails.primaryGuest.name}</strong>
-                        </td>
-                        <td>
-                          <small>{booking.guestDetails.primaryGuest.email}</small>
-                        </td>
-                        <td>
-                          <small>{booking.guestDetails.primaryGuest.phone}</small>
-                        </td>
-                        <td>
-                          {booking?.room?.name}
-                        </td>
-                        <td>
-                          <small>{new Date(booking.bookingDates.checkInDate).toLocaleDateString()}</small>
-                        </td>
-                        <td>
-                          <small>{new Date(booking.bookingDates.checkOutDate).toLocaleDateString()}</small>
-                        </td>
-                        <td>
-                          <strong>₹{booking.pricing.totalAmount?.toFixed(2) || '0.00'}</strong>
-                        </td>
-                        <td>
-                          <Badge bg={
-                            booking.status === 'Confirmed' ? 'success' :
-                              booking.status === 'Pending' ? 'warning' :
-                                booking.status === 'CheckedIn' ? 'info' :
-                                  booking.status === 'CheckedOut' ? 'secondary' :
-                                    booking.status === 'Cancelled' ? 'danger' : 'secondary'
-                          }>
-                            {booking.status}
-                          </Badge>
-                        </td>
-                        <td>
-                          <div className="d-flex justify-content-end gap-1">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => handleViewDetails(booking)}
-                              title="View booking details"
-                              disabled={actionLoading[booking._id]}
-                            >
-                              <Eye size={16} />
-                            </Button>
-
-                            {booking.status === 'Pending' && (
-                              <Button
-                                variant="outline-success"
-                                size="sm"
-                                onClick={() => handleStatusUpdate(booking._id, 'Confirmed')}
-                                disabled={actionLoading[booking._id]}
-                                title="Confirm this booking"
-                                className="d-flex align-items-center"
-                              >
-                                {actionLoading[booking._id] ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <CheckCircle size={16} />
-                                )}
-                              </Button>
-                            )}
-
-                            {['Pending', 'Confirmed'].includes(booking.status) && (
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => handleStatusUpdate(booking._id, 'Cancelled')}
-                                disabled={actionLoading[booking._id]}
-                                title="Cancel this booking"
-                                className="d-flex align-items-center"
-                              >
-                                {actionLoading[booking._id] ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <XCircle size={16} />
-                                )}
-                              </Button>
-                            )}
-
-                            {booking.status === 'Confirmed' && (
-                              <Button
-                                variant="outline-info"
-                                size="sm"
-                                onClick={() => handleStatusUpdate(booking._id, 'CheckedIn')}
-                                disabled={actionLoading[booking._id]}
-                                title="Check in guest"
-                                className="d-flex align-items-center"
-                              >
-                                {actionLoading[booking._id] ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <LogIn size={16} />
-                                )}
-                              </Button>
-                            )}
-
-                            {booking.status === 'CheckedIn' && (
-                              <Button
-                                variant="outline-secondary"
-                                size="sm"
-                                onClick={() => handleStatusUpdate(booking._id, 'CheckedOut')}
-                                disabled={actionLoading[booking._id]}
-                                title="Check out guest"
-                                className="d-flex align-items-center"
-                              >
-                                {actionLoading[booking._id] ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <LogOut size={16} />
-                                )}
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={9} className="text-center text-muted py-4">
-                        {searchTerm ? `No bookings found matching "${searchTerm}"` : 'No bookings available'}
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="d-flex justify-content-between align-items-center mt-3">
-                  <div className="d-flex align-items-center gap-2">
-                    <span className="text-muted">Show</span>
-                    <Form.Select
-                      size="sm"
-                      style={{ width: 'auto' }}
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                    </Form.Select>
-                    <span className="text-muted">entries</span>
-                  </div>
-
-                  <div className="d-flex align-items-center gap-2">
-                    <span className="text-muted">
-                      Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, data?.recentBookings.length || 0)} of {data?.recentBookings.length || 0} entries
-                    </span>
-                  </div>
-
-                  <div className="d-flex gap-1">
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      disabled={currentPage === 1}
-                      onClick={() => handlePageChange(currentPage - 1)}
-                    >
-                      Previous
-                    </Button>
-
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum: number;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-
-                      return (
-                        <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "primary" : "outline-secondary"}
-                          size="sm"
-                          onClick={() => handlePageChange(pageNum)}
-                        >
-                          {pageNum}
-                        </Button>
-                      );
-                    })}
-
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      disabled={currentPage === totalPages}
-                      onClick={() => handlePageChange(currentPage + 1)}
-                    >
-                      Next
-                    </Button>
                   </div>
                 </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="admin-card">
+        <div className="admin-card-header d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <div className="d-flex align-items-center gap-3">
+              <h5 className="admin-card-title mb-0">Recent Bookings</h5>
+              <div className="live-indicator">
+                <span className="pulsing-dot"></span>
+                LIVE
+              </div>
+            </div>
+            {searchTerm && (
+              <Badge bg="info" className="fw-normal rounded-pill px-3">
+                {data?.recentBookings?.length || 0} found
+              </Badge>
+            )}
+          </div>
+
+          <div className="admin-search position-relative" style={{ minWidth: '300px' }}>
+            <Search size={18} className="admin-search-icon text-muted position-absolute top-50 start-0 translate-middle-y ms-3" />
+            <input
+              type="text"
+              className="admin-form-control ps-5"
+              placeholder="Search bookings..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+            {searchTerm && !searchLoading && (
+              <button
+                className="btn btn-sm text-muted position-absolute top-50 end-0 translate-middle-y me-2 border-0 p-0"
+                onClick={handleClearSearch}
+                style={{ background: 'transparent' }}
+              >
+                <XCircle size={16} />
+              </button>
+            )}
+            {(searchLoading || loading) && (
+              <div className="position-absolute top-50 end-0 translate-middle-y me-2">
+                <Loader2 size={16} className="animate-spin text-muted" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="admin-card-body p-0">
+          {error && (
+            <div className="m-4">
+              <Alert variant="danger" dismissible onClose={() => setError(null)}>
+                <strong>Error:</strong> {error}
+              </Alert>
+            </div>
+          )}
+
+          <div className="table-responsive">
+            <table className="admin-table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Guest Name</th>
+                  <th>Contact</th>
+                  <th>Room Info</th>
+                  <th>Dates</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th className="text-end">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(loading || searchLoading) ? (
+                  <tr>
+                    <td colSpan={7} className="p-5 text-center">
+                      <div className="d-flex justify-content-center">
+                        <DataLoader type="spinner" />
+                      </div>
+                    </td>
+                  </tr>
+                ) : currentItems.length > 0 ? (
+                  currentItems.map((booking) => (
+                    <tr key={booking._id}>
+                      <td>
+                        <div className="fw-semibold text-dark">{booking.guestDetails.primaryGuest.name}</div>
+                        <div className="small text-muted">ID: #{booking.bookingId}</div>
+                      </td>
+                      <td>
+                        <div className="d-flex flex-column small">
+                          <span className="text-dark">{booking.guestDetails.primaryGuest.phone}</span>
+                          <span className="text-muted">{booking.guestDetails.primaryGuest.email}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="d-flex align-items-center gap-2">
+                          <span className="badge bg-light text-dark border">{booking?.room?.name}</span>
+                          <span className="small text-muted">{booking?.room?.type || 'Room'}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="d-flex flex-column small">
+                          <div><span className="text-muted w-25 d-inline-block">In:</span> <span className="fw-medium">{new Date(booking.bookingDates.checkInDate).toLocaleDateString()}</span></div>
+                          <div><span className="text-muted w-25 d-inline-block">Out:</span> <span className="fw-medium">{new Date(booking.bookingDates.checkOutDate).toLocaleDateString()}</span></div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="fw-bold text-dark">₹{booking.pricing.totalAmount?.toFixed(2) || '0.00'}</span>
+                      </td>
+                      <td>
+                        {(() => {
+                          const status = booking.status;
+                          let badgeClass = 'bg-secondary text-white';
+                          if (status === 'Confirmed') badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
+                          else if (status === 'Pending') badgeClass = 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25';
+                          else if (status === 'CheckedIn') badgeClass = 'bg-info bg-opacity-10 text-info border border-info border-opacity-25';
+                          else if (status === 'CheckedOut') badgeClass = 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25';
+                          else if (status === 'Cancelled') badgeClass = 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25';
+
+                          return (
+                            <span className={`badge ${badgeClass} fw-medium px-2 py-1 rounded-pill`}>
+                              {status}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="text-end">
+                        <div className="admin-action-buttons justify-content-end">
+                          <button
+                            className="admin-action-btn view"
+                            onClick={() => handleViewDetails(booking)}
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+
+                          {booking.status === 'Pending' && (
+                            <button
+                              className="admin-action-btn text-success"
+                              onClick={() => handleStatusUpdate(booking._id, 'Confirmed')}
+                              disabled={actionLoading[booking._id]}
+                              title="Confirm Booking"
+                            >
+                              {actionLoading[booking._id] ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                            </button>
+                          )}
+
+                          {['Pending', 'Confirmed'].includes(booking.status) && (
+                            <button
+                              className="admin-action-btn delete"
+                              onClick={() => handleStatusUpdate(booking._id, 'Cancelled')}
+                              disabled={actionLoading[booking._id]}
+                              title="Cancel Booking"
+                            >
+                              {actionLoading[booking._id] ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
+                            </button>
+                          )}
+
+                          {booking.status === 'Confirmed' && (
+                            <button
+                              className="admin-action-btn text-info"
+                              onClick={() => handleStatusUpdate(booking._id, 'CheckedIn')}
+                              disabled={actionLoading[booking._id]}
+                              title="Check In"
+                            >
+                              {actionLoading[booking._id] ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
+                            </button>
+                          )}
+
+                          {booking.status === 'CheckedIn' && (
+                            <button
+                              className="admin-action-btn text-secondary"
+                              onClick={() => handleStatusUpdate(booking._id, 'CheckedOut')}
+                              disabled={actionLoading[booking._id]}
+                              title="Check Out"
+                            >
+                              {actionLoading[booking._id] ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="text-center text-muted py-5">
+                      <div className="mb-2"><Search size={24} className="text-muted opacity-50" /></div>
+                      {searchTerm ? `No bookings found matching "${searchTerm}"` : 'No bookings available yet'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {totalPages > 1 && (
+            <div className="admin-card-footer d-flex justify-content-between align-items-center">
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-muted small">Items per page:</span>
+                <select
+                  className="form-select form-select-sm"
+                  style={{ width: '70px', borderColor: 'var(--admin-border)' }}
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value={5}>5</option>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+              </div>
+
+              <div className="d-flex align-items-center gap-2">
+                <span className="text-muted small me-2 d-none d-sm-inline">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="d-flex gap-1">
+                  <button
+                    className="admin-btn admin-btn-sm admin-btn-outline"
+                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                  >
+                    <ChevronLeft size={16} /> <span className="d-none d-sm-inline ms-1">Previous</span>
+                  </button>
+                  <button
+                    className="admin-btn admin-btn-sm admin-btn-outline"
+                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                  >
+                    <span className="d-none d-sm-inline me-1">Next</span> <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Booking Details Modal */}
       <Modal
