@@ -3,7 +3,7 @@ import '../../styles/skeleton.css';
 import { Card } from 'react-bootstrap';
 
 interface DataLoaderProps {
-    type?: 'table' | 'card' | 'list' | 'text' | 'image';
+    type?: 'table' | 'card' | 'list' | 'text' | 'image' | 'spinner';
     count?: number;
     height?: string | number;
     width?: string | number;
@@ -67,6 +67,13 @@ const DataLoader: React.FC<DataLoaderProps> = ({
                 return (
                     <div key={key} className={`skeleton-loader ${className}`} style={{ height: height || '200px', width: width || '100%' }} />
                 )
+
+            case 'spinner':
+                return (
+                    <div key={key} className={`spinner-border text-primary ${className}`} role="status">
+                        <span className="visually-hidden">Loading...</span>
+                    </div>
+                );
 
             case 'text':
             default:

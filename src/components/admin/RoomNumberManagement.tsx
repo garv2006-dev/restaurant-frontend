@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Card,
-    Table,
     Button,
     Modal,
     Form,
@@ -11,10 +9,11 @@ import {
     Alert,
     Spinner
 } from 'react-bootstrap';
-import { Plus, Filter, RefreshCw, Home, User, Calendar, UserPlus } from 'lucide-react';
+import { Plus, Filter, RefreshCw, Home, User, Calendar, Trash2 } from 'lucide-react';
 import api from '../../services/api';
 import { getSocket } from '../../services/socket';
 import DataLoader from '../common/DataLoader';
+import { toast } from 'react-toastify';
 
 interface RoomNumber {
     _id: string;
@@ -92,11 +91,7 @@ const RoomNumberManagement: React.FC = () => {
         prefix: ''
     });
 
-    // Manual allocation modal
-    const [showAllocationModal, setShowAllocationModal] = useState(false);
-    const [selectedRoom, setSelectedRoom] = useState<RoomNumber | null>(null);
-    const [pendingBookings, setPendingBookings] = useState<any[]>([]);
-    const [selectedBooking, setSelectedBooking] = useState('');
+
 
     // View mode
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
@@ -208,69 +203,28 @@ const RoomNumberManagement: React.FC = () => {
     const handleStatusChange = async (roomNumberId: string, newStatus: string) => {
         try {
             await api.put(`/room-numbers/${roomNumberId}/status`, { status: newStatus });
-            setSuccess('Room status updated successfully!');
+            toast.success('Room status updated successfully!');
             fetchRoomNumbers();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to update room status');
+            console.error('Error updating status:', err);
+            toast.error(err.response?.data?.message || 'Failed to update room status');
         }
     };
 
-    const fetchPendingBookings = async (roomTypeId: string) => {
-        try {
-            const response = await api.get('/admin/bookings', {
-                params: { status: 'Pending,Confirmed', limit: 100 }
-            });
-            console.log('Bookings response:', response.data);
-            if (response.data?.data?.bookings) {
-                // Filter bookings that match the room type and don't have a room number
-                const filtered = response.data.data.bookings.filter((booking: any) => {
-                    const matches = (booking.room?._id === roomTypeId || booking.room === roomTypeId) && !booking.roomNumber;
-                    console.log('Booking:', booking.bookingId, 'Room:', booking.room, 'Matches:', matches);
-                    return matches;
-                });
-                console.log('Filtered bookings:', filtered);
-                setPendingBookings(filtered);
-            }
-        } catch (err) {
-            console.error('Error fetching pending bookings:', err);
-        }
-    };
-
-    const handleAllocateClick = (room: RoomNumber) => {
-        setSelectedRoom(room);
-        setSelectedBooking('');
-        fetchPendingBookings(room.roomType._id);
-        setShowAllocationModal(true);
-    };
-
-    const handleAllocateRoom = async () => {
-        if (!selectedRoom || !selectedBooking) {
-            setError('Please select a booking');
-            return;
-        }
+    const handleDeleteRoomNumber = async (id: string, roomNum: string) => {
+        if (!window.confirm(`Are you sure you want to delete Room ${roomNum}?`)) return;
 
         try {
-            setLoading(true);
-            const booking = pendingBookings.find(b => b._id === selectedBooking);
-            if (!booking) return;
-
-            await api.post(`/room-numbers/${selectedRoom._id}/allocate`, {
-                bookingId: booking._id,
-                customerId: booking.user?._id || booking.user,
-                customerName: booking.guestDetails?.primaryGuest?.name,
-                checkInDate: booking.bookingDates?.checkInDate,
-                checkOutDate: booking.bookingDates?.checkOutDate
-            });
-
-            setSuccess(`Room ${selectedRoom.roomNumber} allocated successfully!`);
-            setShowAllocationModal(false);
+            await api.delete(`/room-numbers/${id}`);
+            toast.success('Room number deleted successfully');
             fetchRoomNumbers();
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to allocate room');
-        } finally {
-            setLoading(false);
+            console.error('Error deleting room number:', err);
+            toast.error(err.response?.data?.message || 'Failed to delete room number');
         }
     };
+
+
 
     const getStatusBadge = (status: string) => {
         const statusConfig: Record<string, { variant: string; label: string }> = {
@@ -310,25 +264,25 @@ const RoomNumberManagement: React.FC = () => {
 
     return (
         <div className="room-number-management">
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <div>
-                    <h2 className="mb-1">Room Number Management</h2>
+                    <h2 className="h4 fw-bold text-dark mb-1">Room Number Management</h2>
                     <p className="text-muted mb-0">Manage individual room instances and allocations</p>
                 </div>
                 <div className="d-flex gap-2">
-                    <Button
-                        variant="outline-secondary"
+                    <button
+                        className="admin-btn admin-btn-outline"
                         onClick={() => setViewMode(viewMode === 'grid' ? 'table' : 'grid')}
                     >
                         {viewMode === 'grid' ? 'Table View' : 'Grid View'}
-                    </Button>
-                    <Button variant="primary" onClick={() => setShowBulkModal(true)}>
+                    </button>
+                    <button className="admin-btn admin-btn-primary" onClick={() => setShowBulkModal(true)}>
                         <Plus size={16} className="me-2" />
                         Bulk Create Rooms
-                    </Button>
-                    <Button variant="outline-primary" onClick={fetchRoomNumbers}>
+                    </button>
+                    <button className="admin-btn admin-btn-outline" onClick={fetchRoomNumbers}>
                         <RefreshCw size={16} />
-                    </Button>
+                    </button>
                 </div>
             </div>
 
@@ -336,19 +290,22 @@ const RoomNumberManagement: React.FC = () => {
             {success && <Alert variant="success" dismissible onClose={() => setSuccess('')}>{success}</Alert>}
 
             {/* Filters */}
-            <Card className="mb-4">
-                <Card.Body>
-                    <h5 className="mb-3">
+            <div className="admin-card mb-4">
+                <div className="admin-card-header">
+                    <h5 className="admin-card-title mb-0">
                         <Filter size={18} className="me-2" />
                         Filters
                     </h5>
+                </div>
+                <div className="admin-card-body">
                     <Row>
                         <Col md={3}>
                             <Form.Group className="mb-3">
-                                <Form.Label>Room Type</Form.Label>
+                                <Form.Label className="small fw-semibold text-muted">Room Type</Form.Label>
                                 <Form.Select
                                     value={filters.roomType}
                                     onChange={(e) => setFilters({ ...filters, roomType: e.target.value })}
+                                    className="admin-form-control"
                                 >
                                     <option value="">All Types</option>
                                     {roomTypes.map((type) => (
@@ -361,10 +318,11 @@ const RoomNumberManagement: React.FC = () => {
                         </Col>
                         <Col md={3}>
                             <Form.Group className="mb-3">
-                                <Form.Label>Status</Form.Label>
+                                <Form.Label className="small fw-semibold text-muted">Status</Form.Label>
                                 <Form.Select
                                     value={filters.status}
                                     onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                                    className="admin-form-control"
                                 >
                                     <option value="">All Statuses</option>
                                     <option value="Available">Available</option>
@@ -378,7 +336,7 @@ const RoomNumberManagement: React.FC = () => {
 
                         <Col md={2}>
                             <Form.Group className="mb-3">
-                                <Form.Label>Room Number</Form.Label>
+                                <Form.Label className="small fw-semibold text-muted">Room Number</Form.Label>
                                 <Form.Control
                                     type="text"
                                     placeholder="Search..."
@@ -388,12 +346,13 @@ const RoomNumberManagement: React.FC = () => {
                                         const value = e.target.value.replace(/\D/g, '');
                                         setFilters({ ...filters, roomNumber: value });
                                     }}
+                                    className="admin-form-control"
                                 />
                             </Form.Group>
                         </Col>
                         <Col md={2}>
                             <Form.Group className="mb-3">
-                                <Form.Label>Customer Name</Form.Label>
+                                <Form.Label className="small fw-semibold text-muted">Customer Name</Form.Label>
                                 <Form.Control
                                     type="text"
                                     placeholder="Search..."
@@ -403,14 +362,20 @@ const RoomNumberManagement: React.FC = () => {
                                         const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
                                         setFilters({ ...filters, customerName: value });
                                     }}
+                                    className="admin-form-control"
                                 />
                             </Form.Group>
+                        </Col>
+                        <Col md={2} className="d-flex align-items-end">
+                            <button className="admin-btn admin-btn-outline w-100 mb-3" onClick={clearFilters}>
+                                Clear
+                            </button>
                         </Col>
                     </Row>
                     <Row>
                         <Col md={3}>
                             <Form.Group className="mb-3">
-                                <Form.Label>Check-In Date</Form.Label>
+                                <Form.Label className="small fw-semibold text-muted">Check-In Date</Form.Label>
                                 <Form.Control
                                     type="date"
                                     min={new Date().toISOString().split('T')[0]} // Prevent past dates
@@ -424,63 +389,53 @@ const RoomNumberManagement: React.FC = () => {
                                             checkOutDate: (prev.checkOutDate && prev.checkOutDate < newDate) ? '' : prev.checkOutDate
                                         }));
                                     }}
+                                    className="admin-form-control"
                                 />
                             </Form.Group>
                         </Col>
                         <Col md={3}>
                             <Form.Group className="mb-3">
-                                <Form.Label>Check-Out Date</Form.Label>
+                                <Form.Label className="small fw-semibold text-muted">Check-Out Date</Form.Label>
                                 <Form.Control
                                     type="date"
                                     value={filters.checkOutDate}
                                     min={filters.checkInDate}
                                     disabled={!filters.checkInDate}
                                     onChange={(e) => setFilters({ ...filters, checkOutDate: e.target.value })}
+                                    className="admin-form-control"
                                 />
                             </Form.Group>
                         </Col>
-                        <Col md={6} className="d-flex align-items-end">
-                            <Button variant="outline-secondary" onClick={clearFilters} className="mb-3">
-                                Clear Filters
-                            </Button>
-                        </Col>
                     </Row>
-                </Card.Body>
-            </Card>
+                </div>
+            </div>
 
             {/* Room Numbers Display */}
             {loading ? (
-                <DataLoader />
+                <div className="p-5 text-center">
+                    <DataLoader />
+                </div>
             ) : viewMode === 'grid' ? (
-                <Row>
+                <div className="row g-3">
                     {roomNumbers.map((room) => {
                         // Use dateWiseStatus if dates are filtered, otherwise use regular status
                         const displayStatus = room.dateWiseStatus || room.status;
                         return (
-                            <Col key={room._id} md={3} className="mb-3">
-                                <Card
-                                    className="room-number-card h-100"
+                            <div key={room._id} className="col-xl-3 col-lg-4 col-md-6 mb-3">
+                                <div
+                                    className="admin-card h-100 position-relative transition-hover"
                                     style={{
                                         borderLeft: `4px solid ${getStatusColor(displayStatus)}`,
                                         cursor: 'pointer'
                                     }}
                                 >
-                                    <Card.Body>
+
+                                    <div className="admin-card-body">
                                         <div className="d-flex justify-content-between align-items-start mb-2">
-                                            <h4 className="mb-0">{room.roomNumber}</h4>
+                                            <h4 className="mb-0 fw-bold">{room.roomNumber}</h4>
                                             <div className="d-flex align-items-center gap-2">
                                                 {getStatusBadge(displayStatus)}
-                                                {displayStatus === 'Available' && (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline-primary"
-                                                        onClick={() => handleAllocateClick(room)}
-                                                        title="Allocate to Booking"
-                                                        style={{ padding: '2px 6px' }}
-                                                    >
-                                                        <UserPlus size={16} />
-                                                    </Button>
-                                                )}
+
                                             </div>
                                         </div>
                                         <div className="text-muted small mb-2">
@@ -488,13 +443,15 @@ const RoomNumberManagement: React.FC = () => {
                                             <div>Floor {room.floor}</div>
                                         </div>
                                         {room.currentAllocation && room.currentAllocation.customerName && (
-                                            <div className="mt-2 pt-2 border-top">
-                                                <div className="small">
-                                                    <User size={14} className="me-1" />
-                                                    <strong>{room.currentAllocation.customerName}</strong>
+                                            <div className="mt-3 pt-3 border-top border-light">
+                                                <div className="d-flex align-items-center mb-1">
+                                                    <div className="bg-light rounded-circle p-1 me-2 text-primary">
+                                                        <User size={12} />
+                                                    </div>
+                                                    <span className="fw-medium small text-dark">{room.currentAllocation.customerName}</span>
                                                 </div>
                                                 {room.currentAllocation.checkInDate && (
-                                                    <div className="small text-muted">
+                                                    <div className="small text-muted ps-1">
                                                         <Calendar size={12} className="me-1" />
                                                         {new Date(room.currentAllocation.checkInDate).toLocaleDateString()} -
                                                         {room.currentAllocation.checkOutDate && new Date(room.currentAllocation.checkOutDate).toLocaleDateString()}
@@ -503,11 +460,12 @@ const RoomNumberManagement: React.FC = () => {
                                             </div>
                                         )}
                                         {(displayStatus === 'Available' || displayStatus === 'Maintenance' || displayStatus === 'Out of Service') && (
-                                            <div className="mt-2">
+                                            <div className="mt-3">
                                                 <Form.Select
                                                     size="sm"
                                                     onChange={(e) => handleStatusChange(room._id, e.target.value)}
                                                     defaultValue=""
+                                                    className="admin-form-select-sm"
                                                 >
                                                     <option value="">Change Status...</option>
                                                     <option value="Available">Available</option>
@@ -516,82 +474,108 @@ const RoomNumberManagement: React.FC = () => {
                                                 </Form.Select>
                                             </div>
                                         )}
-                                    </Card.Body>
-                                </Card>
-                            </Col>
+                                    </div>
+                                </div>
+                            </div>
                         );
                     })}
                     {roomNumbers.length === 0 && (
-                        <Col>
-                            <Alert variant="info">No room numbers found. Create some using the "Bulk Create Rooms" button.</Alert>
-                        </Col>
+                        <div className="col-12">
+                            <div className="admin-card p-5 text-center">
+                                <div className="text-muted mb-3">No room numbers found based on your filters.</div>
+                                <button className="admin-btn admin-btn-primary" onClick={() => setShowBulkModal(true)}>
+                                    <Plus size={16} className="me-1" /> Bulk Create Rooms
+                                </button>
+                            </div>
+                        </div>
                     )}
-                </Row>
+                </div>
             ) : (
-                <Card>
-                    <Card.Body>
-                        <Table responsive hover>
-                            <thead>
-                                <tr>
-                                    <th>Room Number</th>
-                                    <th>Room Type</th>
-                                    <th>Floor</th>
-                                    <th>Status</th>
-                                    <th>Customer</th>
-                                    <th>Check-In</th>
-                                    <th>Check-Out</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {roomNumbers.map((room) => {
-                                    // Use dateWiseStatus if dates are filtered, otherwise use regular status
-                                    const displayStatus = room.dateWiseStatus || room.status;
-                                    return (
-                                        <tr key={room._id}>
-                                            <td><strong>{room.roomNumber}</strong></td>
-                                            <td>{room.roomType?.name || 'N/A'}</td>
-                                            <td>{room.floor}</td>
-                                            <td>{getStatusBadge(displayStatus)}</td>
-                                            <td>{room.currentAllocation?.customerName || '-'}</td>
-                                            <td>
-                                                {room.currentAllocation?.checkInDate
-                                                    ? new Date(room.currentAllocation.checkInDate).toLocaleDateString()
-                                                    : '-'}
-                                            </td>
-                                            <td>
-                                                {room.currentAllocation?.checkOutDate
-                                                    ? new Date(room.currentAllocation.checkOutDate).toLocaleDateString()
-                                                    : '-'}
-                                            </td>
-                                            <td>
-                                                {(displayStatus === 'Available' || displayStatus === 'Maintenance' || displayStatus === 'Out of Service') && (
-                                                    <Form.Select
-                                                        size="sm"
-                                                        onChange={(e) => handleStatusChange(room._id, e.target.value)}
-                                                        defaultValue=""
-                                                    >
-                                                        <option value="">Change Status...</option>
-                                                        <option value="Available">Available</option>
-                                                        <option value="Maintenance">Maintenance</option>
-                                                        <option value="Out of Service">Out of Service</option>
-                                                    </Form.Select>
-                                                )}
+                <div className="admin-card">
+                    <div className="admin-card-body p-0">
+                        <div className="table-responsive">
+                            <table className="admin-table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Room Number</th>
+                                        <th>Room Type</th>
+                                        <th>Floor</th>
+                                        <th>Status</th>
+                                        <th>Customer</th>
+                                        <th>Check-In</th>
+                                        <th>Check-Out</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {roomNumbers.map((room) => {
+                                        // Use dateWiseStatus if dates are filtered, otherwise use regular status
+                                        const displayStatus = room.dateWiseStatus || room.status;
+                                        return (
+                                            <tr key={room._id}>
+                                                <td><span className="fw-bold text-dark">{room.roomNumber}</span></td>
+                                                <td><span className="badge bg-light text-dark border fw-normal">{room.roomType?.name || 'N/A'}</span></td>
+                                                <td>{room.floor}</td>
+                                                <td>{getStatusBadge(displayStatus)}</td>
+                                                <td>{room.currentAllocation?.customerName ? (
+                                                    <div className="d-flex align-items-center">
+                                                        <User size={14} className="me-1 text-muted" />
+                                                        {room.currentAllocation.customerName}
+                                                    </div>
+                                                ) : '-'}</td>
+                                                <td>
+                                                    {room.currentAllocation?.checkInDate
+                                                        ? new Date(room.currentAllocation.checkInDate).toLocaleDateString()
+                                                        : '-'}
+                                                </td>
+                                                <td>
+                                                    {room.currentAllocation?.checkOutDate
+                                                        ? new Date(room.currentAllocation.checkOutDate).toLocaleDateString()
+                                                        : '-'}
+                                                </td>
+                                                <td>
+                                                    <div className="d-flex align-items-center gap-2">
+                                                        {(displayStatus === 'Available' || displayStatus === 'Maintenance' || displayStatus === 'Out of Service') && (
+                                                            <div style={{ width: '150px' }}>
+                                                                <Form.Select
+                                                                    size="sm"
+                                                                    onChange={(e) => handleStatusChange(room._id, e.target.value)}
+                                                                    defaultValue=""
+                                                                    className="admin-form-select-sm"
+                                                                >
+                                                                    <option value="">Status...</option>
+                                                                    <option value="Available">Available</option>
+                                                                    <option value="Maintenance">Maintenance</option>
+                                                                    <option value="Out of Service">Out of Service</option>
+                                                                </Form.Select>
+                                                            </div>
+                                                        )}
+                                                        {displayStatus !== 'Allocated' && displayStatus !== 'Occupied' && (
+                                                            <button
+                                                                className="admin-action-btn delete"
+                                                                onClick={() => handleDeleteRoomNumber(room._id, room.roomNumber)}
+                                                                title="Delete Room"
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {roomNumbers.length === 0 && (
+                                        <tr>
+                                            <td colSpan={8} className="text-center py-5 text-muted">
+                                                No room numbers found
                                             </td>
                                         </tr>
-                                    );
-                                })}
-                                {roomNumbers.length === 0 && (
-                                    <tr>
-                                        <td colSpan={8} className="text-center">
-                                            No room numbers found
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </Table>
-                    </Card.Body>
-                </Card>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             )}
 
             {/* Bulk Create Modal */}
@@ -682,48 +666,7 @@ const RoomNumberManagement: React.FC = () => {
                 </Form>
             </Modal>
 
-            {/* Manual Allocation Modal */}
-            <Modal show={showAllocationModal} onHide={() => setShowAllocationModal(false)}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Allocate Room {selectedRoom?.roomNumber}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Select Booking</Form.Label>
-                        <Form.Select
-                            value={selectedBooking}
-                            onChange={(e) => setSelectedBooking(e.target.value)}
-                        >
-                            <option value="">Choose a booking...</option>
-                            {pendingBookings.map((booking) => (
-                                <option key={booking._id} value={booking._id}>
-                                    {booking.guestDetails?.primaryGuest?.name} -
-                                    {' '}{new Date(booking.bookingDates?.checkInDate).toLocaleDateString()} to{' '}
-                                    {new Date(booking.bookingDates?.checkOutDate).toLocaleDateString()}
-                                    {' '}(₹{booking.pricing?.totalAmount})
-                                </option>
-                            ))}
-                        </Form.Select>
-                        {pendingBookings.length === 0 && (
-                            <Form.Text className="text-muted">
-                                No pending bookings found for this room type
-                            </Form.Text>
-                        )}
-                    </Form.Group>
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowAllocationModal(false)}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="primary"
-                        onClick={handleAllocateRoom}
-                        disabled={!selectedBooking || loading}
-                    >
-                        {loading ? <Spinner animation="border" size="sm" /> : 'Allocate Room'}
-                    </Button>
-                </Modal.Footer>
-            </Modal>
+
         </div>
     );
 };

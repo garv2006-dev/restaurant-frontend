@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Badge, Button, Alert, Modal, Form, Spinner } from 'react-bootstrap';
-import { Search, UserPlus, Trash2, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Badge, Modal, Form, Spinner } from 'react-bootstrap';
+import { Search, UserPlus, Trash2, User, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { User as UserType } from '../../types';
 import { toast } from 'react-toastify';
@@ -216,10 +216,10 @@ const CustomerManagement: React.FC = () => {
           </div>
           <div className="d-flex gap-3 align-items-center">
             <div className="admin-search position-relative">
-              <Search size={16} className="admin-search-icon" />
+              <Search size={18} className="admin-search-icon text-muted position-absolute top-50 start-0 translate-middle-y ms-3" />
               <input
                 type="text"
-                className="admin-search-input pe-5"
+                className="admin-form-control ps-5"
                 placeholder="Search customers..."
                 value={searchTerm}
                 onChange={handleSearchChange}
@@ -230,7 +230,7 @@ const CustomerManagement: React.FC = () => {
                   onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
                   style={{ background: 'transparent' }}
                 >
-                  ×
+                  <XCircle size={16} />
                 </button>
               )}
             </div>
@@ -335,20 +335,13 @@ const CustomerManagement: React.FC = () => {
                       <td>{formatDate(customer.createdAt)}</td>
                       <td>
                         <div className="admin-action-buttons">
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
+                          <button
+                            className="admin-action-btn delete"
                             title="Delete Customer"
                             onClick={() => handleDeleteClick(customer)}
-                            style={{
-                              padding: '0.25rem 0.5rem',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.25rem'
-                            }}
                           >
-                            <Trash2 size={14} />
-                          </Button>
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -359,74 +352,71 @@ const CustomerManagement: React.FC = () => {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
-                <div className="d-flex align-items-center gap-2">
-                  <span className="text-muted small">Show</span>
-                  <Form.Select
-                    size="sm"
-                    style={{ width: 'auto' }}
-                    value={itemsPerPage}
-                    onChange={(e) => handleLimitChange(Number(e.target.value))}
-                  >
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                  </Form.Select>
-                  <span className="text-muted small">entries</span>
-                </div>
+              <div className="admin-card-footer mt-0">
+                <div className="d-flex justify-content-between align-items-center w-100">
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="text-muted small">Show</span>
+                    <select
+                      className="form-select form-select-sm"
+                      style={{ width: 'auto', borderColor: 'var(--admin-border)' }}
+                      value={itemsPerPage}
+                      onChange={(e) => handleLimitChange(Number(e.target.value))}
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                    <span className="text-muted small">entries</span>
+                  </div>
 
-                <div className="d-flex align-items-center gap-2">
-                  <span className="text-muted small">
-                    Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, customers.length)} of {customers.length} entries
-                  </span>
-                </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <span className="text-muted small me-2">
+                      Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, customers.length)} of {customers.length} entries
+                    </span>
 
-                <div className="d-flex gap-1">
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    disabled={currentPage === 1}
-                    onClick={() => handlePageChange(currentPage - 1)}
-                    className="d-flex align-items-center"
-                  >
-                    <ChevronLeft size={14} /> Previous
-                  </Button>
-
-                  {/* Page Numbers */}
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "primary" : "outline-secondary"}
-                        size="sm"
-                        onClick={() => handlePageChange(pageNum)}
+                    <div className="d-flex gap-1">
+                      <button
+                        className="admin-btn admin-btn-sm admin-btn-outline"
+                        disabled={currentPage === 1}
+                        onClick={() => handlePageChange(currentPage - 1)}
                       >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
+                        <ChevronLeft size={16} /> Previous
+                      </button>
 
-                  <Button
-                    variant="outline-secondary"
-                    size="sm"
-                    disabled={currentPage === totalPages}
-                    onClick={() => handlePageChange(currentPage + 1)}
-                    className="d-flex align-items-center"
-                  >
-                    Next <ChevronRight size={14} />
-                  </Button>
+                      {/* Page Numbers */}
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum: number;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            className={`admin-btn admin-btn-sm ${currentPage === pageNum ? 'admin-btn-primary' : 'admin-btn-outline'}`}
+                            onClick={() => handlePageChange(pageNum)}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+
+                      <button
+                        className="admin-btn admin-btn-sm admin-btn-outline"
+                        disabled={currentPage === totalPages}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                      >
+                        Next <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -435,7 +425,7 @@ const CustomerManagement: React.FC = () => {
       </div>
 
       {/* Add Customer Modal */}
-      <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
+      <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Add New Customer</Modal.Title>
         </Modal.Header>
@@ -448,6 +438,7 @@ const CustomerManagement: React.FC = () => {
                 name="name"
                 placeholder="Enter customer name"
                 required
+                className="admin-form-control"
               />
             </Form.Group>
 
@@ -458,6 +449,7 @@ const CustomerManagement: React.FC = () => {
                 name="email"
                 placeholder="Enter customer email"
                 required
+                className="admin-form-control"
               />
             </Form.Group>
 
@@ -468,6 +460,7 @@ const CustomerManagement: React.FC = () => {
                 name="phone"
                 placeholder="Enter customer phone"
                 required
+                className="admin-form-control"
               />
             </Form.Group>
 
@@ -479,6 +472,7 @@ const CustomerManagement: React.FC = () => {
                 placeholder="Enter temporary password"
                 required
                 minLength={6}
+                className="admin-form-control"
               />
               <Form.Text className="text-muted">
                 Minimum 6 characters. Customer can change this later.
@@ -486,10 +480,10 @@ const CustomerManagement: React.FC = () => {
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>
+            <button type="button" className="admin-btn admin-btn-secondary" onClick={() => setShowAddModal(false)}>
               Cancel
-            </Button>
-            <Button type="submit" variant="primary" disabled={addLoading}>
+            </button>
+            <button type="submit" className="admin-btn admin-btn-primary" disabled={addLoading}>
               {addLoading ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
@@ -498,34 +492,35 @@ const CustomerManagement: React.FC = () => {
               ) : (
                 'Add Customer'
               )}
-            </Button>
+            </button>
           </Modal.Footer>
         </Form>
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={handleDeleteCancel}>
+      <Modal show={showDeleteModal} onHide={handleDeleteCancel} centered>
         <Modal.Header closeButton>
           <Modal.Title>Delete Customer</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>Are you sure you want to delete this customer?</p>
           {customerToDelete && (
-            <Alert variant="warning">
+            <div className="alert alert-warning">
               <strong>{customerToDelete.name}</strong><br />
               <small>{customerToDelete.email}</small>
-            </Alert>
+            </div>
           )}
-          <p className="text-muted">
+          <p className="text-muted small mb-0">
             This action cannot be undone. The customer will be permanently removed from the system.
           </p>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleDeleteCancel}>
+          <button type="button" className="admin-btn admin-btn-secondary" onClick={handleDeleteCancel}>
             Cancel
-          </Button>
-          <Button
-            variant="danger"
+          </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn-danger"
             onClick={handleDeleteConfirm}
             disabled={deleteLoading}
           >
@@ -537,7 +532,7 @@ const CustomerManagement: React.FC = () => {
             ) : (
               'Delete Customer'
             )}
-          </Button>
+          </button>
         </Modal.Footer>
       </Modal>
     </div>

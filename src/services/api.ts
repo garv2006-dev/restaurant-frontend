@@ -585,6 +585,11 @@ export const adminAPI = {
     return response.data;
   },
 
+  createOfflineBooking: async (bookingData: any): Promise<ApiResponse<Booking>> => {
+    const response: AxiosResponse<ApiResponse<Booking>> = await api.post('/bookings/admin/offline', bookingData);
+    return response.data;
+  },
+
   // Customer API
   getCustomers: async (filters?: any): Promise<ApiResponse<{ customers: any[]; pagination: any }>> => {
     const response: AxiosResponse<ApiResponse<{ customers: any[]; pagination: any }>> = await api.get('/customers', {
@@ -631,6 +636,27 @@ export const adminAPI = {
 
   updateSettings: async (settings: { gstPercentage: number }): Promise<ApiResponse<any>> => {
     const response: AxiosResponse<ApiResponse<any>> = await api.put('/admin/settings', settings);
+    return response.data;
+  },
+
+  // Discount API
+  getDiscounts: async (): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.get('/discounts/admin');
+    return response.data;
+  },
+
+  createDiscount: async (discountData: any): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.post('/discounts', discountData);
+    return response.data;
+  },
+
+  updateDiscount: async (id: string, discountData: any): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.put(`/discounts/${id}`, discountData);
+    return response.data;
+  },
+
+  deleteDiscount: async (id: string): Promise<ApiResponse<any>> => {
+    const response: AxiosResponse<ApiResponse<any>> = await api.delete(`/discounts/${id}`);
     return response.data;
   },
 };

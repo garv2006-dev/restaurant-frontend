@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container,
-  Row,
-  Col,
-  Card,
   Tab,
   Tabs,
-  Table,
-  Button,
-  Form,
   Badge,
   Alert,
   Spinner
@@ -34,8 +28,11 @@ import api from '../../services/api';
 interface ReportData {
   bookings: {
     total: number;
+    pending: number;
     confirmed: number;
+    checkedIn: number;
     cancelled: number;
+    noShow: number;
     completed: number;
     revenue: number;
     averageBookingValue: number;
@@ -99,7 +96,8 @@ const ReportsAnalytics: React.FC = () => {
 
   useEffect(() => {
     fetchReportData();
-  }, [fetchReportData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDateRangeChange = (field: keyof DateRange, value: string) => {
     setDateRange((prev) => ({ ...prev, [field]: value }));
@@ -148,299 +146,299 @@ const ReportsAnalytics: React.FC = () => {
   }
 
   return (
-    <Container fluid className="py-4">
-      <Row className="mb-4">
-        <Col>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h2>Reports & Analytics</h2>
-            {/* <div className="d-flex gap-2">
-              <Button variant="outline-primary" onClick={() => exportReport('excel')}>
-                Export Excel
-              </Button>
-              <Button variant="outline-secondary" onClick={() => exportReport('pdf')}>
-                Export PDF
-              </Button>
-            </div> */}
+    <div className="container-fluid px-4">
+      <div className="d-flex justify-content-between align-items-center mb-4 mt-4">
+        <div>
+          <h2 className="admin-page-title mb-1">Reports & Analytics</h2>
+          <p className="text-muted mb-0">Monitor your business performance and insights</p>
+        </div>
+      </div>
+
+      {/* Date Range Filter */}
+      <div className="admin-card mb-4">
+        <div className="admin-card-header">
+          <h5 className="admin-card-title mb-0">Date Range Filter</h5>
+        </div>
+        <div className="admin-card-body">
+          <div className="row g-3 align-items-end">
+            <div className="col-md-3">
+              <div>
+                <label className="form-label small fw-semibold text-muted">Start Date</label>
+                <input
+                  type="date"
+                  className="admin-form-control"
+                  value={dateRange.startDate}
+                  onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div>
+                <label className="form-label small fw-semibold text-muted">End Date</label>
+                <input
+                  type="date"
+                  className="admin-form-control"
+                  value={dateRange.endDate}
+                  onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="col-md-3">
+              <button className="admin-btn admin-btn-primary w-100" onClick={fetchReportData}>
+                Update Report
+              </button>
+            </div>
           </div>
+        </div>
+      </div>
 
-          {/* Date Range Filter */}
-          <Card className="mb-4">
-            <Card.Body>
-              <Row>
-                <Col md={3}>
-                  <Form.Group>
-                    <Form.Label>Start Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      value={dateRange.startDate}
-                      onChange={(e) => handleDateRangeChange('startDate', e.target.value)}
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={3}>
-                  <Form.Group>
-                    <Form.Label>End Date</Form.Label>
-                    <Form.Control
-                      type="date"
-                      value={dateRange.endDate}
-                      onChange={(e) => handleDateRangeChange('endDate', e.target.value)}
-                    />
-                  </Form.Group>
-                </Col>
-                <Col md={3} className="d-flex align-items-end">
-                  <Button variant="primary" onClick={fetchReportData}>
-                    Update Report
-                  </Button>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'overview')} className="mb-4">
+      <Tabs activeKey={activeTab} onSelect={(k) => setActiveTab(k || 'overview')} className="admin-tabs mb-4">
         <Tab eventKey="overview" title="Overview">
           {/* KPI Cards */}
-          <Row className="mb-4">
-            <Col md={3}>
-              <Card className="text-center border-0 shadow-sm">
-                <Card.Body>
-                  <h6 className="text-muted">Total Revenue</h6>
-                  <h3 className="text-success">₹{(reportData.revenue?.totalRevenue || 0).toLocaleString()}</h3>
+          <div className="row g-4 mb-4">
+            <div className="col-xl-3 col-sm-6">
+              <div className="admin-card h-100">
+                <div className="admin-card-body text-center p-4">
+                  <h6 className="text-muted text-uppercase small fw-bold mb-3">Total Revenue</h6>
+                  <h3 className="fs-4 fw-bold text-success mb-2" title={`₹${(reportData.revenue?.totalRevenue || 0).toLocaleString()}`}>
+                    ₹{(reportData.revenue?.totalRevenue || 0).toLocaleString()}
+                  </h3>
                   <small className="text-muted">Selected Period</small>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3}>
-              <Card className="text-center border-0 shadow-sm">
-                <Card.Body>
-                  <h6 className="text-muted">Total Bookings</h6>
-                  <h3 className="text-primary">{reportData.bookings?.total || 0}</h3>
-                  <small className="text-muted">{reportData.bookings?.confirmed || 0} Confirmed</small>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3}>
-              <Card className="text-center border-0 shadow-sm">
-                <Card.Body>
-                  <h6 className="text-muted">Occupancy Rate</h6>
-                  <h3 className="text-warning">{reportData.bookings?.occupancyRate || 0}%</h3>
+                </div>
+              </div>
+            </div>
+            <div className="col-xl-3 col-sm-6">
+              <div className="admin-card h-100">
+                <div className="admin-card-body text-center p-4">
+                  <h6 className="text-muted text-uppercase small fw-bold mb-3">Total Bookings</h6>
+                  <h3 className="fs-4 fw-bold text-primary mb-2" title={(reportData.bookings?.total || 0).toString()}>
+                    {reportData.bookings?.total || 0}
+                  </h3>
+                  <Badge bg="success" className="bg-opacity-10 text-success border border-success border-opacity-25 fw-normal px-3 py-2 rounded-pill">
+                    {reportData.bookings?.confirmed || 0} Confirmed
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            <div className="col-xl-3 col-sm-6">
+              <div className="admin-card h-100">
+                <div className="admin-card-body text-center p-4">
+                  <h6 className="text-muted text-uppercase small fw-bold mb-3">Occupancy Rate</h6>
+                  <h3 className="fs-4 fw-bold text-warning mb-2" title={`${reportData.bookings?.occupancyRate || 0}%`}>
+                    {reportData.bookings?.occupancyRate || 0}%
+                  </h3>
                   <small className="text-muted">Current Period</small>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3}>
-              <Card className="text-center border-0 shadow-sm">
-                <Card.Body>
-                  <h6 className="text-muted">Avg. Rating</h6>
-                  <h3 className="text-info">{(reportData.performance?.averageRating || 0).toFixed(1)}</h3>
+                </div>
+              </div>
+            </div>
+            <div className="col-xl-3 col-sm-6">
+              <div className="admin-card h-100">
+                <div className="admin-card-body text-center p-4">
+                  <h6 className="text-muted text-uppercase small fw-bold mb-3">Avg. Rating</h6>
+                  <h3 className="fs-4 fw-bold text-info mb-2" title={(reportData.performance?.averageRating || 0).toFixed(1)}>
+                    {(reportData.performance?.averageRating || 0).toFixed(1)}
+                  </h3>
                   <small className="text-muted">Customer Satisfaction</small>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Revenue Chart */}
-          <Row className="mb-4">
-            <Col md={8}>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Revenue Trend</h5>
-                </Card.Header>
-                <Card.Body>
+          <div className="row g-4 mb-4">
+            <div className="col-lg-8">
+              <div className="admin-card h-100">
+                <div className="admin-card-header">
+                  <h5 className="admin-card-title mb-0">Revenue Trend</h5>
+                </div>
+                <div className="admin-card-body">
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={reportData.revenue?.monthlyRevenue || []}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [`₹${value}`, 'Revenue']} />
-                      <Legend />
-                      <Line type="monotone" dataKey="revenue" stroke="#8884d8" strokeWidth={2} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} tickFormatter={(value) => `₹${value}`} />
+                      <Tooltip
+                        formatter={(value) => [`₹${value}`, 'Revenue']}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Line type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
                     </LineChart>
                   </ResponsiveContainer>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={4}>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Room Type Distribution</h5>
-                </Card.Header>
-                <Card.Body>
+                </div>
+              </div>
+            </div>
+            <div className="col-lg-4">
+              <div className="admin-card h-100">
+                <div className="admin-card-header">
+                  <h5 className="admin-card-title mb-0">Room Type Distribution</h5>
+                </div>
+                <div className="admin-card-body d-flex align-items-center justify-content-center">
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
                         data={reportData.rooms?.roomTypeDistribution || []}
                         cx="50%"
                         cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        innerRadius={60}
                         outerRadius={80}
-                        fill="#8884d8"
+                        paddingAngle={5}
                         dataKey="count"
                       >
                         {(reportData.rooms?.roomTypeDistribution || []).map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip
+                        formatter={(value, name) => [value, name]}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                      />
+                      <Legend verticalAlign="bottom" height={36} />
                     </PieChart>
                   </ResponsiveContainer>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+                </div>
+              </div>
+            </div>
+          </div>
         </Tab>
 
         <Tab eventKey="bookings" title="Bookings">
-          <Row>
-            <Col md={6}>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Booking Status</h5>
-                </Card.Header>
-                <Card.Body>
-                  <Table striped>
-                    <tbody>
-                      <tr>
-                        <td>Total Bookings</td>
-                        <td><Badge bg="primary">{reportData.bookings?.total || 0}</Badge></td>
-                      </tr>
-                      <tr>
-                        <td>Confirmed</td>
-                        <td><Badge bg="success">{reportData.bookings?.confirmed || 0}</Badge></td>
-                      </tr>
-                      <tr>
-                        <td>Cancelled</td>
-                        <td><Badge bg="danger">{reportData.bookings?.cancelled || 0}</Badge></td>
-                      </tr>
-                      <tr>
-                        <td>Completed</td>
-                        <td><Badge bg="info">{reportData.bookings?.completed || 0}</Badge></td>
-                      </tr>
-                    </tbody>
-                  </Table>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={6}>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Top Performing Rooms</h5>
-                </Card.Header>
-                <Card.Body>
-                  <Table striped>
-                    <thead>
-                      <tr>
-                        <th>Room</th>
-                        <th>Bookings</th>
-                        <th>Revenue</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(reportData.performance?.topRooms || []).map((room, index) => (
-                        <tr key={index}>
-                          <td>{room.roomName}</td>
-                          <td>{room.bookings}</td>
-                          <td>₹{room.revenue.toLocaleString()}</td>
+          <div className="row g-4">
+            <div className="col-lg-6">
+              <div className="admin-card h-100">
+                <div className="admin-card-header">
+                  <h5 className="admin-card-title mb-0">Booking Status Breakdown</h5>
+                </div>
+                <div className="admin-card-body p-0">
+                  <div className="table-responsive">
+                    <table className="admin-table table-hover mb-0">
+                      <tbody>
+                        <tr>
+                          <td>Total Bookings</td>
+                          <td className="text-end fw-bold">{reportData.bookings?.total || 0}</td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+                        <tr>
+                          <td>Pending</td>
+                          <td className="text-end"><span className="badge bg-warning text-dark bg-opacity-25 px-3 py-1 rounded-pill">{(reportData.bookings?.pending || 0)}</span></td>
+                        </tr>
+                        <tr>
+                          <td>Confirmed</td>
+                          <td className="text-end"><span className="badge bg-success bg-opacity-25 text-success px-3 py-1 rounded-pill">{(reportData.bookings?.confirmed || 0)}</span></td>
+                        </tr>
+                        <tr>
+                          <td>Checked In</td>
+                          <td className="text-end"><span className="badge bg-info bg-opacity-25 text-info px-3 py-1 rounded-pill">{(reportData.bookings?.checkedIn || 0)}</span></td>
+                        </tr>
+                        <tr>
+                          <td>Completed</td>
+                          <td className="text-end"><span className="badge bg-success bg-opacity-25 text-success px-3 py-1 rounded-pill">{(reportData.bookings?.completed || 0)}</span></td>
+                        </tr>
+                        <tr>
+                          <td>Cancelled</td>
+                          <td className="text-end"><span className="badge bg-danger bg-opacity-25 text-danger px-3 py-1 rounded-pill">{(reportData.bookings?.cancelled || 0)}</span></td>
+                        </tr>
+                        <tr>
+                          <td>No Show</td>
+                          <td className="text-end"><span className="badge bg-secondary bg-opacity-25 text-dark px-3 py-1 rounded-pill">{(reportData.bookings?.noShow || 0)}</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-lg-6">
+              <div className="admin-card h-100">
+                <div className="admin-card-header">
+                  <h5 className="admin-card-title mb-0">Top Performing Rooms</h5>
+                </div>
+                <div className="admin-card-body p-0">
+                  <div className="table-responsive">
+                    <table className="admin-table table-hover mb-0">
+                      <thead>
+                        <tr>
+                          <th>Room</th>
+                          <th className="text-center">Bookings</th>
+                          <th className="text-end">Revenue</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(reportData.performance?.topRooms || []).length > 0 ? (
+                          (reportData.performance?.topRooms || []).map((room, index) => (
+                            <tr key={index}>
+                              <td className="fw-medium text-dark">{room.roomName}</td>
+                              <td className="text-center">{room.bookings}</td>
+                              <td className="text-end fw-bold text-success">₹{room.revenue.toLocaleString()}</td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={3} className="text-center py-4 text-muted">No data available</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </Tab>
 
         <Tab eventKey="revenue" title="Revenue">
-          <Row>
-            <Col md={8}>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Monthly Revenue Breakdown</h5>
-                </Card.Header>
-                <Card.Body>
+          <div className="row g-4">
+            <div className="col-lg-8">
+              <div className="admin-card h-100">
+                <div className="admin-card-header">
+                  <h5 className="admin-card-title mb-0">Monthly Revenue Breakdown</h5>
+                </div>
+                <div className="admin-card-body">
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={reportData.revenue?.monthlyRevenue || []}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [`₹${value}`, 'Revenue']} />
-                      <Legend />
-                      <Bar dataKey="revenue" fill="#8884d8" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} tickFormatter={(value) => `₹${value}`} />
+                      <Tooltip
+                        formatter={(value) => [`₹${value}`, 'Revenue']}
+                        cursor={{ fill: '#F1F5F9' }}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                      <Bar dataKey="revenue" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={40} />
                     </BarChart>
                   </ResponsiveContainer>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={4}>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Revenue Sources</h5>
-                </Card.Header>
-                <Card.Body>
-                  <Table striped>
+                </div>
+              </div>
+            </div>
+            <div className="col-lg-4">
+              <div className="admin-card h-100">
+                <div className="admin-card-header">
+                  <h5 className="admin-card-title mb-0">Revenue Sources</h5>
+                </div>
+                <div className="admin-card-body p-0">
+                  <table className="admin-table mb-0">
                     <tbody>
                       <tr>
-                        <td>Room Bookings</td>
-                        <td>₹{(reportData.revenue?.roomRevenue || 0).toLocaleString()}</td>
+                        <td className="text-muted">Room Bookings</td>
+                        <td className="text-end fw-medium">₹{(reportData.revenue?.roomRevenue || 0).toLocaleString()}</td>
                       </tr>
                       <tr>
-                        <td>Extra Services</td>
-                        <td>₹{(reportData.revenue?.extraServicesRevenue || 0).toLocaleString()}</td>
+                        <td className="text-muted">Extra Services</td>
+                        <td className="text-end fw-medium">₹{(reportData.revenue?.extraServicesRevenue || 0).toLocaleString()}</td>
                       </tr>
-                      <tr className="table-active">
-                        <td><strong>Total</strong></td>
-                        <td><strong>₹{(reportData.revenue?.totalRevenue || 0).toLocaleString()}</strong></td>
+                      <tr className="bg-light">
+                        <td className="fw-bold text-dark ps-4">Total Revenue</td>
+                        <td className="text-end fw-bold text-success pe-4">₹{(reportData.revenue?.totalRevenue || 0).toLocaleString()}</td>
                       </tr>
                     </tbody>
-                  </Table>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
         </Tab>
-
-        {/* <Tab eventKey="customers" title="Customers">
-          <Row>
-            <Col md={6}>
-              <Card>
-                <Card.Header>
-                  <h5 className="mb-0">Customer Statistics</h5>
-                </Card.Header>
-                <Card.Body>
-                  <Table striped>
-                    <tbody>
-                      <tr>
-                        <td>Total Customers</td>
-                        <td><Badge bg="primary">{reportData.customers?.totalCustomers || 0}</Badge></td>
-                      </tr>
-                      <tr>
-                        <td>New Customers</td>
-                        <td><Badge bg="success">{reportData.customers?.newCustomers || 0}</Badge></td>
-                      </tr>
-                      <tr>
-                        <td>Returning Customers</td>
-                        <td><Badge bg="info">{reportData.customers?.returningCustomers || 0}</Badge></td>
-                      </tr>
-                      <tr>
-                        <td>Loyalty Members</td>
-                        <td><Badge bg="warning">{reportData.customers?.loyaltyMembers || 0}</Badge></td>
-                      </tr>
-                      <tr>
-                        <td>Avg. Loyalty Points</td>
-                        <td>{reportData.customers?.averageLoyaltyPoints || 0}</td>
-                      </tr>
-                    </tbody>
-                  </Table>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Tab> */}
       </Tabs>
-    </Container>
+    </div>
   );
 };
 
