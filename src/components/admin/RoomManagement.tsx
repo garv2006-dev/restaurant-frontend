@@ -541,19 +541,18 @@ const RoomManagement: React.FC = () => {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th>Room Name</th>
-                  <th>Type</th>
-                  <th>Capacity</th>
-                  <th>Price</th>
-                  <th>Availability</th>
-                  <th>Status</th>
-                  <th className="text-end">Actions</th>
+                  <th style={{ width: '30%' }}>Room Name</th>
+                  <th style={{ width: '12%' }}>Type</th>
+                  <th style={{ width: '15%' }}>Capacity</th>
+                  <th style={{ width: '12%' }}>Price</th>
+                  <th style={{ width: '12%' }}>Status</th>
+                  <th className="text-end" style={{ width: '14%' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rooms.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-5">
+                    <td colSpan={7} className="text-center py-5">
                       <div className="text-muted mb-3">No rooms found in the system.</div>
                       <button className="admin-btn admin-btn-primary" onClick={handleAddRoom}>
                         <Plus size={16} className="me-1" /> Add Your First Room
@@ -572,7 +571,7 @@ const RoomManagement: React.FC = () => {
                       </td>
                       <td>
                         <div className="fw-semibold text-dark">{room.name}</div>
-                        <div className="small text-muted text-truncate" style={{ maxWidth: '200px' }}>{room.description}</div>
+                        <div className="small text-muted text-truncate" style={{ maxWidth: '350px' }}>{room.description}</div>
                       </td>
                       <td>
                         <span className="badge bg-light text-dark border fw-normal">{room.type}</span>
@@ -586,35 +585,8 @@ const RoomManagement: React.FC = () => {
                       <td>
                         <span className="fw-bold text-dark">₹{room.price.basePrice}</span>
                       </td>
-                      <td>
-                        {room.totalRoomNumbers !== undefined ? (
-                          <div className="d-flex flex-column gap-1">
-                            <div className="d-flex align-items-center justify-content-between mb-2">
-                              <div>
-                                <div className="text-muted small" style={{ fontSize: '0.75rem', lineHeight: 1 }}>Available</div>
-                                <div className={`fw-bold mt-1 ${room.availableCount && room.availableCount > 0 ? 'text-success' : 'text-danger'}`} style={{ fontSize: '1.1rem' }}>
-                                  {room.availableCount || 0}
-                                </div>
-                              </div>
-                              <div className="text-end ps-3 border-start">
-                                <div className="text-muted small" style={{ fontSize: '0.75rem', lineHeight: 1 }}>Total</div>
-                                <div className="fw-semibold mt-1 text-dark" style={{ fontSize: '0.9rem' }}>
-                                  {room.totalRoomNumbers}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="progress" style={{ height: '4px' }}>
-                              <div
-                                className={`progress-bar ${room.availableCount && room.availableCount > 0 ? 'bg-success' : 'bg-danger'}`}
-                                role="progressbar"
-                                style={{ width: `${(room.availableCount || 0) / (room.totalRoomNumbers || 1) * 100}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        ) : (
-                          <Badge bg="warning" className="fw-normal">No Rooms Added</Badge>
-                        )}
-                      </td>
+
+
                       <td>{getStatusBadge(room.status)}</td>
                       <td className="text-end">
                         <div className="admin-action-buttons justify-content-end">
