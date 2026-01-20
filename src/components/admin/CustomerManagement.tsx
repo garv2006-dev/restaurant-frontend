@@ -209,39 +209,37 @@ const CustomerManagement: React.FC = () => {
   return (
     <div className="admin-card">
       <div className="admin-card-header">
-        <div className="d-flex justify-content-between align-items-center">
-          <div>
-            <h3 className="admin-card-title">Customer Management</h3>
-            <p className="admin-card-subtitle">Manage your restaurant customers</p>
+        <div>
+          <h3 className="admin-card-title">Customer Management</h3>
+          <p className="admin-card-subtitle">Manage your restaurant customers</p>
+        </div>
+        <div className="d-flex gap-3 align-items-center">
+          <div className="admin-search position-relative">
+            <Search size={18} className="admin-search-icon text-muted position-absolute top-50 start-0 translate-middle-y ms-3" />
+            <input
+              type="text"
+              className="admin-form-control ps-5"
+              placeholder="Search customers..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+            {searchTerm && (
+              <button
+                className="btn btn-sm text-muted position-absolute top-50 end-0 translate-middle-y me-2 border-0 p-0"
+                onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
+                style={{ background: 'transparent' }}
+              >
+                <XCircle size={16} />
+              </button>
+            )}
           </div>
-          <div className="d-flex gap-3 align-items-center">
-            <div className="admin-search position-relative">
-              <Search size={18} className="admin-search-icon text-muted position-absolute top-50 start-0 translate-middle-y ms-3" />
-              <input
-                type="text"
-                className="admin-form-control ps-5"
-                placeholder="Search customers..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-              />
-              {searchTerm && (
-                <button
-                  className="btn btn-sm text-muted position-absolute top-50 end-0 translate-middle-y me-2 border-0 p-0"
-                  onClick={() => { setSearchTerm(''); setCurrentPage(1); }}
-                  style={{ background: 'transparent' }}
-                >
-                  <XCircle size={16} />
-                </button>
-              )}
-            </div>
-            <button
-              className="admin-btn admin-btn-primary"
-              onClick={() => setShowAddModal(true)}
-            >
-              <UserPlus size={16} />
-              Add Customer
-            </button>
-          </div>
+          <button
+            className="admin-btn admin-btn-primary"
+            onClick={() => setShowAddModal(true)}
+          >
+            <UserPlus size={16} />
+            Add Customer
+          </button>
         </div>
       </div>
 

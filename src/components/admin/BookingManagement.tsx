@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Table, Button, Row, Col, Badge, Modal } from 'react-bootstrap';
+import { Button, Badge, Modal } from 'react-bootstrap';
 import { adminAPI, roomsAPI } from '../../services/api';
 import { Booking, Room } from '../../types';
 import format from 'date-fns/format';
@@ -235,6 +235,9 @@ const BookingManagement: React.FC = () => {
   };
 
   const handlePrintBooking = () => {
+    // STRICT CSS ISOLATION via class toggle
+    document.body.classList.add('printing-active');
+
     // Store original title
     const originalTitle = document.title;
 
@@ -243,16 +246,15 @@ const BookingManagement: React.FC = () => {
       document.title = `Booking Details - ${selectedBooking.bookingId}`;
     }
 
-    // Add a small delay to ensure modal is fully rendered
+    // Wait for repaint then print
     setTimeout(() => {
       window.print();
-
-      // Restore original title after print dialog
-      setTimeout(() => {
-        document.title = originalTitle;
-      }, 1000);
+      // Remove class after print dialog closes
+      document.body.classList.remove('printing-active');
+      document.title = originalTitle;
     }, 100);
   };
+
 
 
   const getStatusBadge = (status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
@@ -261,7 +263,7 @@ const BookingManagement: React.FC = () => {
       'Pending': 'warning',
       'Cancelled': 'danger',
       'CheckedIn': 'info',
-      'CheckedOut': 'secondary',
+      'CheckedOut': 'dark',
       'NoShow': 'dark'
     };
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
@@ -296,9 +298,6 @@ const BookingManagement: React.FC = () => {
           <div className="d-flex gap-2">
             <button className="admin-btn admin-btn-success admin-btn-sm" onClick={handleOpenOfflineModal} title="Create Walk-in/Offline Booking">
               <PlusCircle size={16} className="me-1" /> New Offline Booking
-            </button>
-            <button className="admin-btn admin-btn-primary admin-btn-sm" onClick={() => window.print()}>
-              <Printer size={16} className="me-1" /> Print
             </button>
           </div>
         </div>
@@ -391,13 +390,7 @@ const BookingManagement: React.FC = () => {
               </thead>
               <tbody>
                 {loading && bookings.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="p-5 text-center">
-                      <div className="d-flex justify-content-center">
-                        <DataLoader type="spinner" />
-                      </div>
-                    </td>
-                  </tr>
+                  <DataLoader type="table" count={5} columns={9} />
                 ) : bookings.length > 0 ? (
                   bookings.map((booking) => {
                     const room = typeof booking.room === 'object' && booking.room !== null ? booking.room : null;
@@ -617,154 +610,211 @@ const BookingManagement: React.FC = () => {
         </Modal.Header>
         <Modal.Body>
           {selectedBooking ? (
-            <div>
-              {/* Print-only header */}
-              <div className="d-none d-print-block text-center mb-4">
-                <h1 style={{ fontSize: '24pt', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                  Hotel Booking Receipt
-                </h1>
-                <p style={{ fontSize: '12pt', color: '#666', margin: '0' }}>
-                  Generated on {new Date().toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </p>
+            <div id="printable-receipt-section" className="invoice-container">
+              {/* Header */}
+              <div className="invoice-header-bar">
+                Hotel Bill
               </div>
 
-              {/* Booking Header */}
-              <div className="booking-header">
-                <div className="d-flex justify-content-between align-items-start">
-                  <div>
-                    <h5>
-                      Booking <span className="booking-id">#{selectedBooking.bookingId}</span>
-                    </h5>
-                    <div className="booking-date">
-                      Created on {formatDate(selectedBooking.createdAt)}
-                    </div>
+              {/* Hotel Info & Logo */}
+              <div className="hotel-info-grid">
+                <div className="hotel-details">
+                  <div className="hotel-row">
+                    <span className="hotel-label">Name Of The Hotel :</span>
+                    <span>Luxury Hotel</span>
                   </div>
-                  <div className="text-end">
-                    <div className="booking-amount">
-                      ₹{getTotalPrice(selectedBooking)}
-                    </div>
-                    <div className="booking-status">
-                      {getStatusBadge(selectedBooking.status)}
-                    </div>
+                  <div className="hotel-row">
+                    <span className="hotel-label">Address :</span>
+                    <span>123 Resort Drive, Paradise City, 400001</span>
+                  </div>
+                  <div className="hotel-row mt-3">
+                    <span className="hotel-label">Hotel Phone No :</span>
+                    <span>+91 98765 43210</span>
+                  </div>
+                  <div className="hotel-row">
+                    <span className="hotel-label">Email Id :</span>
+                    <span>info@luxuryhotel.com</span>
+                  </div>
+                </div>
+                <div className="hotel-logo-box" style={{ borderLeft: '2px solid #ccc', paddingLeft: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img
+                    src="/favicon.svg"
+                    alt="Hotel Logo"
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '150px',
+                      objectFit: 'contain'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Billing To Section */}
+              <div className="invoice-section-header">
+                Billing To
+              </div>
+
+              {/* Customer Details */}
+              <div className="customer-info-grid">
+                <div>
+                  <div className="customer-row">
+                    <span className="customer-label">Customer Name :</span>
+                    <span className="customer-value">{selectedBooking.guestDetails?.primaryGuest?.name}</span>
+                  </div>
+                  <div className="customer-row">
+                    <span className="customer-label">Phone No :</span>
+                    <span className="customer-value">{selectedBooking.guestDetails?.primaryGuest?.phone}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="customer-row">
+                    <span className="customer-label">Checkin Date :</span>
+                    <span className="customer-value">
+                      {(() => {
+                        try {
+                          return format(parseISO(selectedBooking.bookingDates.checkInDate), 'MMM dd, yyyy');
+                        } catch (e) {
+                          return 'Invalid Date';
+                        }
+                      })()}
+                    </span>
+                  </div>
+                  <div className="customer-row">
+                    <span className="customer-label">Check in Time :</span>
+                    <span className="customer-value">
+                      {(() => {
+                        try {
+                          return format(parseISO(selectedBooking.bookingDates.checkInDate), 'hh:mm a');
+                        } catch (e) {
+                          return 'Invalid Time';
+                        }
+                      })()}
+                    </span>
+                  </div>
+                  <div className="customer-row">
+                    <span className="customer-label">Checkout Date :</span>
+                    <span className="customer-value">
+                      {(() => {
+                        try {
+                          return format(parseISO(selectedBooking.bookingDates.checkOutDate), 'MMM dd, yyyy');
+                        } catch (e) {
+                          return 'Invalid Date';
+                        }
+                      })()}
+                    </span>
+                  </div>
+                  <div className="customer-row">
+                    <span className="customer-label">Check out Time :</span>
+                    <span className="customer-value">
+                      {/* Assuming standard checkout time or using actual checkout time if available, 
+                          but typically just date is stored. If times are in the ISO string, this works. 
+                          If defaulting to 11:00 AM standard: */}
+                      {(() => {
+                        try {
+                          // If checkOutDate has time, use it, else default to standard 11:00 AM?
+                          // Let's assume the date string might have time or we default to 11:00 AM for now if it's just a date.
+                          // Actually the user probably wants the checkout time from the booking if present.
+                          return format(parseISO(selectedBooking.bookingDates.checkOutDate), 'hh:mm a');
+                        } catch (e) {
+                          return '11:00 AM'; // Fallback
+                        }
+                      })()}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <Row className="g-3 mb-4">
-                <Col md={6}>
-                  <Card className="info-card">
-                    <Card.Body>
-                      <h6>Guest Information</h6>
-                      <div className="info-item">
-                        <span className="info-label">Name:</span>
-                        <span className="info-value">{selectedBooking.guestDetails?.primaryGuest?.name}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">Email:</span>
-                        <span className="info-value">{selectedBooking.guestDetails?.primaryGuest?.email}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">Phone:</span>
-                        <span className="info-value">{selectedBooking.guestDetails?.primaryGuest?.phone}</span>
-                      </div>
-                      {selectedBooking.guestDetails?.additionalGuests?.length > 0 && (
-                        <div className="additional-guests">
-                          <strong>Additional Guests:</strong>
-                          <ul>
-                            {selectedBooking.guestDetails.additionalGuests.map((guest, index) => (
-                              <li key={index}>
-                                {guest.name} {guest.relation && `(${guest.relation})`}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </Card.Body>
-                  </Card>
-                </Col>
-                <Col md={6}>
-                  <Card className="info-card">
-                    <Card.Body>
-                      <h6>Booking Details</h6>
-                      <div className="info-item">
-                        <span className="info-label">Check-in:</span>
-                        <span className="info-value">{formatDate(selectedBooking.bookingDates.checkInDate)}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">Check-out:</span>
-                        <span className="info-value">{formatDate(selectedBooking.bookingDates.checkOutDate)}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">Nights:</span>
-                        <span className="info-value">{selectedBooking.bookingDates.nights}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">Guests:</span>
-                        <span className="info-value">{selectedBooking.guestDetails?.totalAdults || 1} Adults, {selectedBooking.guestDetails?.totalChildren || 0} Children</span>
-                      </div>
-                      {selectedBooking.specialRequests && (
-                        <div className="special-requests">
-                          <strong>Special Requests:</strong>
-                          <div>{selectedBooking.specialRequests}</div>
-                        </div>
-                      )}
-                    </Card.Body>
-                  </Card>
-                </Col>
-              </Row>
+              {/* Bill Details Table */}
+              <table className="invoice-table">
+                <thead>
+                  <tr>
+                    <th>Room No</th>
+                    <th>Particulars</th>
+                    <th>No. Of Days</th>
+                    <th>Price Per Day</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Room Charges */}
+                  <tr>
+                    <td>{selectedBooking.roomNumberInfo?.number || '-'}</td>
+                    <td className="text-left">Room Charges ({selectedBooking.room && typeof selectedBooking.room === 'object' ? selectedBooking.room.name : 'Standard Room'})</td>
+                    <td>{selectedBooking.bookingDates.nights}</td>
+                    <td>₹{selectedBooking.pricing?.roomPrice ? (selectedBooking.pricing.roomPrice / selectedBooking.bookingDates.nights).toFixed(2) : '0.00'}</td>
+                    <td>₹{selectedBooking.pricing?.roomPrice?.toFixed(2)}</td>
+                  </tr>
 
-              <Card className="pricing-breakdown">
-                <Card.Body>
-                  <h6>Pricing Breakdown</h6>
-                  <div className="table-responsive">
-                    <Table borderless className="mb-0">
-                      <tbody>
-                        <tr>
-                          <td>Room Charges ({selectedBooking.bookingDates.nights} nights)</td>
-                          <td className="text-end">₹{selectedBooking.pricing?.roomPrice?.toFixed(2) || '0.00'}</td>
-                        </tr>
+                  {/* Extra Services */}
+                  {selectedBooking.pricing?.extraServices?.map((service, index) => (
+                    <tr key={index}>
+                      <td>-</td>
+                      <td className="text-left">{service.service}</td>
+                      <td>{service.quantity}</td>
+                      <td>₹{service.price.toFixed(2)}</td>
+                      <td>₹{(service.price * service.quantity).toFixed(2)}</td>
+                    </tr>
+                  ))}
 
-                        {selectedBooking.pricing?.extraServices?.map((service, index) => (
-                          <tr key={`service-${index}`}>
-                            <td>
-                              {service.service} (x{service.quantity})
-                            </td>
-                            <td className="text-end">
-                              ₹{(service.price * service.quantity).toFixed(2)}
-                            </td>
-                          </tr>
-                        ))}
+                  {/* Empty rows to fill space matching template */}
+                  {[...Array(3)].map((_, i) => (
+                    <tr key={`empty-${i}`}>
+                      <td style={{ height: '40px' }}></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                      <td></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-                        {selectedBooking.pricing?.discount?.amount > 0 && (
-                          <tr className="discount-row">
-                            <td>
-                              Discount {selectedBooking.pricing.discount.couponCode && `(${selectedBooking.pricing.discount.couponCode})`}
-                            </td>
-                            <td className="text-end">
-                              -₹{selectedBooking.pricing.discount.amount.toFixed(2)}
-                            </td>
-                          </tr>
-                        )}
-
-                        <tr className="total-row">
-                          <td>
-                            <strong>Total Amount</strong>
-                          </td>
-                          <td className="text-end">
-                            <strong>₹{getTotalPrice(selectedBooking)}</strong>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </Table>
+              {/* Footer Totals */}
+              <div className="invoice-footer-grid">
+                <div className="amount-words-section">
+                  <strong>Amount in Words</strong>
+                  <div style={{ marginTop: '10px', fontStyle: 'italic' }}>
+                    {/* Placeholder for now logic to convert number to words */}
+                    {/* One Thousand Four Hundred Only */}
                   </div>
-                </Card.Body>
-              </Card>
+                </div>
+                <div className="totals-section">
+                  <div className="total-row">
+                    <div className="total-label">Total :</div>
+                    <div className="total-value">₹{selectedBooking.pricing?.roomPrice?.toFixed(2)}</div>
+                  </div>
+                  <div className="total-row">
+                    <div className="total-label">GST :</div>
+                    <div className="total-value">
+                      {selectedBooking.pricing?.taxes?.gst ? `₹${selectedBooking.pricing.taxes.gst.toFixed(2)}` : '₹0.00'}
+                    </div>
+                  </div>
+                  <div className="total-row" style={{ backgroundColor: '#e0e7ff' }}>
+                    <div className="total-label">Grand Total :</div>
+                    <div className="total-value">₹{getTotalPrice(selectedBooking)}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>
+                Note : __________________________________________________________________________________
+              </div>
+
+              {/* Signatures */}
+              <div className="signature-section">
+                <div className="signature-box">
+                  <div className="signature-line"></div>
+                  <div className="signature-label">Customer Signature</div>
+                </div>
+                <div className="signature-box">
+                  <div className="signature-line"></div>
+                  <div className="signature-label">Checked By</div>
+                </div>
+                <div className="signature-box">
+                  <div className="signature-line"></div>
+                  <div className="signature-label">Manager</div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-center py-4">

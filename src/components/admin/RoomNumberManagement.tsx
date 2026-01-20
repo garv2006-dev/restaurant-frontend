@@ -10,6 +10,7 @@ import {
     Spinner
 } from 'react-bootstrap';
 import { Plus, Filter, RefreshCw, Home, User, Calendar, Trash2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { getSocket } from '../../services/socket';
 import DataLoader from '../common/DataLoader';
@@ -51,11 +52,11 @@ interface RoomType {
 }
 
 const RoomNumberManagement: React.FC = () => {
-    const [roomNumbers, setRoomNumbers] = useState<RoomNumber[]>([]);
-    const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
+    const queryClient = useQueryClient();
+    const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+    const [showBulkModal, setShowBulkModal] = useState(false);
     const [success, setSuccess] = useState('');
+    const [error, setError] = useState('');
 
     // Filters
     const [filters, setFilters] = useState(() => {
@@ -63,7 +64,6 @@ const RoomNumberManagement: React.FC = () => {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // Helper to format as YYYY-MM-DD in local time
         const formatDate = (date: Date) => {
             const offset = date.getTimezoneOffset();
             const localDate = new Date(date.getTime() - (offset * 60 * 1000));
@@ -81,81 +81,48 @@ const RoomNumberManagement: React.FC = () => {
         };
     });
 
-    // Bulk creation modal
-    const [showBulkModal, setShowBulkModal] = useState(false);
-    const [bulkForm, setBulkForm] = useState({
-        roomTypeId: '',
-        startNumber: '',
-        endNumber: '',
-        floor: '',
-        prefix: ''
-    });
-
-
-
-    // View mode
-    const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-
-    // Initial load
-    useEffect(() => {
-        fetchRoomTypes();
-    }, []);
-
-    // Debounced filters to prevent excessive API calls
     const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
     // Debounce effect
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedFilters(filters);
-        }, 500); // 500ms delay
-
+        }, 500);
         return () => clearTimeout(timer);
     }, [filters]);
 
+    // Data Fetching
+    const { data: roomTypes = [] } = useQuery({
+        queryKey: ['roomTypes'],
+        queryFn: async () => {
+            const response = await api.get('/rooms?limit=100');
+            return response.data.data;
+        }
+    });
 
-
-    // Socket listeners
-
-    // Ideally fetchRoomNumbers should access the latest state. 
-    // Since we're in a functional component, we might have closure staleness.
-    // For now, keeping it simpler.
-
-    const fetchRoomNumbers = React.useCallback(async () => {
-        try {
-            setLoading(true);
+    const {
+        data: roomNumbers = [],
+        isLoading,
+        isError,
+        error: queryError
+    } = useQuery({
+        queryKey: ['roomNumbers', debouncedFilters],
+        queryFn: async () => {
             const queryParams = new URLSearchParams();
-
-            // Use debouncedFilters for the API call
             Object.entries(debouncedFilters).forEach(([key, value]) => {
                 if (value) queryParams.append(key, value);
             });
-
             const response = await api.get(`/room-numbers?${queryParams.toString()}`);
-            setRoomNumbers(response.data.data);
-            setError('');
-        } catch (err: any) {
-            console.error('Error fetching room numbers:', err);
-            setError(err.response?.data?.message || 'Failed to fetch room numbers');
-        } finally {
-            setLoading(false);
-        }
-    }, [debouncedFilters]);
-
-    useEffect(() => {
-        const datesValid = debouncedFilters.checkInDate && debouncedFilters.checkOutDate;
-        if (datesValid) {
-            fetchRoomNumbers();
-        }
-    }, [debouncedFilters, fetchRoomNumbers]);
+            return response.data.data;
+        },
+        enabled: !!(debouncedFilters.checkInDate && debouncedFilters.checkOutDate)
+    });
 
     // Socket listeners
     useEffect(() => {
         const socket = getSocket();
-
         const handleRefresh = () => {
-            // Only refresh if current filters are valid
-            fetchRoomNumbers();
+            queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
         };
 
         socket.on('bookingStatusChange', handleRefresh);
@@ -167,22 +134,15 @@ const RoomNumberManagement: React.FC = () => {
             socket.off('newBooking', handleRefresh);
             socket.off('bookingUpdated', handleRefresh);
         };
-    }, [fetchRoomNumbers]);
+    }, [queryClient]);
 
-    const fetchRoomTypes = async () => {
-        try {
-            const response = await api.get('/rooms?limit=100');
-            setRoomTypes(response.data.data);
-        } catch (err) {
-            console.error('Error fetching room types:', err);
-        }
-    };
-
-    const handleBulkCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            setLoading(true);
-            await api.post('/room-numbers/bulk-create', bulkForm);
+    // Mutations
+    const bulkCreateMutation = useMutation({
+        mutationFn: async (data: any) => {
+            return api.post('/room-numbers/bulk-create', data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
             setSuccess('Room numbers created successfully!');
             setShowBulkModal(false);
             setBulkForm({
@@ -192,39 +152,73 @@ const RoomNumberManagement: React.FC = () => {
                 floor: '',
                 prefix: ''
             });
-            fetchRoomNumbers();
-        } catch (err: any) {
+        },
+        onError: (err: any) => {
             setError(err.response?.data?.message || 'Failed to create room numbers');
-        } finally {
-            setLoading(false);
         }
-    };
+    });
 
-    const handleStatusChange = async (roomNumberId: string, newStatus: string) => {
-        try {
-            await api.put(`/room-numbers/${roomNumberId}/status`, { status: newStatus });
+    const updateStatusMutation = useMutation({
+        mutationFn: async ({ id, status }: { id: string, status: string }) => {
+            return api.put(`/room-numbers/${id}/status`, { status });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
             toast.success('Room status updated successfully!');
-            fetchRoomNumbers();
-        } catch (err: any) {
-            console.error('Error updating status:', err);
+        },
+        onError: (err: any) => {
             toast.error(err.response?.data?.message || 'Failed to update room status');
         }
-    };
+    });
 
-    const handleDeleteRoomNumber = async (id: string, roomNum: string) => {
-        if (!window.confirm(`Are you sure you want to delete Room ${roomNum}?`)) return;
-
-        try {
-            await api.delete(`/room-numbers/${id}`);
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            return api.delete(`/room-numbers/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
             toast.success('Room number deleted successfully');
-            fetchRoomNumbers();
-        } catch (err: any) {
-            console.error('Error deleting room number:', err);
+        },
+        onError: (err: any) => {
             toast.error(err.response?.data?.message || 'Failed to delete room number');
         }
+    });
+
+    const [bulkForm, setBulkForm] = useState({
+        roomTypeId: '',
+        startNumber: '',
+        endNumber: '',
+        floor: '',
+        prefix: ''
+    });
+
+    const handleBulkCreate = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        bulkCreateMutation.mutate(bulkForm);
     };
 
+    const handleStatusChange = (id: string, status: string) => {
+        updateStatusMutation.mutate({ id, status });
+    };
 
+    const handleDeleteRoomNumber = (id: string, roomNum: string) => {
+        if (!window.confirm(`Are you sure you want to delete Room ${roomNum}?`)) return;
+        deleteMutation.mutate(id);
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            roomType: '',
+            status: '',
+            floor: '',
+            roomNumber: '',
+            customerName: '',
+            checkInDate: '',
+            checkOutDate: ''
+        });
+    };
 
     const getStatusBadge = (status: string) => {
         const statusConfig: Record<string, { variant: string; label: string }> = {
@@ -250,17 +244,16 @@ const RoomNumberManagement: React.FC = () => {
         return colors[status] || '#6c757d';
     };
 
-    const clearFilters = () => {
-        setFilters({
-            roomType: '',
-            status: '',
-            floor: '',
-            roomNumber: '',
-            customerName: '',
-            checkInDate: '',
-            checkOutDate: ''
-        });
-    };
+    if (isError) {
+        return (
+            <div className="admin-card p-5 text-center">
+                <Alert variant="danger">
+                    {(queryError as any)?.message || 'Failed to fetch room numbers'}
+                </Alert>
+                <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['roomNumbers'] })}>Retry</Button>
+            </div>
+        )
+    }
 
     return (
         <div className="room-number-management">
@@ -280,8 +273,12 @@ const RoomNumberManagement: React.FC = () => {
                         <Plus size={16} className="me-2" />
                         Bulk Create Rooms
                     </button>
-                    <button className="admin-btn admin-btn-outline" onClick={fetchRoomNumbers}>
-                        <RefreshCw size={16} />
+                    <button
+                        className="admin-btn admin-btn-outline"
+                        onClick={() => queryClient.invalidateQueries({ queryKey: ['roomNumbers'] })}
+                        disabled={isLoading}
+                    >
+                        <RefreshCw size={16} className={isLoading ? 'spin' : ''} />
                     </button>
                 </div>
             </div>
@@ -308,7 +305,7 @@ const RoomNumberManagement: React.FC = () => {
                                     className="admin-form-control"
                                 >
                                     <option value="">All Types</option>
-                                    {roomTypes.map((type) => (
+                                    {roomTypes.map((type: RoomType) => (
                                         <option key={type._id} value={type._id}>
                                             {type.name} ({type.type})
                                         </option>
@@ -342,7 +339,6 @@ const RoomNumberManagement: React.FC = () => {
                                     placeholder="Search..."
                                     value={filters.roomNumber}
                                     onChange={(e) => {
-                                        // Numeric only validation
                                         const value = e.target.value.replace(/\D/g, '');
                                         setFilters({ ...filters, roomNumber: value });
                                     }}
@@ -358,7 +354,6 @@ const RoomNumberManagement: React.FC = () => {
                                     placeholder="Search..."
                                     value={filters.customerName}
                                     onChange={(e) => {
-                                        // Alphabet only validation (no numbers/symbols)
                                         const value = e.target.value.replace(/[^a-zA-Z\s]/g, '');
                                         setFilters({ ...filters, customerName: value });
                                     }}
@@ -378,14 +373,13 @@ const RoomNumberManagement: React.FC = () => {
                                 <Form.Label className="small fw-semibold text-muted">Check-In Date</Form.Label>
                                 <Form.Control
                                     type="date"
-                                    min={new Date().toISOString().split('T')[0]} // Prevent past dates
+                                    min={new Date().toISOString().split('T')[0]}
                                     value={filters.checkInDate}
                                     onChange={(e) => {
                                         const newDate = e.target.value;
                                         setFilters(prev => ({
                                             ...prev,
                                             checkInDate: newDate,
-                                            // Reset check-out if it becomes invalid (less than new check-in)
                                             checkOutDate: (prev.checkOutDate && prev.checkOutDate < newDate) ? '' : prev.checkOutDate
                                         }));
                                     }}
@@ -411,14 +405,39 @@ const RoomNumberManagement: React.FC = () => {
             </div>
 
             {/* Room Numbers Display */}
-            {loading ? (
-                <div className="p-5 text-center">
-                    <DataLoader />
-                </div>
+            {isLoading ? (
+                viewMode === 'grid' ? (
+                    <div className="row g-3">
+                        <DataLoader type="card" count={8} className="col-xl-3 col-lg-4 col-md-6" />
+                    </div>
+                ) : (
+                    <div className="admin-card">
+                        <div className="admin-card-body p-0">
+                            <div className="table-responsive">
+                                <table className="admin-table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Room Number</th>
+                                            <th>Room Type</th>
+                                            <th>Floor</th>
+                                            <th>Status</th>
+                                            <th>Customer</th>
+                                            <th>Check-In</th>
+                                            <th>Check-Out</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <DataLoader type="table" count={5} columns={8} />
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                )
             ) : viewMode === 'grid' ? (
                 <div className="row g-3">
-                    {roomNumbers.map((room) => {
-                        // Use dateWiseStatus if dates are filtered, otherwise use regular status
+                    {roomNumbers.map((room: RoomNumber) => {
                         const displayStatus = room.dateWiseStatus || room.status;
                         return (
                             <div key={room._id} className="col-xl-3 col-lg-4 col-md-6 mb-3">
@@ -466,6 +485,7 @@ const RoomNumberManagement: React.FC = () => {
                                                     onChange={(e) => handleStatusChange(room._id, e.target.value)}
                                                     defaultValue=""
                                                     className="admin-form-select-sm"
+                                                    disabled={updateStatusMutation.isPending}
                                                 >
                                                     <option value="">Change Status...</option>
                                                     <option value="Available">Available</option>
@@ -508,8 +528,7 @@ const RoomNumberManagement: React.FC = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {roomNumbers.map((room) => {
-                                        // Use dateWiseStatus if dates are filtered, otherwise use regular status
+                                    {roomNumbers.map((room: RoomNumber) => {
                                         const displayStatus = room.dateWiseStatus || room.status;
                                         return (
                                             <tr key={room._id}>
@@ -542,6 +561,7 @@ const RoomNumberManagement: React.FC = () => {
                                                                     onChange={(e) => handleStatusChange(room._id, e.target.value)}
                                                                     defaultValue=""
                                                                     className="admin-form-select-sm"
+                                                                    disabled={updateStatusMutation.isPending}
                                                                 >
                                                                     <option value="">Status...</option>
                                                                     <option value="Available">Available</option>
@@ -555,6 +575,7 @@ const RoomNumberManagement: React.FC = () => {
                                                                 className="admin-action-btn delete"
                                                                 onClick={() => handleDeleteRoomNumber(room._id, room.roomNumber)}
                                                                 title="Delete Room"
+                                                                disabled={deleteMutation.isPending}
                                                             >
                                                                 <Trash2 size={16} />
                                                             </button>
@@ -595,7 +616,7 @@ const RoomNumberManagement: React.FC = () => {
                                         onChange={(e) => setBulkForm({ ...bulkForm, roomTypeId: e.target.value })}
                                     >
                                         <option value="">Select Room Type</option>
-                                        {roomTypes.map((type) => (
+                                        {roomTypes.map((type: RoomType) => (
                                             <option key={type._id} value={type._id}>
                                                 {type.name} ({type.type})
                                             </option>
@@ -659,14 +680,12 @@ const RoomNumberManagement: React.FC = () => {
                         <Button variant="secondary" onClick={() => setShowBulkModal(false)}>
                             Cancel
                         </Button>
-                        <Button variant="primary" type="submit" disabled={loading}>
-                            {loading ? <Spinner animation="border" size="sm" /> : 'Create Room Numbers'}
+                        <Button variant="primary" type="submit" disabled={bulkCreateMutation.isPending}>
+                            {bulkCreateMutation.isPending ? <Spinner animation="border" size="sm" /> : 'Create Room Numbers'}
                         </Button>
                     </Modal.Footer>
                 </Form>
             </Modal>
-
-
         </div>
     );
 };
