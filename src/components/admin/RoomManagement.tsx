@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Button,
   Modal,
@@ -12,6 +12,7 @@ import {
   ButtonGroup
 } from 'react-bootstrap';
 import { Plus, Edit2, Trash2, RefreshCw, ExternalLink, Upload } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import ImageUploadModal from './ImageUploadModal';
 import DataLoader from '../common/DataLoader';
@@ -51,8 +52,7 @@ interface Room {
 }
 
 const RoomManagement: React.FC = () => {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showImageUploadModal, setShowImageUploadModal] = useState<boolean>(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
@@ -60,10 +60,9 @@ const RoomManagement: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>('');
-  const [submitting, setSubmitting] = useState<boolean>(false);
-  const [deletingRoomId, setDeletingRoomId] = useState<string | null>(null);
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [roomForImageUpload, setRoomForImageUpload] = useState<Room | null>(null);
+
   const [formData, setFormData] = useState<{
     name: string;
     type: 'Standard' | 'Deluxe' | 'Suite';
@@ -104,41 +103,113 @@ const RoomManagement: React.FC = () => {
     totalRooms: 1,
   });
 
-  const fetchRooms = async () => {
-    try {
-      setLoading(true);
-      setError('');
-      // Use the correct endpoint relative to baseURL (which already includes /api)
+  // Fetch Rooms Query
+  const { data: rooms = [], isLoading, isError, error: queryError, refetch } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: async () => {
       const response = await api.get('/rooms');
-
       // Handle different response structures
-      let roomsData = [];
-      if (Array.isArray(response.data)) {
-        roomsData = response.data;
-      } else if (response.data && Array.isArray(response.data.rooms)) {
-        roomsData = response.data.rooms;
-      } else if (response.data && Array.isArray(response.data.data)) {
-        roomsData = response.data.data;
-      }
-
-      setRooms(roomsData);
-
-      if (roomsData.length === 0) {
-        setSuccess('No rooms found. Add your first room.');
-      }
-    } catch (error: any) {
-      console.error('Error fetching rooms:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to fetch rooms. Please try again.';
-      setError(errorMessage);
-      setRooms([]);
-    } finally {
-      setLoading(false);
+      if (Array.isArray(response.data)) return response.data;
+      if (response.data && Array.isArray(response.data.rooms)) return response.data.rooms;
+      if (response.data && Array.isArray(response.data.data)) return response.data.data;
+      return [];
     }
-  };
+  });
 
-  useEffect(() => {
-    fetchRooms();
-  }, []);
+  // Create/Update Room Mutation
+  const saveRoomMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (editingRoom) {
+        return api.put(`/rooms/${editingRoom._id}`, data);
+      } else {
+        return api.post('/rooms', data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      setSuccess(editingRoom ? 'Room updated successfully!' : 'Room added successfully!');
+      handleCloseModal();
+      setSelectedImages([]);
+      setImagePreview([]);
+    },
+    onError: (err: any) => {
+      console.error('Error saving room:', err);
+      let errorMessage = 'Failed to save room';
+      if (err.response) {
+        if (err.response.status === 400) errorMessage = 'Invalid data. Please check your inputs.';
+        else if (err.response.status === 413) errorMessage = 'File size is too large. Maximum size is 5MB per image.';
+        else if (err.response.data?.message) errorMessage = err.response.data.message;
+      }
+      setError(errorMessage);
+    }
+  });
+
+  // Delete Room Mutation
+  const deleteRoomMutation = useMutation({
+    mutationFn: async (roomId: string) => {
+      await api.delete(`/rooms/${roomId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      setSuccess('Room deleted successfully!');
+      setSelectedRooms(prev => prev.filter(id => !deleteRoomMutation.variables));
+    },
+    onError: (err: any) => {
+      console.error('Error deleting room:', err);
+      let errorMessage = 'Failed to delete room';
+      if (err.response?.status === 400) {
+        errorMessage = err.response.data?.message || 'Cannot delete this room. It may have active bookings.';
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      setError(errorMessage);
+    }
+  });
+
+  // Bulk Delete Mutation
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (roomIds: string[]) => {
+      const results = await Promise.allSettled(
+        roomIds.map(roomId => api.delete(`/rooms/${roomId}`))
+      );
+
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      if (failed > 0) {
+        const failureReasons = results
+          .map((r, i) => r.status === 'rejected' ? r.reason?.response?.data?.message : null)
+          .filter(Boolean);
+        throw new Error(`Successfully deleted ${successful} room(s). Failed to delete ${failed} room(s): ${failureReasons.join(', ')}`);
+      }
+      return successful;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      setSuccess(`${count} rooms deleted successfully!`);
+      setSelectedRooms([]);
+    },
+    onError: (err: any) => {
+      setError(err.message || 'Failed to delete some rooms');
+    }
+  });
+
+  // Bulk Status Change Mutation
+  const bulkStatusMutation = useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[], status: Room['status'] }) => {
+      await Promise.all(ids.map(roomId => api.put(`/rooms/${roomId}`, { status })));
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      setSuccess(`${variables.ids.length} rooms status updated to ${variables.status}!`);
+      setSelectedRooms([]);
+    },
+    onError: () => {
+      setError('Failed to update some rooms status');
+    }
+  });
 
   const handleCloseModal = () => {
     setShowModal(false);
@@ -229,9 +300,6 @@ const RoomManagement: React.FC = () => {
     setError('');
     setSuccess('');
 
-    // Prevent double submission
-    if (submitting) return;
-
     // Validation
     const requiredFields = ['name', 'type', 'description', 'bedType'];
     const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
@@ -241,86 +309,25 @@ const RoomManagement: React.FC = () => {
       return;
     }
 
-    try {
-      setSubmitting(true);
+    if (editingRoom) {
+      saveRoomMutation.mutate({ ...formData });
+    } else {
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('type', formData.type);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('bedType', formData.bedType);
+      formDataToSend.append('status', formData.status);
+      formDataToSend.append('isActive', String(formData.isActive));
+      formDataToSend.append('area', String(formData.area));
+      formDataToSend.append('floor', String(formData.floor));
+      formDataToSend.append('totalRooms', String(formData.totalRooms));
+      formDataToSend.append('capacity', JSON.stringify(formData.capacity));
+      formDataToSend.append('price', JSON.stringify(formData.price));
+      formDataToSend.append('features', JSON.stringify(formData.features));
+      selectedImages.forEach((file) => formDataToSend.append('images', file));
 
-      // Create or update room
-
-      if (editingRoom) {
-        // For now, keep updates as JSON payloads
-        const payload = {
-          ...formData,
-        };
-        // response = await api.put(`/rooms/${editingRoom._id}`, payload);
-        await api.put(`/rooms/${editingRoom._id}`, payload);
-      } else {
-        // Build FormData for creating a new room with optional images
-        const formDataToSend = new FormData();
-
-        // Primitive fields
-        formDataToSend.append('name', formData.name);
-        formDataToSend.append('type', formData.type);
-        formDataToSend.append('description', formData.description);
-        formDataToSend.append('bedType', formData.bedType);
-        formDataToSend.append('status', formData.status);
-        formDataToSend.append('isActive', String(formData.isActive));
-        formDataToSend.append('area', String(formData.area));
-        formDataToSend.append('floor', String(formData.floor));
-        formDataToSend.append('totalRooms', String(formData.totalRooms));
-
-        // Nested objects as JSON strings (parsed on backend)
-        formDataToSend.append('capacity', JSON.stringify(formData.capacity));
-        formDataToSend.append('price', JSON.stringify(formData.price));
-        formDataToSend.append('features', JSON.stringify(formData.features));
-
-        // Images - up to 5, enforced by handleImageSelect
-        selectedImages.forEach((file) => {
-          formDataToSend.append('images', file);
-        });
-
-        // response = await api.post('/rooms', formDataToSend, {
-        await api.post('/rooms', formDataToSend, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        });
-      }
-
-      // Show success message and refresh the list
-      setSuccess(editingRoom ? 'Room updated successfully!' : 'Room added successfully!');
-      handleCloseModal();
-      setSelectedImages([]);
-      setImagePreview([]);
-      fetchRooms();
-    } catch (err: any) {
-      console.error('Error saving room:', err);
-
-      let errorMessage = 'Failed to save room';
-
-      if (err.response) {
-        // Handle different error statuses
-        if (err.response.status === 400) {
-          errorMessage = 'Invalid data. Please check your inputs.';
-        } else if (err.response.status === 401) {
-          errorMessage = 'You are not authorized. Please login again.';
-        } else if (err.response.status === 403) {
-          errorMessage = 'You do not have permission to perform this action.';
-        } else if (err.response.status === 413) {
-          errorMessage = 'File size is too large. Maximum size is 5MB per image.';
-        } else if (err.response.status === 429) {
-          errorMessage = 'Too many requests. Please try again later.';
-        } else if (err.response.data && err.response.data.message) {
-          errorMessage = err.response.data.message;
-        }
-      } else if (err.request) {
-        errorMessage = 'No response from server. Please check your connection.';
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      setError(errorMessage);
-    } finally {
-      setSubmitting(false);
+      saveRoomMutation.mutate(formDataToSend);
     }
   };
 
@@ -334,102 +341,26 @@ const RoomManagement: React.FC = () => {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedRooms(rooms.map(room => room._id));
+      setSelectedRooms(rooms.map((room: Room) => room._id));
     } else {
       setSelectedRooms([]);
     }
   };
 
-  const handleDeleteRoom = async (roomId: string) => {
+  const handleDeleteRoom = (roomId: string) => {
     if (!window.confirm('Are you sure you want to delete this room?')) return;
-
-    try {
-      setDeletingRoomId(roomId);
-      setError('');
-
-      await api.delete(`/rooms/${roomId}`);
-
-      setSuccess('Room deleted successfully!');
-      setDeletingRoomId(null);
-      fetchRooms();
-    } catch (err: any) {
-      console.error('Error deleting room:', err);
-
-      let errorMessage = 'Failed to delete room';
-
-      if (err.response) {
-        if (err.response.status === 400) {
-          // This is likely "Cannot delete room with active bookings"
-          errorMessage = err.response.data?.message || 'Cannot delete this room. It may have active bookings.';
-        } else if (err.response.status === 404) {
-          errorMessage = 'Room not found';
-        } else if (err.response.status === 401 || err.response.status === 403) {
-          errorMessage = 'You do not have permission to delete this room.';
-        } else if (err.response.data?.message) {
-          errorMessage = err.response.data.message;
-        }
-      } else if (err.request) {
-        errorMessage = 'No response from server. Please check your connection.';
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-
-      setError(errorMessage);
-      setDeletingRoomId(null);
-    }
+    deleteRoomMutation.mutate(roomId);
   };
 
-  const handleBulkDelete = async () => {
+  const handleBulkDelete = () => {
     if (selectedRooms.length === 0) return;
     if (!window.confirm(`Are you sure you want to delete ${selectedRooms.length} selected rooms?`)) return;
-
-    try {
-      setSubmitting(true);
-      setError('');
-
-      const results = await Promise.allSettled(
-        selectedRooms.map(roomId => api.delete(`/rooms/${roomId}`))
-      );
-
-      const successful = results.filter(r => r.status === 'fulfilled').length;
-      const failed = results.filter(r => r.status === 'rejected').length;
-
-      if (failed > 0) {
-        // const failedRoomIds = selectedRooms.filter((_, i) => results[i].status === 'rejected');
-        const failureReasons = results
-          .map((r, i) => r.status === 'rejected' ? r.reason?.response?.data?.message : null)
-          .filter(Boolean);
-
-        setError(`Successfully deleted ${successful} room(s). Failed to delete ${failed} room(s): ${failureReasons.join(', ')}`);
-      } else {
-        setSuccess(`${successful} rooms deleted successfully!`);
-      }
-
-      setSelectedRooms([]);
-      fetchRooms();
-    } catch (error: any) {
-      console.error('Error bulk deleting rooms:', error);
-      setError(error.response?.data?.message || 'Failed to delete some rooms');
-    } finally {
-      setSubmitting(false);
-    }
+    bulkDeleteMutation.mutate(selectedRooms);
   };
 
-  const handleBulkStatusChange = async (status: Room['status']) => {
+  const handleBulkStatusChange = (status: Room['status']) => {
     if (selectedRooms.length === 0) return;
-
-    try {
-      // Use Promise.all to update all selected rooms
-      await Promise.all(selectedRooms.map(roomId =>
-        api.put(`/rooms/${roomId}`, { status })
-      ));
-      setSuccess(`${selectedRooms.length} rooms status updated to ${status}!`);
-      setSelectedRooms([]);
-      fetchRooms();
-    } catch (error) {
-      console.error('Error bulk updating status:', error);
-      setError('Failed to update some rooms status');
-    }
+    bulkStatusMutation.mutate({ ids: selectedRooms, status });
   };
 
   const getStatusBadge = (status: Room['status']) => {
@@ -442,6 +373,17 @@ const RoomManagement: React.FC = () => {
     return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
   };
 
+  if (isError) {
+    // Show error state if initial load fails
+    return (
+      <div className="admin-card text-center p-5">
+        <h4 className="text-danger">Failed to load rooms</h4>
+        <p className="text-muted">{(queryError as any)?.message || 'Unknown error occured'}</p>
+        <Button variant="primary" onClick={() => refetch()}>Retry</Button>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-card">
       <div className="admin-card-header d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
@@ -450,12 +392,12 @@ const RoomManagement: React.FC = () => {
           {selectedRooms.length > 0 && (
             <div className="d-flex gap-2 align-items-center bg-light p-1 rounded border">
               <span className="text-muted small fw-medium px-2">{selectedRooms.length} selected</span>
-              <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={handleBulkDelete}>
+              <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={handleBulkDelete} disabled={bulkDeleteMutation.isPending}>
                 <Trash2 size={14} className="me-1" />
                 Delete
               </button>
               <Dropdown as={ButtonGroup}>
-                <Dropdown.Toggle as="button" className="admin-btn admin-btn-sm admin-btn-outline dropdown-toggle" id="dropdown-status">
+                <Dropdown.Toggle as="button" className="admin-btn admin-btn-sm admin-btn-outline dropdown-toggle" id="dropdown-status" disabled={bulkStatusMutation.isPending}>
                   Change Status
                 </Dropdown.Toggle>
                 <Dropdown.Menu className="shadow-sm border-0">
@@ -476,8 +418,8 @@ const RoomManagement: React.FC = () => {
             </div>
           )}
 
-          <button className="admin-btn admin-btn-outline" onClick={fetchRooms} disabled={loading}>
-            <RefreshCw size={16} className={`me-1 ${loading ? 'spin' : ''}`} />
+          <button className="admin-btn admin-btn-outline" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw size={16} className={`me-1 ${isLoading ? 'spin' : ''}`} />
             Refresh
           </button>
 
@@ -485,7 +427,7 @@ const RoomManagement: React.FC = () => {
             className="admin-btn admin-btn-primary position-relative"
             onClick={handleAddRoom}
             type="button"
-            disabled={showModal || submitting}
+            disabled={showModal || saveRoomMutation.isPending}
           >
             <Plus size={16} className="me-1" />
             Add Room
@@ -525,7 +467,7 @@ const RoomManagement: React.FC = () => {
           </div>
         )}
 
-        {loading ? (
+        {isLoading ? (
           <div className="p-5">
             <DataLoader type="table" count={5} columns={7} />
           </div>
@@ -560,7 +502,7 @@ const RoomManagement: React.FC = () => {
                     </td>
                   </tr>
                 ) : (
-                  rooms.map((room) => (
+                  rooms.map((room: Room) => (
                     <tr key={room._id}>
                       <td>
                         <Form.Check
@@ -585,8 +527,6 @@ const RoomManagement: React.FC = () => {
                       <td>
                         <span className="fw-bold text-dark">₹{room.price.basePrice}</span>
                       </td>
-
-
                       <td>{getStatusBadge(room.status)}</td>
                       <td className="text-end">
                         <div className="admin-action-buttons justify-content-end">
@@ -607,10 +547,10 @@ const RoomManagement: React.FC = () => {
                           <button
                             className="admin-action-btn delete"
                             onClick={() => handleDeleteRoom(room._id)}
-                            disabled={deletingRoomId === room._id}
+                            disabled={deleteRoomMutation.isPending && deleteRoomMutation.variables === room._id}
                             title="Delete Room"
                           >
-                            {deletingRoomId === room._id ? (
+                            {deleteRoomMutation.isPending && deleteRoomMutation.variables === room._id ? (
                               <Spinner animation="border" size="sm" />
                             ) : (
                               <Trash2 size={16} />
@@ -808,52 +748,61 @@ const RoomManagement: React.FC = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>Room Images</Form.Label>
+              <Form.Label>Images (Max 5)</Form.Label>
               <Form.Control
                 type="file"
                 multiple
                 accept="image/*"
                 onChange={handleImageSelect}
-                className="mb-2"
+                disabled={selectedImages.length >= 5}
               />
-              <div className="text-muted small mb-3">You can upload up to 5 images</div>
+              <Form.Text className="text-muted">
+                First image will be the primary image. Each image must be less than 5MB.
+              </Form.Text>
+            </Form.Group>
 
-              {/* Image preview */}
-              <div className="d-flex flex-wrap gap-2">
+            {imagePreview.length > 0 && (
+              <div className="d-flex flex-wrap gap-2 mt-2">
                 {imagePreview.map((src, index) => (
-                  <div key={index} className="position-relative" style={{ width: '100px', height: '80px' }}>
+                  <div key={index} className="position-relative">
                     <img
                       src={src}
-                      alt={`Preview ${index + 1}`}
-                      className="img-thumbnail h-100 w-100"
-                      style={{ objectFit: 'cover' }}
+                      alt={`Preview ${index}`}
+                      className="img-thumbnail"
+                      style={{ width: '100px', height: '100px', objectFit: 'cover' }}
                     />
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      className="position-absolute top-0 end-0 m-1 rounded-circle p-0"
-                      style={{ width: '24px', height: '24px' }}
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm position-absolute top-0 start-100 translate-middle rounded-circle p-0 d-flex align-items-center justify-content-center"
+                      style={{ width: '20px', height: '20px' }}
                       onClick={() => removeImage(index)}
                     >
                       &times;
-                    </Button>
+                    </button>
                   </div>
                 ))}
               </div>
-            </Form.Group>
+            )}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal} disabled={submitting}>
+            <Button variant="secondary" onClick={handleCloseModal}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" disabled={submitting}>
-              {submitting ? 'Saving...' : 'Save Room'}
+            <Button variant="primary" type="submit" disabled={saveRoomMutation.isPending}>
+              {saveRoomMutation.isPending ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Saving...
+                </>
+              ) : (
+                'Save Room'
+              )}
             </Button>
           </Modal.Footer>
         </Form>
       </Modal>
 
-      {/* Image Upload Modal */}
+      {/* Image Upload Modal - Separate component */}
       {roomForImageUpload && (
         <ImageUploadModal
           show={showImageUploadModal}
@@ -862,10 +811,10 @@ const RoomManagement: React.FC = () => {
           itemId={roomForImageUpload._id}
           itemName={roomForImageUpload.name}
           onUploadSuccess={() => {
-            fetchRooms();
+            queryClient.invalidateQueries({ queryKey: ['rooms'] });
             handleCloseImageUploadModal();
+            setSuccess('Images updated successfully!');
           }}
-          maxFiles={5}
         />
       )}
     </div>
