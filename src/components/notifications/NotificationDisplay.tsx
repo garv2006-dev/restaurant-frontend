@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Toast, ToastContainer, Badge } from 'react-bootstrap';
-import { X } from 'lucide-react';
+import { X, Copy, Check } from 'lucide-react';
 import { notificationSoundService } from '../../services/NotificationSoundService';
+import { toast } from 'react-toastify';
 import '../../styles/notification-display.css';
 
 interface NotificationItem {
@@ -25,6 +26,7 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
 }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
+  const [copiedCodes, setCopiedCodes] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (id: string) => {
     setExpandedNotifications(prev => {
@@ -36,6 +38,43 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
       }
       return newSet;
     });
+  };
+
+  // Extract promo code from notification message
+  const extractPromoCode = (message: string): string | null => {
+    // Match patterns like "Use code: XXXXX" or "Code: XXXXX"
+    const codeMatch = message.match(/(?:Use code:|Code:)\s*([A-Z0-9]+)/i);
+    return codeMatch ? codeMatch[1] : null;
+  };
+
+  // Handle copying promo code to clipboard
+  const handleCopyPromoCode = async (code: string, notificationId: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCodes(prev => new Set(prev).add(notificationId));
+      toast.success('Promo code copied to clipboard!', {
+        position: 'top-right',
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+      });
+
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedCodes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationId);
+          return newSet;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy promo code:', error);
+      toast.error('Failed to copy code. Please try again.', {
+        position: 'top-right',
+        autoClose: 2000,
+      });
+    }
   };
 
   useEffect(() => {
@@ -125,11 +164,31 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
 
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - timestamp.getTime()) / 1000);
+    const diffInSeconds = Math.max(0, Math.floor((now.getTime() - timestamp.getTime()) / 1000));
 
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    // Less than 1 minute
+    if (diffInSeconds < 60) {
+      return `${Math.max(1, diffInSeconds)}s`;
+    }
+
+    // Less than 1 hour
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}m`;
+    }
+
+    // Less than 24 hours
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) {
+      return `${diffInHours}h`;
+    }
+
+    // Less than 7 days
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) {
+      return `${diffInDays}d`;
+    }
+
     return timestamp.toLocaleDateString();
   };
 
@@ -152,47 +211,109 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
             className={`notification-toast ${notification.type} ${isExpanded ? 'expanded' : 'collapsed'}`}
           >
             <Toast.Header className="notification-toast-header">
-              <div className="notification-header-content">
-                <div className="notification-title-section">
-                  <strong className="notification-title">
-                    {notification.title}
-                  </strong>
-                  <Badge
-                    bg={getNotificationVariant(notification.type)}
-                    className="notification-type-badge"
-                  >
-                    {getTypeLabel(notification.type)}
-                  </Badge>
-                </div>
-              </div>
-              <div className="notification-meta">
-                <small className="notification-time">
-                  {formatTimestamp(notification.timestamp)}
-                </small>
-                <button
-                  type="button"
-                  className="btn-close notification-close"
-                  aria-label="Close"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeNotification(notification.id);
-                  }}
-                >
-                  <X size={14} />
-                </button>
-              </div>
+              {notification.type === 'promotion' && extractPromoCode(notification.message) ? (
+                <>
+                  <div className="notification-header-content promotion-header">
+                    <div className="notification-title-section">
+                      <strong className="notification-title">
+                        {notification.title}
+                      </strong>
+                      <div className="promo-header-left">
+                        <span className="promo-code-header">
+                          {extractPromoCode(notification.message)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      className="copy-button-header"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyPromoCode(
+                          extractPromoCode(notification.message)!,
+                          notification.id
+                        );
+                      }}
+                      title="Copy promo code"
+                    >
+                      {copiedCodes.has(notification.id) ? (
+                        <>
+                          <Check size={16} className="copy-icon copied" />
+                          <span className="copy-text">Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={16} className="copy-icon" />
+                          <span className="copy-text">Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <div className="notification-meta">
+                    <small className="notification-time">
+                      {formatTimestamp(notification.timestamp)}
+                    </small>
+                    <button
+                      type="button"
+                      className="btn-close notification-close"
+                      aria-label="Close"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeNotification(notification.id);
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="notification-header-content">
+                    <div className="notification-title-section">
+                      <strong className="notification-title">
+                        {notification.title}
+                      </strong>
+                      <Badge
+                        bg={getNotificationVariant(notification.type)}
+                        className="notification-type-badge"
+                      >
+                        {getTypeLabel(notification.type)}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="notification-meta">
+                    <small className="notification-time">
+                      {formatTimestamp(notification.timestamp)}
+                    </small>
+                    <button
+                      type="button"
+                      className="btn-close notification-close"
+                      aria-label="Close"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeNotification(notification.id);
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </>
+              )}
             </Toast.Header>
             <Toast.Body
               className="notification-toast-body"
               onClick={() => toggleExpanded(notification.id)}
               style={{ cursor: 'pointer' }}
             >
-              <p className={`notification-message ${isExpanded ? 'expanded' : 'collapsed'}`}>
-                {notification.message}
-              </p>
-              {!isExpanded && notification.message.length > 60 && (
-                <span className="notification-expand-hint">Click to read more...</span>
-              )}
+              <div>
+                <p className={`notification-message ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                  {notification.type === 'promotion' && extractPromoCode(notification.message)
+                    ? notification.message.split(/(?:Use code:|Code:)/i)[0].trim()
+                    : notification.message}
+                </p>
+                {!isExpanded && notification.message.length > 60 && (
+                  <span className="notification-expand-hint">Click to read more...</span>
+                )}
+              </div>
             </Toast.Body>
           </Toast>
         );

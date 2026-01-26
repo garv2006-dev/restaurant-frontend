@@ -2,7 +2,8 @@
 
 /* Main container adjustments */
 .notifications-page {
-  padding-top: 80px; /* Account for fixed header */
+  padding-top: 80px;
+  /* Account for fixed header */
   min-height: 100vh;
   background-color: var(--bs-body-bg);
   color: var(--bs-body-color);
@@ -59,7 +60,7 @@
   padding-bottom: 0.5rem;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0,0,0,0.2) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
 /* Dropdown for mobile */
@@ -95,7 +96,7 @@
   width: 100%;
   border: 1px solid var(--bs-border-color);
   border-radius: 0.5rem;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   background-color: var(--bs-body-bg);
 }
 
@@ -151,7 +152,7 @@
 }
 
 .notifications-tabs::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 2px;
 }
 
@@ -261,7 +262,7 @@
 }
 
 .notification-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-1px);
   border-color: var(--bs-primary);
 }
@@ -283,8 +284,7 @@
 }
 
 .notification-details {
-  flex-grow: 1;
-  min-width: 0;
+  flex: 1 1 100%;
   width: 100%;
 }
 
@@ -294,11 +294,12 @@
   align-items: flex-start;
   margin-bottom: 0.5rem;
   gap: 0.75rem;
+  width: 100%;
 }
 
 .notification-title {
-  flex-grow: 1;
-  min-width: 0;
+  flex: 1 1 auto;
+  width: 100%;
 }
 
 .notification-title h6 {
@@ -361,22 +362,24 @@
 }
 
 .notification-message {
-  font-size: 0.85rem;
-  line-height: 1.4;
+  font-size: 0.95rem;
+  line-height: 1.5;
   color: var(--bs-secondary-color);
   margin: 0;
   word-wrap: break-word;
   transition: all 0.3s ease;
+  width: 100%;
 }
 
-/* Collapsed state - single line with ellipsis */
+/* Collapsed state - allow 2 lines on desktop, 1 on mobile */
 .notification-message.collapsed {
   display: -webkit-box;
- 
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
   max-width: 100%;
 }
 
@@ -575,7 +578,9 @@
   .notification-message.collapsed {
     font-size: 0.8rem;
     max-width: 100%;
-    
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    white-space: nowrap;
   }
 
   .notification-expand-hint {
@@ -670,7 +675,19 @@
   }
 
   .notification-message {
-    font-size: 0.875rem;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    width: 100%;
+  }
+
+  .notification-message.collapsed {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+
+  .notification-message-wrapper {
+    width: 100%;
   }
 
   .notifications-empty {
@@ -754,8 +771,19 @@
   }
 
   .notification-message {
-    font-size: 0.875rem;
-    line-height: 1.5;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    width: 100%;
+  }
+
+  .notification-message.collapsed {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+  }
+
+  .notification-message-wrapper {
+    width: 100%;
   }
 
   .notifications-empty {
@@ -782,31 +810,31 @@
 }
 
 [data-bs-theme="dark"] .notification-card {
-  border-color: rgba(255,255,255,0.12);
-  background: rgba(45,45,45,0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(45, 45, 45, 0.9);
 }
 
 [data-bs-theme="dark"] .notification-card:hover {
   border-color: var(--bs-primary);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 [data-bs-theme="dark"] .notification-card.unread {
-  background: linear-gradient(to right, rgba(var(--bs-primary-rgb), 0.15), rgba(45,45,45,0.9));
+  background: linear-gradient(to right, rgba(var(--bs-primary-rgb), 0.15), rgba(45, 45, 45, 0.9));
 }
 
 [data-bs-theme="dark"] .notifications-empty {
-  border-color: rgba(255,255,255,0.12);
-  background: rgba(45,45,45,0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(45, 45, 45, 0.9);
 }
 
 [data-bs-theme="dark"] .notifications-tabs .nav-link {
-  background-color: rgba(45,45,45,0.8);
-  border-color: rgba(255,255,255,0.12);
+  background-color: rgba(45, 45, 45, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 [data-bs-theme="dark"] .notifications-tabs .nav-link:hover {
-  background-color: rgba(60,60,60,0.9);
+  background-color: rgba(60, 60, 60, 0.9);
   border-color: var(--bs-primary);
 }
 
@@ -816,21 +844,21 @@
 }
 
 [data-bs-theme="dark"] .notifications-dropdown .dropdown-toggle {
-  background-color: rgba(45,45,45,0.8);
-  border-color: rgba(255,255,255,0.12);
+  background-color: rgba(45, 45, 45, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 [data-bs-theme="dark"] .notifications-dropdown .dropdown-menu {
-  background-color: rgba(30,30,30,0.98);
-  border-color: rgba(255,255,255,0.12);
+  background-color: rgba(30, 30, 30, 0.98);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 [data-bs-theme="dark"] .notifications-dropdown .dropdown-item {
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 [data-bs-theme="dark"] .notifications-dropdown .dropdown-item:hover {
-  background-color: rgba(60,60,60,0.8);
+  background-color: rgba(60, 60, 60, 0.8);
 }
 
 [data-bs-theme="dark"] .notifications-dropdown .dropdown-item.active {

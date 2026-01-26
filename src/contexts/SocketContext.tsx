@@ -66,23 +66,29 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected(true);
       setConnectionTimestamp(timestamp);
       console.log('📅 Connection timestamp updated:', new Date(timestamp).toISOString());
-      
+
       // CRITICAL FIX: Auto-join user room on connection if user is logged in
       try {
         const userStr = localStorage.getItem('user');
         console.log('🔍 Checking localStorage for user:', userStr ? 'Found' : 'Not found');
-        
+
         if (userStr) {
           const user = JSON.parse(userStr);
-          console.log('🔍 Parsed user object:', { id: user?.id, _id: user?._id, name: user?.name });
-          
+          console.log('🔍 Parsed user object:', { id: user?.id, _id: user?._id, name: user?.name, role: user?.role });
+
           // Try both 'id' and '_id' fields (MongoDB uses _id)
           const userId = user?.id || user?._id;
-          
+
           if (userId) {
             socketInstance?.emit('join-user-room', userId);
             hasJoinedUserRoom.current = true;
             console.log('✅ Auto-joined user room on connection:', userId);
+
+            // Join admin room if user is admin
+            if (user.role === 'admin') {
+              socketInstance?.emit('join-admin-room');
+              console.log('🛡️ Auto-joined ADMIN room on connection');
+            }
           } else {
             console.warn('⚠️ User object found but no id field:', user);
           }
@@ -98,7 +104,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       console.log('⚠️ Socket.io disconnected. Reason:', reason);
       setIsConnected(false);
       hasJoinedUserRoom.current = false; // Reset flag on disconnect
-      
+
       // Auto-reconnect for certain disconnect reasons
       if (reason === 'io server disconnect') {
         // Server initiated disconnect, manually reconnect
@@ -112,7 +118,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected(true);
       setConnectionTimestamp(timestamp);
       console.log('📅 Reconnection timestamp updated:', new Date(timestamp).toISOString());
-      
+
       // CRITICAL FIX: Re-join user room on reconnection
       try {
         const userStr = localStorage.getItem('user');
@@ -120,11 +126,17 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
           const user = JSON.parse(userStr);
           // Try both 'id' and '_id' fields (MongoDB uses _id)
           const userId = user?.id || user?._id;
-          
+
           if (userId) {
             socketInstance?.emit('join-user-room', userId);
             hasJoinedUserRoom.current = true;
             console.log('✅ Re-joined user room on reconnection:', userId);
+
+            // Re-join admin room if user is admin
+            if (user.role === 'admin') {
+              socketInstance?.emit('join-admin-room');
+              console.log('🛡️ Re-joined ADMIN room on reconnection');
+            }
           }
         }
       } catch (error) {

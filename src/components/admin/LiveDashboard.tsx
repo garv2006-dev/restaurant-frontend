@@ -19,6 +19,7 @@ import { adminAPI } from '../../services/api';
 import api from '../../services/api';
 import '../../styles/admin-panel.css';
 import DataLoader from '../common/DataLoader';
+import { useSocket } from '../../contexts/SocketContext';
 
 // Add custom styles for search input
 const searchStyles = `
@@ -193,10 +194,62 @@ const LiveDashboard: React.FC = () => {
     [fetchBookings]
   );
 
+  // Socket Integration
+  const { socket } = useSocket();
+
   useEffect(() => {
     fetchBookings();
     fetchRoomMetrics();
   }, [fetchBookings]);
+
+  // Handle Real-time Updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewBooking = (data: any) => {
+      console.log('🔔 New booking received via socket:', data);
+      // Refresh data to show new booking
+      fetchBookings();
+      fetchRoomMetrics();
+    };
+
+    const handleBookingStatusChange = (data: any) => {
+      console.log('🔔 Booking status changed via socket:', data);
+      // Refresh data to reflect status change
+      fetchBookings();
+      fetchRoomMetrics();
+    };
+
+    const handleDashboardUpdate = (data: any) => {
+      console.log('🔔 Dashboard update received via socket:', data);
+      // Refresh stats
+      fetchBookings();
+      fetchRoomMetrics();
+    };
+
+    const handleRoomUpdate = (data: any) => {
+      console.log('🔔 Room update received via socket:', data);
+      fetchRoomMetrics();
+    };
+
+    // Listen for events
+    socket.on('new-booking', handleNewBooking);
+    socket.on('new_booking_confirmed', handleNewBooking); // Also listen for confirmed bookings
+    socket.on('booking-status-change', handleBookingStatusChange);
+    socket.on('booking_cancelled', handleBookingStatusChange); // Also listen for cancellations
+    socket.on('dashboard-update', handleDashboardUpdate);
+    socket.on('room_updated', handleRoomUpdate);
+
+    // Cleanup listeners
+    return () => {
+      socket.off('new-booking', handleNewBooking);
+      socket.off('new_booking_confirmed', handleNewBooking);
+      socket.off('booking-status-change', handleBookingStatusChange);
+      socket.off('booking_cancelled', handleBookingStatusChange);
+      socket.off('dashboard-update', handleDashboardUpdate);
+      socket.off('room_updated', handleRoomUpdate);
+    };
+  }, [socket, fetchBookings]);
 
   // Fetch room number metrics
   const fetchRoomMetrics = async () => {

@@ -321,6 +321,22 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         }, 100); // Small delay to ensure audio context is ready
       }
       console.log('✅ New REAL-TIME notification processed:', newNotification.id);
+
+      // CONFIGURATION: Dispatch event to trigger Toast notification in NotificationDisplay
+      // This is required because NotificationDisplay listens to window events, not context state
+      const event = new CustomEvent('newNotification', {
+        detail: {
+          ...socketNotif,
+          id: newNotification.id,
+          // Ensure type and message are passed correctly for the toast
+          type: socketNotif.type,
+          message: socketNotif.message,
+          title: socketNotif.title,
+          timestamp: new Date()
+        }
+      });
+      window.dispatchEvent(event);
+
     } else {
       console.log('⏰ Old/reconnect notification received (no sound):', newNotification.id);
     }
