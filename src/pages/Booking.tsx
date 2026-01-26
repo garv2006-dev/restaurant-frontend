@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Alert, Badge, Modal, Spinner } from 'react-bootstrap';
-import { Calendar, Users, XCircle } from 'lucide-react';
+import { Calendar, Users, XCircle, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI, paymentsAPI } from '../services/api';
@@ -12,6 +12,7 @@ import { toast } from 'react-toastify';
 
 const Booking: React.FC = () => {
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.role === 'staff';
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -644,6 +645,21 @@ const Booking: React.FC = () => {
         </Col>
       </Row>
 
+      {/* Admin Warning Alert */}
+      {isAdmin && (
+        <Alert variant="warning" className="mb-4 shadow-sm border-warning">
+          <div className="d-flex align-items-center">
+            <ShieldAlert size={24} className="me-3" />
+            <div>
+              <Alert.Heading className="h6 mb-1">Admin Access</Alert.Heading>
+              <p className="mb-0 small">
+                You are viewing this page as an Administrator. You can view room availability, but booking functionality is disabled for admin accounts.
+              </p>
+            </div>
+          </div>
+        </Alert>
+      )}
+
       {/* Rooms Grid */}
       <Row>
         {rooms && rooms.length > 0 ? (
@@ -700,12 +716,19 @@ const Booking: React.FC = () => {
 
                   <div className="mt-auto">
                     <Button
-                      variant={room.status === 'Available' ? "primary" : "secondary"}
+                      variant={room.status === 'Available' && !isAdmin ? "primary" : "secondary"}
                       className="w-100"
-                      disabled={room.status !== 'Available'}
+                      disabled={room.status !== 'Available' || isAdmin}
                       onClick={() => handleBookRoom(room)}
                     >
-                      {room.status === 'Available' ? 'Book Now' : room.status === 'Occupied' ? 'Booked' : 'Not Available'}
+                      {isAdmin
+                        ? 'Admin View Only'
+                        : room.status === 'Available'
+                          ? 'Book Now'
+                          : room.status === 'Occupied'
+                            ? 'Booked'
+                            : 'Not Available'
+                      }
                     </Button>
                   </div>
                 </Card.Body>

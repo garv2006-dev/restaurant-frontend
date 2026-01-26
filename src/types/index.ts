@@ -67,6 +67,8 @@ export interface Room {
   isActive: boolean;
   averageRating: number;
   totalReviews: number;
+  availableCount?: number;
+  totalRoomNumbers?: number;
 }
 
 // Booking types

@@ -52,9 +52,9 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <Navbar 
-        expand="lg" 
-        className="navbar-custom shadow-sm" 
+      <Navbar
+        expand="lg"
+        className="navbar-custom shadow-sm"
         expanded={expanded}
         onToggle={handleToggle}
         fixed="top"
@@ -68,17 +68,17 @@ const Header: React.FC = () => {
             {/* Mobile notification icon */}
             <div className="d-lg-none mobile-notification-wrapper">
               {isAuthenticated && user && (
-                <Nav.Link 
+                <Nav.Link
                   as={Link}
-                  to="/notifications" 
+                  to="/notifications"
                   className="mobile-notification-bell"
                   onClick={() => handleNavLinkClick()}
                 >
                   <Bell size={20} />
                   {unreadCount > 0 && (
-                    <Badge 
-                      pill 
-                      bg="danger" 
+                    <Badge
+                      pill
+                      bg="danger"
                       className="position-absolute top-0 start-100 translate-middle mobile-notification-badge"
                     >
                       {unreadCount}
@@ -94,11 +94,11 @@ const Header: React.FC = () => {
               </span>
             </Navbar.Toggle>
           </div>
-          
+
           <Navbar.Collapse id="basic-navbar-nav">
             {/* Mobile menu header */}
             <div className="navbar-header d-lg-none">
-              <span 
+              <span
                 className="navbar-brand clickable-brand"
                 onClick={() => {
                   navigate('/');
@@ -109,7 +109,7 @@ const Header: React.FC = () => {
               >
                 Luxury Hotel
               </span>
-              <button 
+              <button
                 className="navbar-close"
                 onClick={handleToggle}
                 aria-label="Close menu"
@@ -117,28 +117,28 @@ const Header: React.FC = () => {
                 ×
               </button>
             </div>
-            
+
             {/* Main Navigation */}
             <Nav className="me-auto">
-              <Nav.Link 
-                as={Link} 
-                to="/" 
+              <Nav.Link
+                as={Link}
+                to="/"
                 className={`fw-medium ${isActive('/') ? 'active' : ''}`}
                 onClick={() => handleNavLinkClick()}
               >
                 Home
               </Nav.Link>
-              <Nav.Link 
-                as={Link} 
-                to="/booking" 
+              <Nav.Link
+                as={Link}
+                to="/booking"
                 className={`fw-medium ${isActive('/booking') ? 'active' : ''}`}
                 onClick={() => handleNavLinkClick()}
               >
                 Booking
               </Nav.Link>
-              <Nav.Link 
-                as={Link} 
-                to="/contact" 
+              <Nav.Link
+                as={Link}
+                to="/contact"
                 className={`fw-medium ${isActive('/contact') ? 'active' : ''}`}
                 onClick={() => handleNavLinkClick()}
               >
@@ -173,23 +173,28 @@ const Header: React.FC = () => {
                     id="user-dropdown"
                     className="w-100"
                   >
-                    <NavDropdown.Item as={Link} to="/dashboard" onClick={() => handleNavLinkClick()}>
-                      Dashboard
-                    </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/profile" onClick={() => handleNavLinkClick()}>
-                      Profile
-                    </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/bookings" onClick={() => handleNavLinkClick()}>
-                      My Bookings
-                    </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/reviews" onClick={() => handleNavLinkClick()}>
-                      My Reviews
-                    </NavDropdown.Item>
-                    
+                    {/* User Links - Hidden for Admin */}
+                    {user.role !== 'admin' && (
+                      <>
+                        <NavDropdown.Item as={Link} to="/dashboard" onClick={() => handleNavLinkClick()}>
+                          Dashboard
+                        </NavDropdown.Item>
+                        <NavDropdown.Item as={Link} to="/profile" onClick={() => handleNavLinkClick()}>
+                          Profile
+                        </NavDropdown.Item>
+                        <NavDropdown.Item as={Link} to="/bookings" onClick={() => handleNavLinkClick()}>
+                          My Bookings
+                        </NavDropdown.Item>
+                        <NavDropdown.Item as={Link} to="/reviews" onClick={() => handleNavLinkClick()}>
+                          My Reviews
+                        </NavDropdown.Item>
+                        <NavDropdown.Divider />
+                      </>
+                    )}
+
                     {/* Admin Links */}
                     {(user.role === 'admin' || user.role === 'staff') && (
                       <>
-                        <NavDropdown.Divider />
                         <NavDropdown.Item as={Link} to="/admin" onClick={() => handleNavLinkClick()}>
                           Admin Panel
                         </NavDropdown.Item>
@@ -200,7 +205,7 @@ const Header: React.FC = () => {
                         )}
                       </>
                     )}
-                    
+
                     <NavDropdown.Divider />
                     <NavDropdown.Item onClick={handleLogout}>
                       Logout
@@ -209,20 +214,20 @@ const Header: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <Button 
-                    as={Link as any} 
-                    to="/login" 
-                    variant="outline-primary" 
+                  <Button
+                    as={Link as any}
+                    to="/login"
+                    variant="outline-primary"
                     className="w-100 d-flex align-items-center justify-content-center"
                     onClick={() => handleNavLinkClick()}
                   >
                     <LogIn size={16} className="me-2" />
                     Login
                   </Button>
-                  <Button 
-                    as={Link as any} 
-                    to="/register" 
-                    variant="primary" 
+                  <Button
+                    as={Link as any}
+                    to="/register"
+                    variant="primary"
                     className="w-100 d-flex align-items-center justify-content-center"
                     onClick={() => handleNavLinkClick()}
                   >
@@ -250,17 +255,17 @@ const Header: React.FC = () => {
               {isAuthenticated && user ? (
                 <>
                   {/* Notifications */}
-                  <Nav.Link 
+                  <Nav.Link
                     as={Link}
-                    to="/notifications" 
+                    to="/notifications"
                     className="position-relative me-2"
                     onClick={handleDesktopNavClick}
                   >
                     <Bell size={16} />
                     {unreadCount > 0 && (
-                      <Badge 
-                        pill 
-                        bg="danger" 
+                      <Badge
+                        pill
+                        bg="danger"
                         className="position-absolute top-0 start-100 translate-middle"
                         style={{ fontSize: '0.6rem' }}
                       >
@@ -280,23 +285,28 @@ const Header: React.FC = () => {
                     id="user-dropdown"
                     align="end"
                   >
-                    <NavDropdown.Item as={Link} to="/dashboard" onClick={() => handleNavLinkClick()}>
-                      Dashboard
-                    </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/profile" onClick={() => handleNavLinkClick()}>
-                      Profile
-                    </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/bookings" onClick={() => handleNavLinkClick()}>
-                      My Bookings
-                    </NavDropdown.Item>
-                    <NavDropdown.Item as={Link} to="/reviews" onClick={() => handleNavLinkClick()}>
-                      My Reviews
-                    </NavDropdown.Item>
-                    
+                    {/* User Links - Hidden for Admin */}
+                    {user.role !== 'admin' && (
+                      <>
+                        <NavDropdown.Item as={Link} to="/dashboard" onClick={() => handleNavLinkClick()}>
+                          Dashboard
+                        </NavDropdown.Item>
+                        <NavDropdown.Item as={Link} to="/profile" onClick={() => handleNavLinkClick()}>
+                          Profile
+                        </NavDropdown.Item>
+                        <NavDropdown.Item as={Link} to="/bookings" onClick={() => handleNavLinkClick()}>
+                          My Bookings
+                        </NavDropdown.Item>
+                        <NavDropdown.Item as={Link} to="/reviews" onClick={() => handleNavLinkClick()}>
+                          My Reviews
+                        </NavDropdown.Item>
+                        <NavDropdown.Divider />
+                      </>
+                    )}
+
                     {/* Admin Links */}
                     {(user.role === 'admin' || user.role === 'staff') && (
                       <>
-                        <NavDropdown.Divider />
                         <NavDropdown.Item as={Link} to="/admin" onClick={() => handleNavLinkClick()}>
                           Admin Panel
                         </NavDropdown.Item>
@@ -307,7 +317,7 @@ const Header: React.FC = () => {
                         )}
                       </>
                     )}
-                    
+
                     <NavDropdown.Divider />
                     <NavDropdown.Item onClick={handleLogout}>
                       Logout
@@ -316,10 +326,10 @@ const Header: React.FC = () => {
                 </>
               ) : (
                 <div className="d-flex gap-2">
-                  <Button 
-                    as={Link as any} 
-                    to="/login" 
-                    variant="outline-primary" 
+                  <Button
+                    as={Link as any}
+                    to="/login"
+                    variant="outline-primary"
                     size="sm"
                     className="d-flex align-items-center fw-medium"
                     onClick={() => handleNavLinkClick()}
@@ -327,10 +337,10 @@ const Header: React.FC = () => {
                     <LogIn size={16} className="me-1" />
                     Login
                   </Button>
-                  <Button 
-                    as={Link as any} 
-                    to="/register" 
-                    variant="primary" 
+                  <Button
+                    as={Link as any}
+                    to="/register"
+                    variant="primary"
                     size="sm"
                     className="d-flex align-items-center fw-medium"
                     onClick={() => handleNavLinkClick()}
@@ -344,9 +354,9 @@ const Header: React.FC = () => {
           </Navbar.Collapse>
         </Container>
       </Navbar>
-      
+
       {/* Mobile overlay */}
-      <div 
+      <div
         className={`navbar-overlay ${expanded ? 'show' : ''}`}
         onClick={handleToggle}
         aria-label="Close menu overlay"

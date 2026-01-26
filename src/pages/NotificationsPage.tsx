@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Badge, Button, Nav, Tab, Dropdown, Spinner, Alert } from 'react-bootstrap';
-import { Bell, Check, ChevronDown, Trash2 } from 'lucide-react';
+import { Bell, Check, ChevronDown, Trash2, Copy } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import VolumeControl from '../components/notifications/VolumeControl';
+import { toast } from 'react-toastify';
 import '../styles/notifications-responsive.css';
+import '../styles/notifications-page-promo.css';
+import '../styles/notifications-copy-btn.css';
 
 const NotificationsPage: React.FC = () => {
   const {
@@ -21,6 +24,7 @@ const NotificationsPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState('all');
   const [expandedNotifications, setExpandedNotifications] = useState<Set<string>>(new Set());
+  const [copiedCodes, setCopiedCodes] = useState<Set<string>>(new Set());
 
   const toggleExpanded = (id: string) => {
     setExpandedNotifications(prev => {
@@ -32,6 +36,42 @@ const NotificationsPage: React.FC = () => {
       }
       return newSet;
     });
+  };
+
+  // Extract promo code from notification message
+  const extractPromoCode = (message: string): string | null => {
+    // Match patterns like "code J6EY8QN1" or "code: J6EY8QN1" (case insensitive)
+    const codeMatch = message.match(/code[:\s]+([A-Z0-9]{6,12})/i);
+    const result = codeMatch ? codeMatch[1] : null;
+    console.log('Extracting promo code from:', message, '-> Result:', result);
+    return result;
+  };
+
+  // Handle copying promo code to clipboard
+  const handleCopyPromoCode = async (code: string, notificationId: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCodes(prev => new Set(prev).add(notificationId));
+      toast.success('Promo code copied to clipboard!', {
+        position: 'top-right',
+        autoClose: 2000,
+      });
+
+      // Reset copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedCodes(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationId);
+          return newSet;
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Failed to copy promo code:', error);
+      toast.error('Failed to copy code. Please try again.', {
+        position: 'top-right',
+        autoClose: 2000,
+      });
+    }
   };
 
   // Fetch notifications based on active tab
@@ -53,14 +93,37 @@ const NotificationsPage: React.FC = () => {
     return false;
   });
 
-  const formatTimestamp = (date: Date) => {
+  const formatTimestamp = (date: Date | string) => {
+    // Handle both Date objects and string timestamps
+    const timestamp = new Date(date);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    const diffInSeconds = Math.max(0, Math.floor((now.getTime() - timestamp.getTime()) / 1000));
 
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 48) return 'Yesterday';
-    return date.toLocaleDateString();
+    // Less than 1 minute
+    if (diffInSeconds < 60) {
+      return `${Math.max(1, diffInSeconds)}s`;
+    }
+
+    // Less than 1 hour
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes}m`;
+    }
+
+    // Less than 24 hours
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) {
+      return `${diffInHours}h`;
+    }
+
+    // Less than 7 days
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) {
+      return `${diffInDays}d`;
+    }
+
+    // Default date format
+    return timestamp.toLocaleDateString();
   };
 
   const getTypeColor = (type: string) => {
@@ -248,10 +311,6 @@ const NotificationsPage: React.FC = () => {
                                       <Badge bg="primary" pill>New</Badge>
                                     )}
                                   </h6>
-                                  <Badge bg={getTypeColor(notification.type)}>
-                                    {notification.type === 'room_booking' ? 'Room Booking' :
-                                      notification.type.charAt(0).toUpperCase() + notification.type.slice(1)}
-                                  </Badge>
                                 </div>
                                 <div className="notification-meta">
                                   <div className="notification-time">
@@ -284,9 +343,34 @@ const NotificationsPage: React.FC = () => {
                                   {notification.message}
                                 </p>
                                 {!isExpanded && isLongMessage && (
-                                  <span className="notification-expand-hint">Click to read more...</span>
+                                  <span className="notification-expand-hint d-lg-none">Click to read more...</span>
                                 )}
                               </div>
+
+                              {/* Promo Code Copy Section - Bottom of card */}
+                              {(notification.type === 'promotion' || extractPromoCode(notification.message)) && extractPromoCode(notification.message) && (
+                                <div className="notification-footer mt-2 d-flex justify-content-end">
+                                  <button
+                                    className="notification-copy-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCopyPromoCode(
+                                        extractPromoCode(notification.message)!,
+                                        notification.id
+                                      );
+                                    }}
+                                    title={copiedCodes.has(notification.id) ? "Copied!" : "Copy promo code"}
+                                  >
+                                    <span className="me-2 text-muted small">Copy Code:</span>
+                                    <span className="code-display me-2 fw-bold">{extractPromoCode(notification.message)}</span>
+                                    {copiedCodes.has(notification.id) ? (
+                                      <Check size={16} className="text-success" />
+                                    ) : (
+                                      <Copy size={16} />
+                                    )}
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </Card.Body>

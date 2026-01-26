@@ -283,7 +283,10 @@ const MyBookings: React.FC = () => {
               <th>Check-out</th>
               <th>Guests</th>
               <th>Status</th>
-              <th>Total</th>
+              <th>Original Amount</th>
+              <th>Discount</th>
+              <th>GST</th>
+              <th>Final Paid</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -294,7 +297,18 @@ const MyBookings: React.FC = () => {
               const roomLabel = room ? `${room.name || ''} ${room.type ? `(${room.type})` : ''}`.trim() : 'Unknown Room';
               const ci = new Date(b.bookingDates.checkInDate).toLocaleDateString();
               const co = new Date(b.bookingDates.checkOutDate).toLocaleDateString();
-              const total = `₹${b.pricing.totalAmount?.toFixed(2) || '0.00'}`;
+
+              // Calculate pricing breakdown
+              const subtotal = b.pricing.subtotal || 0;
+              const discountAmount = b.pricing.discount?.amount || 0;
+              const couponCode = b.pricing.discount?.couponCode || null;
+              const gstAmount = b.pricing.taxes?.gst || 0;
+              const totalAmount = b.pricing.totalAmount || 0;
+
+              const originalAmount = `₹${subtotal.toFixed(2)}`;
+              const gstDisplay = `₹${gstAmount.toFixed(2)}`;
+              const finalPaid = `₹${totalAmount.toFixed(2)}`;
+
               return (
                 <tr key={b._id}>
                   <td>{idx + 1}</td>
@@ -303,7 +317,18 @@ const MyBookings: React.FC = () => {
                   <td>{co}</td>
                   <td>{b.guestDetails.totalAdults + b.guestDetails.totalChildren} Guests</td>
                   <td>{b.status || 'Pending'}</td>
-                  <td>{total}</td>
+                  <td>{originalAmount}</td>
+                  <td>
+                    {discountAmount > 0 && couponCode ? (
+                      <div>
+                        <Badge bg="success" className="mb-1">₹{discountAmount.toFixed(2)}</Badge>
+                      </div>
+                    ) : (
+                      <span className="text-muted">-</span>
+                    )}
+                  </td>
+                  <td>{gstDisplay}</td>
+                  <td><strong>{finalPaid}</strong></td>
                   <td>
                     {canCancelBooking(b) ? (
                       <Button
@@ -330,7 +355,7 @@ const MyBookings: React.FC = () => {
               );
             }) : (
               <tr>
-                <td colSpan={7} className="text-center">
+                <td colSpan={11} className="text-center">
                   No booking data available
                 </td>
               </tr>
