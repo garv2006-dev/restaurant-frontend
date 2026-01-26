@@ -126,15 +126,6 @@ const NotificationsPage: React.FC = () => {
     return timestamp.toLocaleDateString();
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'room_booking': return 'primary';
-      case 'promotion': return 'warning';
-      case 'system': return 'secondary';
-      case 'payment': return 'success';
-      default: return 'primary';
-    }
-  };
 
   const getTabLabel = (tabKey: string) => {
     switch (tabKey) {
