@@ -94,6 +94,10 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
 
       // Add notification to display
       setNotifications(prev => {
+        // Check if notification with same ID already exists to prevent duplicates
+        if (prev.some(n => n.id === newNotification.id)) {
+          return prev;
+        }
         const updated = [newNotification, ...prev];
         // Limit number of displayed notifications
         return updated.slice(0, maxNotifications);
@@ -105,22 +109,19 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
       }
     };
 
-    // Listen for socket notifications
-    const handleSocketNotification = (event: CustomEvent) => {
-      handleNewNotification(event);
-    };
+
 
     // Listen for manual notifications
     const handleManualNotification = (event: CustomEvent) => {
       handleNewNotification(event);
     };
 
-    window.addEventListener('socketNotification', handleSocketNotification as EventListener);
+
     window.addEventListener('showNotification', handleManualNotification as EventListener);
     window.addEventListener('newNotification', handleNewNotification as EventListener);
 
     return () => {
-      window.removeEventListener('socketNotification', handleSocketNotification as EventListener);
+
       window.removeEventListener('showNotification', handleManualNotification as EventListener);
       window.removeEventListener('newNotification', handleNewNotification as EventListener);
     };
@@ -210,7 +211,7 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
             delay={notification.duration}
             className={`notification-toast ${notification.type} ${isExpanded ? 'expanded' : 'collapsed'}`}
           >
-            <Toast.Header className="notification-toast-header">
+            <Toast.Header className="notification-toast-header" closeButton={false}>
               {notification.type === 'promotion' && extractPromoCode(notification.message) ? (
                 <>
                   <div className="notification-header-content promotion-header">

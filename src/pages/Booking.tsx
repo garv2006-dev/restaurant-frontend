@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI, paymentsAPI } from '../services/api';
 import { differenceInDays } from 'date-fns';
 import type { Room, BookingFormData } from '../types';
-import { triggerBookingNotification } from '../utils/bookingNotification';
+// import { triggerBookingNotification } from '../utils/bookingNotification';
 import DiscountCode from '../components/booking/DiscountCode';
 import { toast } from 'react-toastify';
 
@@ -501,21 +501,21 @@ const Booking: React.FC = () => {
         setSelectedPaymentMethod('Cash');
 
 
-        const bookingId = response.data?.bookingId || 'your booking';
-        toast.success(`Booking received successfully! Your booking ID is ${bookingId}. Awaiting admin confirmation.`, {
+        // const bookingId = response.data?.bookingId || 'your booking';
+        /* toast.success(`Booking received successfully! Your booking ID is ${bookingId}. Awaiting admin confirmation.`, {
           position: "top-right",
           autoClose: 6000,
           hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-        });
+        }); */
 
-        // Trigger notification
-        if ((response.data as any)?.notificationTrigger) {
+        // Notification is triggered automatically from backend via socket
+        /* if ((response.data as any)?.notificationTrigger) {
           console.log('Triggering notification:', (response.data as any).notificationTrigger);
           triggerBookingNotification((response.data as any).notificationTrigger);
-        }
+        } */
 
         navigate('/bookings');
       } else {
