@@ -444,3 +444,196 @@
         line-clamp: 2;
     }
 }
+
+/* ============================================ */
+/* Dark Mode Styles */
+/* ============================================ */
+
+[data-bs-theme="dark"] .notifications-page {
+    color: #e5e7eb;
+}
+
+/* Header Section - Dark Mode */
+[data-bs-theme="dark"] .notifications-header {
+    border-bottom-color: #374151;
+}
+
+[data-bs-theme="dark"] .notifications-title h2 {
+    color: #f9fafb;
+}
+
+[data-bs-theme="dark"] .notifications-title p {
+    color: #9ca3af;
+}
+
+/* Action Buttons - Dark Mode */
+[data-bs-theme="dark"] .notifications-actions .btn-outline-primary {
+    color: #818cf8;
+    border-color: #818cf8;
+}
+
+[data-bs-theme="dark"] .notifications-actions .btn-outline-primary:hover {
+    background: #818cf8;
+    color: #1f2937;
+}
+
+[data-bs-theme="dark"] .notifications-actions .btn-outline-danger {
+    color: #f87171;
+    border-color: #f87171;
+}
+
+[data-bs-theme="dark"] .notifications-actions .btn-outline-danger:hover {
+    background: #f87171;
+    color: #1f2937;
+}
+
+/* Tabs Navigation - Dark Mode */
+[data-bs-theme="dark"] .notifications-tabs {
+    background: #1f2937;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme="dark"] .notifications-tabs .nav-link {
+    color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .notifications-tabs .nav-link:hover {
+    color: #f9fafb;
+    background-color: #374151;
+}
+
+[data-bs-theme="dark"] .notifications-tabs .nav-link.active {
+    background-color: #818cf8;
+    color: white;
+    box-shadow: 0 1px 3px rgba(129, 140, 248, 0.5);
+}
+
+/* Notification Cards - Dark Mode */
+[data-bs-theme="dark"] .notification-card {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+[data-bs-theme="dark"] .notification-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+    border-color: #4b5563;
+}
+
+[data-bs-theme="dark"] .notification-card.unread {
+    background: #1f2937;
+    border-left-color: #818cf8;
+}
+
+/* Notification Content - Dark Mode */
+[data-bs-theme="dark"] .notification-title h6 {
+    color: #f9fafb;
+}
+
+[data-bs-theme="dark"] .notification-title .badge {
+    background-color: #4b5563 !important;
+    color: #e5e7eb !important;
+}
+
+[data-bs-theme="dark"] .notification-time {
+    color: #6b7280;
+}
+
+[data-bs-theme="dark"] .notification-message {
+    color: #d1d5db;
+}
+
+/* Delete Button - Dark Mode */
+[data-bs-theme="dark"] .notification-delete {
+    color: #6b7280;
+}
+
+[data-bs-theme="dark"] .notification-delete:hover {
+    color: #f87171;
+    background-color: rgba(248, 113, 113, 0.15);
+}
+
+/* Copy Button Section - Dark Mode */
+[data-bs-theme="dark"] .notification-footer {
+    border-top-color: #374151;
+}
+
+[data-bs-theme="dark"] .notification-copy-btn {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #d1d5db;
+}
+
+[data-bs-theme="dark"] .notification-copy-btn:hover {
+    background-color: #4b5563;
+    color: #f9fafb;
+    border-color: #6b7280;
+}
+
+[data-bs-theme="dark"] .notification-copy-btn .code-display {
+    background: #4b5563;
+    color: #f9fafb;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Empty State - Dark Mode */
+[data-bs-theme="dark"] .notifications-empty {
+    background: #1f2937;
+    border-color: #374151;
+    color: #9ca3af;
+}
+
+[data-bs-theme="dark"] .notifications-empty .icon {
+    color: #4b5563;
+}
+
+/* Mobile Dropdown - Dark Mode */
+@media (max-width: 768px) {
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-toggle {
+        background: #1f2937;
+        border-color: #374151;
+        color: #f9fafb;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-toggle:active,
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-toggle.show,
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-toggle:focus,
+    [data-bs-theme="dark"] .notifications-dropdown .btn-outline-secondary.show,
+    [data-bs-theme="dark"] .notifications-dropdown .btn-outline-secondary:active {
+        background-color: #1f2937 !important;
+        color: #818cf8 !important;
+        border-color: #818cf8 !important;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25) !important;
+    }
+
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-menu {
+        background-color: #1f2937;
+        border-color: #374151;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+    }
+
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-item {
+        color: #d1d5db;
+    }
+
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-item:hover {
+        background-color: #374151;
+        color: #f9fafb;
+    }
+
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-item:active,
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-item.active {
+        background-color: #818cf8;
+        color: white;
+    }
+
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-item .badge {
+        background-color: #374151 !important;
+        color: #d1d5db !important;
+    }
+
+    [data-bs-theme="dark"] .notifications-dropdown .dropdown-item.active .badge {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
+    }
+}
