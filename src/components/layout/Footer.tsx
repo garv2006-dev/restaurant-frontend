@@ -49,7 +49,7 @@ const Footer: React.FC = () => {
               <p className="footer-link">
                 Experience the finest dining and accommodation with our luxury rooms and world-class service.
               </p>
-              
+
               {/* Social Media Links */}
               <div className="d-flex gap-3 mt-4">
                 <a
@@ -94,17 +94,11 @@ const Footer: React.FC = () => {
                 <Nav.Link as={Link} to="/" className="footer-link p-0 mb-2">
                   Home
                 </Nav.Link>
-                <Nav.Link as={Link} to="/rooms" className="footer-link p-0 mb-2">
-                  Rooms
-                </Nav.Link>
                 <Nav.Link as={Link} to="/booking" className="footer-link p-0 mb-2">
                   Booking
                 </Nav.Link>
                 <Nav.Link as={Link} to="/contact" className="footer-link p-0 mb-2">
                   Contact
-                </Nav.Link>
-                <Nav.Link as={Link} to="/gallery" className="footer-link p-0 mb-2">
-                  Gallery
                 </Nav.Link>
               </Nav>
             </Col>

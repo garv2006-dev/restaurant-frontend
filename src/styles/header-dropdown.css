@@ -1,0 +1,97 @@
+/* Header Dropdown Premium Styling */
+
+/* Dropdown Menu Container */
+.premium-dropdown .dropdown-menu {
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+  min-width: 220px;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+/* Dropdown Items */
+.premium-dropdown .dropdown-item {
+  display: flex !important;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  color: var(--bs-secondary-color);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-bottom: 2px;
+}
+
+.premium-dropdown .dropdown-item:last-child {
+  margin-bottom: 0;
+}
+
+/* Hover State */
+.premium-dropdown .dropdown-item:hover,
+.premium-dropdown .dropdown-item:focus {
+  background-color: rgba(200, 164, 86, 0.08); /* Gold hint transparent */
+  color: var(--color-gold-dark, #ab8838);
+  transform: translateX(3px);
+}
+
+.premium-dropdown .dropdown-item:active {
+  background-color: rgba(200, 164, 86, 0.15);
+}
+
+/* Icons within items */
+.premium-dropdown .dropdown-item svg {
+  margin-right: 12px;
+  color: #999;
+  transition: color 0.2s ease;
+}
+
+.premium-dropdown .dropdown-item:hover svg {
+  color: var(--color-gold, #c8a456);
+}
+
+/* Divider */
+.premium-dropdown .dropdown-divider {
+  margin: 0.5rem 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* User Info Section (if we add one inside dropdown) */
+.dropdown-user-info {
+  padding: 1rem 1rem 0.5rem;
+  text-align: center;
+}
+
+/* Dark Mode Support */
+[data-bs-theme="dark"] .premium-dropdown .dropdown-menu {
+  background-color: rgba(30, 30, 30, 0.95);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-bs-theme="dark"] .premium-dropdown .dropdown-item {
+  color: #e0e0e0;
+}
+
+[data-bs-theme="dark"] .premium-dropdown .dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--color-gold, #c8a456);
+}
+
+[data-bs-theme="dark"] .premium-dropdown .dropdown-divider {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Animation */
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

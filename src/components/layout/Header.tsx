@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar, Nav, NavDropdown, Container, Button, Badge } from 'react-bootstrap';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { User, Sun, Moon, Bell, LogIn, UserPlus } from 'lucide-react';
+import {
+  User, Sun, Moon, Bell, LogIn, UserPlus,
+  LayoutDashboard, UserCircle, Calendar, Star,
+  ShieldCheck, FileText, LogOut
+} from 'lucide-react';
+import '../../styles/header-dropdown.css';
+
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -170,22 +176,26 @@ const Header: React.FC = () => {
                         {user.name}
                       </span>
                     }
-                    id="user-dropdown"
-                    className="w-100"
+                    id="user-dropdown-mobile"
+                    className="w-100 premium-dropdown"
                   >
                     {/* User Links - Hidden for Admin */}
                     {user.role !== 'admin' && (
                       <>
                         <NavDropdown.Item as={Link} to="/dashboard" onClick={() => handleNavLinkClick()}>
+                          <LayoutDashboard size={18} />
                           Dashboard
                         </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/profile" onClick={() => handleNavLinkClick()}>
+                          <UserCircle size={18} />
                           Profile
                         </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/bookings" onClick={() => handleNavLinkClick()}>
+                          <Calendar size={18} />
                           My Bookings
                         </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/reviews" onClick={() => handleNavLinkClick()}>
+                          <Star size={18} />
                           My Reviews
                         </NavDropdown.Item>
                         <NavDropdown.Divider />
@@ -196,10 +206,12 @@ const Header: React.FC = () => {
                     {(user.role === 'admin' || user.role === 'staff') && (
                       <>
                         <NavDropdown.Item as={Link} to="/admin" onClick={() => handleNavLinkClick()}>
+                          <ShieldCheck size={18} />
                           Admin Panel
                         </NavDropdown.Item>
                         {user.role === 'admin' && (
                           <NavDropdown.Item as={Link} to="/admin/reports" onClick={() => handleNavLinkClick()}>
+                            <FileText size={18} />
                             Reports
                           </NavDropdown.Item>
                         )}
@@ -208,6 +220,7 @@ const Header: React.FC = () => {
 
                     <NavDropdown.Divider />
                     <NavDropdown.Item onClick={handleLogout}>
+                      <LogOut size={18} />
                       Logout
                     </NavDropdown.Item>
                   </NavDropdown>
@@ -284,20 +297,25 @@ const Header: React.FC = () => {
                     }
                     id="user-dropdown"
                     align="end"
+                    className="premium-dropdown"
                   >
                     {/* User Links - Hidden for Admin */}
                     {user.role !== 'admin' && (
                       <>
                         <NavDropdown.Item as={Link} to="/dashboard" onClick={() => handleNavLinkClick()}>
+                          <LayoutDashboard size={18} />
                           Dashboard
                         </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/profile" onClick={() => handleNavLinkClick()}>
+                          <UserCircle size={18} />
                           Profile
                         </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/bookings" onClick={() => handleNavLinkClick()}>
+                          <Calendar size={18} />
                           My Bookings
                         </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/reviews" onClick={() => handleNavLinkClick()}>
+                          <Star size={18} />
                           My Reviews
                         </NavDropdown.Item>
                         <NavDropdown.Divider />
@@ -308,10 +326,12 @@ const Header: React.FC = () => {
                     {(user.role === 'admin' || user.role === 'staff') && (
                       <>
                         <NavDropdown.Item as={Link} to="/admin" onClick={() => handleNavLinkClick()}>
+                          <ShieldCheck size={18} />
                           Admin Panel
                         </NavDropdown.Item>
                         {user.role === 'admin' && (
                           <NavDropdown.Item as={Link} to="/admin/reports" onClick={() => handleNavLinkClick()}>
+                            <FileText size={18} />
                             Reports
                           </NavDropdown.Item>
                         )}
@@ -320,6 +340,7 @@ const Header: React.FC = () => {
 
                     <NavDropdown.Divider />
                     <NavDropdown.Item onClick={handleLogout}>
+                      <LogOut size={18} />
                       Logout
                     </NavDropdown.Item>
                   </NavDropdown>
