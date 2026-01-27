@@ -4,9 +4,8 @@ import { Bell, Check, ChevronDown, Trash2, Copy } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import VolumeControl from '../components/notifications/VolumeControl';
 import { toast } from 'react-toastify';
-import '../styles/notifications-responsive.css';
-import '../styles/notifications-page-promo.css';
-import '../styles/notifications-copy-btn.css';
+import '../styles/notifications-modern.css';
+
 
 const NotificationsPage: React.FC = () => {
   const {
@@ -74,16 +73,10 @@ const NotificationsPage: React.FC = () => {
     }
   };
 
-  // Fetch notifications based on active tab
+  // Fetch all notifications on mount to ensure we have the full list for client-side filtering
   useEffect(() => {
-    if (activeTab === 'all') {
-      fetchNotifications();
-    } else if (activeTab === 'unread') {
-      fetchNotifications(undefined, false);
-    } else {
-      fetchNotifications(activeTab === 'booking' ? 'room_booking' : activeTab);
-    }
-  }, [activeTab, fetchNotifications]);
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const filteredNotifications = notifications.filter(notif => {
     if (activeTab === 'all') return true;
@@ -342,6 +335,7 @@ const NotificationsPage: React.FC = () => {
                               {(notification.type === 'promotion' || extractPromoCode(notification.message)) && extractPromoCode(notification.message) && (
                                 <div className="notification-footer mt-2 d-flex justify-content-end">
                                   <button
+                                    type="button"
                                     className="notification-copy-btn"
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -352,10 +346,10 @@ const NotificationsPage: React.FC = () => {
                                     }}
                                     title={copiedCodes.has(notification.id) ? "Copied!" : "Copy promo code"}
                                   >
-                                    <span className="me-2 text-muted small">Copy Code:</span>
-                                    <span className="code-display me-2 fw-bold">{extractPromoCode(notification.message)}</span>
+                                    <span className="text-muted small">Copy Code:</span>
+                                    <span className="code-display text-dark">{extractPromoCode(notification.message)}</span>
                                     {copiedCodes.has(notification.id) ? (
-                                      <Check size={16} className="text-success" />
+                                      <Check size={16} className="text-success" strokeWidth={2.5} />
                                     ) : (
                                       <Copy size={16} />
                                     )}

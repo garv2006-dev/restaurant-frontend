@@ -100,6 +100,8 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       const params = new URLSearchParams();
       if (type) params.append('type', type);
       if (typeof isRead === 'boolean') params.append('isRead', isRead.toString());
+      // Increase limit to ensure we get duplicates for filtering
+      params.append('limit', '100');
 
       const response = await axios.get(`${API_URL}/notifications?${params}`, getAuthConfig());
 
@@ -116,12 +118,28 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         bookingStatus: notif.bookingStatus
       }));
 
+      // Deduplicate notifications based on unique criteria
+      const uniqueNotifications = notificationsData.filter((notif: Notification, index: number, self: Notification[]) =>
+        index === self.findIndex((t) => (
+          t.type === notif.type &&
+          t.title === notif.title &&
+          t.message === notif.message &&
+          t.relatedRoomBookingId === notif.relatedRoomBookingId
+        ))
+      );
+
       // Mark all fetched notifications as processed to prevent sound on reconnect
-      notificationsData.forEach((notif: Notification) => {
+      uniqueNotifications.forEach((notif: Notification) => {
         processedNotificationIds.current.add(notif.id);
       });
 
-      setNotifications(notificationsData);
+      setNotifications(uniqueNotifications);
+
+      // Calculate unread count from unique notifications to ensure consistency
+      // This overrides the backend count which might include duplicates
+      const uniqueUnreadCount = uniqueNotifications.filter((n: Notification) => !n.read).length;
+      setUnreadCount(uniqueUnreadCount);
+
       initialFetchComplete.current = true;
     } catch (err: any) {
       console.error('Error fetching notifications:', err);
@@ -131,14 +149,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     }
   }, [API_URL]);
 
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const response = await axios.get(`${API_URL}/notifications/unread-count`, getAuthConfig());
-      setUnreadCount(response.data.data.unreadCount);
-    } catch (err: any) {
-      console.error('Error fetching unread count:', err);
-    }
-  }, [API_URL]);
+
 
   const markAsRead = useCallback(async (id: string) => {
     try {
@@ -202,8 +213,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
   const refreshNotifications = useCallback(async () => {
     await fetchNotifications();
-    await fetchUnreadCount();
-  }, [fetchNotifications, fetchUnreadCount]);
+  }, [fetchNotifications]);
 
   // New counting functions
   const getNotificationCount = (type?: string, isRead?: boolean) => {
@@ -289,6 +299,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       roomId: socketNotif.roomId,
       bookingStatus: socketNotif.bookingStatus
     };
+
+    // Double check against current state implementation using the Ref
+    // This resolves the race condition where unreadCount increments but setNotifications filters out the duplicate
+    const alreadyExistsInState = notificationsRef.current.some(n => n.id === newNotification.id);
+
+    if (alreadyExistsInState) {
+      console.log('⚠️ Notification already in state (checked via ref), skipping:', newNotification.id);
+      return;
+    }
 
     // Add notification to state (check for duplicates in state as well)
     setNotifications(prev => {
@@ -424,6 +443,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       socket.off('user_notification', handleNotification);
     };
   }, [socket, isConnected, isAuthenticated, user, handleNewNotification, connectionTimestamp]); // Added handleNewNotification and connectionTimestamp to deps
+
+  // Keep notificationsRef in sync with state for access in event handlers
+  const notificationsRef = useRef(notifications);
+  useEffect(() => {
+    notificationsRef.current = notifications;
+  }, [notifications]);
 
   // Legacy: Listen for custom events (backward compatibility)
   useEffect(() => {
