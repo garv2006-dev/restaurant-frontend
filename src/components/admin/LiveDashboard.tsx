@@ -429,7 +429,11 @@ const LiveDashboard: React.FC = () => {
               </div>
               <div style={{ minWidth: 0 }}>
                 <h6 className="text-uppercase text-muted small fw-semibold mb-1">Occupancy Rate</h6>
-                <h5 className="mb-0 fw-bold text-dark">{data?.occupancyRate || 0}%</h5>
+                <h5 className="mb-0 fw-bold text-dark">
+                  {roomMetrics && roomMetrics.total > 0
+                    ? Math.round(((roomMetrics.occupied + roomMetrics.allocated) / roomMetrics.total) * 100)
+                    : 0}%
+                </h5>
               </div>
             </div>
           </div>
