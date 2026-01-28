@@ -97,14 +97,14 @@ const BookingManagement: React.FC = () => {
       fetchBookings();
     };
 
-    socket.on('newBooking', handleRefresh);
-    socket.on('bookingStatusChange', handleRefresh);
-    socket.on('bookingUpdated', handleRefresh);
+    socket.on('new-booking', handleRefresh);
+    socket.on('booking-status-change', handleRefresh);
+    socket.on('booking-update', handleRefresh);
 
     return () => {
-      socket.off('newBooking', handleRefresh);
-      socket.off('bookingStatusChange', handleRefresh);
-      socket.off('bookingUpdated', handleRefresh);
+      socket.off('new-booking', handleRefresh);
+      socket.off('booking-status-change', handleRefresh);
+      socket.off('booking-update', handleRefresh);
     };
   }, [fetchBookings]);
 

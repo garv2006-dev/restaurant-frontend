@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Table, Alert, Spinner, Button, Modal, Form, Toast, ToastContainer, Badge } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { bookingsAPI, reviewsAPI } from '../services/api';
 import { Booking } from '../types';
 import { useNotifications } from '../context/NotificationContext';
+import { useSocket } from '../contexts/SocketContext';
 
 const MyBookings: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -20,75 +21,28 @@ const MyBookings: React.FC = () => {
   const { refreshNotifications } = useNotifications();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        setLoading(true);
-        const response = await bookingsAPI.getUserBookings();
-        console.log('Bookings API response:', response);
+  const { socket } = useSocket();
 
-        if (response?.success) {
-          // Backend currently returns: { success, count, total, pagination, data: Booking[] }
-          // Older shape was: { success, data: { bookings: Booking[] } }
-          let bookingsData: Booking[] = [];
-
-          if (Array.isArray(response.data)) {
-            bookingsData = response.data as unknown as Booking[];
-          } else if (response.data && Array.isArray((response.data as any).bookings)) {
-            bookingsData = (response.data as any).bookings as Booking[];
-          }
-
-          console.log('Normalized bookings data:', bookingsData);
-          setBookings(bookingsData);
-
-          // Check review status for completed bookings
-          checkReviewStatuses(bookingsData);
-        } else {
-          console.log('No bookings data found in response');
-          setBookings([]);
-        }
-      } catch (err: any) {
-        console.error('Error fetching bookings:', err);
-        setError(
-          err?.response?.data?.message || err?.message || 'Failed to load bookings'
-        );
-        // Set empty bookings on error to prevent infinite loading
-        setBookings([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBookings();
-  }, []);
-
-  const checkReviewStatuses = async (bookings: Booking[]) => {
-    console.log('🔍 Checking review statuses for bookings:', bookings.length);
+  // Helper to check review statuses
+  const checkReviewStatuses = useCallback(async (bookingsList: Booking[]) => {
+    console.log('🔍 Checking review statuses for bookings:', bookingsList.length);
     const statuses: { [key: string]: any } = {};
 
     // Only check review status for completed bookings
-    const completedBookings = bookings.filter(b => b.status === 'CheckedOut');
-    console.log('📋 Completed bookings to check:', completedBookings.length);
+    const completedBookings = bookingsList.filter(b => b.status === 'CheckedOut');
 
     if (completedBookings.length === 0) {
-      console.log('⚠️ No completed bookings found');
       setReviewStatuses({});
       return;
     }
 
-    // For now, let's use a simpler approach - check if user has any reviews for these bookings
     try {
-      console.log('📋 Fetching user reviews to check status...');
       const userReviewsResponse = await reviewsAPI.getUserReviews();
-      console.log('📦 User reviews response:', userReviewsResponse);
-
       let userReviews: any[] = [];
       if (userReviewsResponse.success && userReviewsResponse.data) {
         userReviews = Array.isArray(userReviewsResponse.data) ? userReviewsResponse.data : [];
       }
 
-      console.log(`📊 Found ${userReviews.length} user reviews`);
-
-      // Check each completed booking
       for (const booking of completedBookings) {
         const existingReview = userReviews.find(review =>
           review.booking === booking._id ||
@@ -96,37 +50,96 @@ const MyBookings: React.FC = () => {
         );
 
         if (existingReview) {
-          console.log(`✓ Found existing review for booking ${booking._id}`);
           statuses[booking._id] = {
             canReview: false,
             reason: 'ALREADY_REVIEWED',
             existingReview: {
               id: existingReview._id,
-              title: existingReview.title,
               rating: existingReview.rating,
-              createdAt: existingReview.createdAt,
               isApproved: existingReview.isApproved
             }
           };
         } else {
-          console.log(`✅ No existing review for booking ${booking._id}, can review`);
           statuses[booking._id] = { canReview: true };
         }
       }
 
-      console.log('📊 Final review statuses:', statuses);
       setReviewStatuses(statuses);
-
     } catch (error: any) {
       console.error('❌ Error checking review statuses:', error);
-      // Fallback: allow all completed bookings to be reviewed
       const defaultStatuses: { [key: string]: any } = {};
       completedBookings.forEach(booking => {
         defaultStatuses[booking._id] = { canReview: true };
       });
       setReviewStatuses(defaultStatuses);
     }
-  };
+  }, []);
+
+  const fetchBookings = useCallback(async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+
+      const response = await bookingsAPI.getUserBookings();
+      console.log('Bookings API response:', response);
+
+      if (response?.success) {
+        let bookingsData: Booking[] = [];
+
+        if (Array.isArray(response.data)) {
+          bookingsData = response.data as unknown as Booking[];
+        } else if (response.data && Array.isArray((response.data as any).bookings)) {
+          bookingsData = (response.data as any).bookings as Booking[];
+        }
+
+        console.log('Normalized bookings data:', bookingsData);
+        setBookings(bookingsData);
+
+        // Check review status for completed bookings
+        checkReviewStatuses(bookingsData);
+      } else {
+        console.log('No bookings data found in response');
+        setBookings([]);
+      }
+    } catch (err: any) {
+      console.error('Error fetching bookings:', err);
+      // Don't show error alert for background refreshes
+      if (!silent) {
+        setError(
+          err?.response?.data?.message || err?.message || 'Failed to load bookings'
+        );
+        setBookings([]);
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  }, [checkReviewStatuses]);
+
+  useEffect(() => {
+    fetchBookings(false);
+  }, [fetchBookings]);
+
+  // Real-time updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleBookingUpdate = (data: any) => {
+      console.log('Booking update received:', data);
+      fetchBookings(true);
+    };
+
+    socket.on('booking-status-change', handleBookingUpdate);
+    socket.on('booking-update', handleBookingUpdate);
+    // Also listen for general notifications that might refer to bookings
+    socket.on('notification', handleBookingUpdate);
+
+    return () => {
+      socket.off('booking-status-change', handleBookingUpdate);
+      socket.off('booking-update', handleBookingUpdate);
+      socket.off('notification', handleBookingUpdate);
+    };
+  }, [socket, fetchBookings]);
+
+
 
   const handleCancelClick = (booking: Booking) => {
     console.log('Cancel button clicked for booking:', booking._id);
@@ -162,15 +175,11 @@ const MyBookings: React.FC = () => {
         setCancelReason('');
         setError(null); // Clear any previous errors
 
-        // Show success message
-        setSuccessMessage(`Booking ${selectedBooking.bookingId} has been cancelled successfully!`);
-        setShowSuccessToast(true);
-
         // Refresh notifications to show the cancellation notification
         refreshNotifications();
 
-        // Auto-hide success toast after 5 seconds
-        setTimeout(() => setShowSuccessToast(false), 5000);
+        setSuccessMessage('Booking cancelled successfully');
+        setShowSuccessToast(true);
       } else {
         console.error('Cancel booking failed:', response?.message);
         setError(response?.message || 'Failed to cancel booking');

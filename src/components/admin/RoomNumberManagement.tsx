@@ -139,14 +139,14 @@ const RoomNumberManagement: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
         };
 
-        socket.on('bookingStatusChange', handleRefresh);
-        socket.on('newBooking', handleRefresh);
-        socket.on('bookingUpdated', handleRefresh);
+        socket.on('booking-status-change', handleRefresh);
+        socket.on('new-booking', handleRefresh);
+        socket.on('booking-update', handleRefresh);
 
         return () => {
-            socket.off('bookingStatusChange', handleRefresh);
-            socket.off('newBooking', handleRefresh);
-            socket.off('bookingUpdated', handleRefresh);
+            socket.off('booking-status-change', handleRefresh);
+            socket.off('new-booking', handleRefresh);
+            socket.off('booking-update', handleRefresh);
         };
     }, [queryClient]);
 
