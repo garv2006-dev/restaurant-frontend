@@ -13,7 +13,9 @@ import {
   CalendarCheck,
   Users,
   LayoutDashboard,
-  FileText
+  FileText,
+  Menu,
+  X
 } from 'lucide-react';
 import '../../styles/admin-panel.css';
 import api from '../../services/api';
@@ -34,6 +36,7 @@ const AdminDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Offline Booking Modal State
   const [showOfflineBooking, setShowOfflineBooking] = useState(false);
@@ -47,6 +50,19 @@ const AdminDashboard: React.FC = () => {
 
   const handleBackToMain = () => {
     navigate('/');
+  };
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    closeSidebar(); // Close sidebar on mobile when navigating
   };
 
   const fetchRooms = async () => {
@@ -73,51 +89,60 @@ const AdminDashboard: React.FC = () => {
   const handleOpenOfflineBooking = () => {
     fetchRooms();
     setShowOfflineBooking(true);
+    closeSidebar();
   };
 
   return (
     <div className="admin-container">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div className="admin-sidebar-overlay" onClick={closeSidebar}></div>
+      )}
+
       {/* Sidebar - Fixed Position */}
-      <aside className="admin-sidebar-wrapper">
+      <aside className={`admin-sidebar-wrapper ${isSidebarOpen ? 'mobile-open' : ''}`}>
         <div className="admin-sidebar-header">
           <div className="admin-logo">
             <LayoutDashboard size={24} className="text-primary" />
             <span>Admin</span>
           </div>
+          <button className="btn btn-link text-white d-md-none ms-auto p-0" onClick={closeSidebar}>
+            <X size={24} />
+          </button>
         </div>
 
         <nav className="admin-nav">
           <button
             className={`admin-nav-item ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => handleTabChange('overview')}
           >
             <LayoutDashboard size={18} className="admin-nav-icon" />
             <span>Overview</span>
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'rooms' ? 'active' : ''}`}
-            onClick={() => setActiveTab('rooms')}
+            onClick={() => handleTabChange('rooms')}
           >
             <BedDouble size={18} className="admin-nav-icon" />
             <span>Room Management</span>
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'room-numbers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('room-numbers')}
+            onClick={() => handleTabChange('room-numbers')}
           >
             <Hash size={18} className="admin-nav-icon" />
             <span>Room Numbers</span>
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'bookings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('bookings')}
+            onClick={() => handleTabChange('bookings')}
           >
             <CalendarCheck size={18} className="admin-nav-icon" />
             <span>Bookings</span>
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'customers' ? 'active' : ''}`}
-            onClick={() => setActiveTab('customers')}
+            onClick={() => handleTabChange('customers')}
           >
             <Users size={18} className="admin-nav-icon" />
             <span>Customers</span>
@@ -131,14 +156,14 @@ const AdminDashboard: React.FC = () => {
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'discounts' ? 'active' : ''}`}
-            onClick={() => setActiveTab('discounts')}
+            onClick={() => handleTabChange('discounts')}
           >
             <Percent size={18} className="admin-nav-icon" />
             <span>Discounts</span>
           </button>
           <button
             className={`admin-nav-item ${activeTab === 'reports' ? 'active' : ''}`}
-            onClick={() => setActiveTab('reports')}
+            onClick={() => handleTabChange('reports')}
           >
             <FileText size={18} className="admin-nav-icon" />
             <span>Reports</span>
@@ -146,7 +171,7 @@ const AdminDashboard: React.FC = () => {
 
           <button
             className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('settings')}
+            onClick={() => handleTabChange('settings')}
           >
             <Settings size={18} className="admin-nav-icon" />
             <span>Settings</span>
@@ -171,6 +196,12 @@ const AdminDashboard: React.FC = () => {
         {/* Header */}
         <header className="admin-header">
           <div className="admin-header-start">
+            <button
+              className="btn btn-link text-dark p-0 me-3 d-md-none"
+              onClick={toggleSidebar}
+            >
+              <Menu size={24} />
+            </button>
             <h1 className="page-title">
               {activeTab === 'overview' && 'Dashboard Overview'}
               {activeTab === 'rooms' && 'Room Management'}
@@ -181,7 +212,7 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'reports' && 'Reports & Analytics'}
               {activeTab === 'settings' && 'System Settings'}
             </h1>
-            <div className="live-indicator">
+            <div className="live-indicator d-none d-sm-flex">
               <span className="pulsing-dot"></span>
               <span>System Live</span>
             </div>

@@ -125,7 +125,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Main Navigation */}
-            <Nav className="me-auto">
+            <Nav className="mx-auto">
               <Nav.Link
                 as={Link}
                 to="/"

@@ -54,6 +54,34 @@
   --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-bs-theme="dark"] {
+  --admin-bg-main: #0f172a;
+  --admin-bg-white: #1e293b;
+  --admin-text-main: #f1f5f9;
+  --admin-text-secondary: #cbd5e1;
+  /* Lighter for better contrast */
+  --admin-dark: #f8fafc;
+  /* Invert 'dark' to 'light' for headers/titles */
+  --admin-dark-secondary: #e2e8f0;
+  --admin-border: #334155;
+  --admin-primary-bg: rgba(59, 130, 246, 0.1);
+  --admin-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --admin-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+}
+
+/* Override Bootstrap text utilities for Admin Dark Mode */
+[data-bs-theme="dark"] .admin-container .text-dark {
+  color: var(--admin-text-main) !important;
+}
+
+[data-bs-theme="dark"] .admin-container .text-muted {
+  color: var(--admin-text-secondary) !important;
+}
+
+[data-bs-theme="dark"] .admin-container .bg-light {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
 body {
   background-color: var(--admin-bg-main);
   color: var(--admin-text-main);
@@ -218,6 +246,10 @@ body {
   position: sticky;
   top: 0;
   z-index: 40;
+}
+
+[data-bs-theme="dark"] .admin-header {
+  background-color: rgba(30, 41, 59, 0.8);
 }
 
 .admin-header-start {
@@ -399,6 +431,21 @@ body {
   outline: none;
 }
 
+[data-bs-theme="dark"] .admin-form-control,
+[data-bs-theme="dark"] .admin-form-select,
+[data-bs-theme="dark"] .admin-search-input {
+  background-color: var(--admin-bg-white);
+  color: var(--admin-text-main);
+  border-color: var(--admin-border);
+}
+
+[data-bs-theme="dark"] .admin-form-control:focus,
+[data-bs-theme="dark"] .admin-form-select:focus,
+[data-bs-theme="dark"] .admin-search-input:focus {
+  border-color: var(--admin-primary);
+  background-color: var(--admin-bg-white);
+}
+
 /* Buttons */
 .admin-btn {
   display: inline-flex;
@@ -488,6 +535,22 @@ body {
   background-color: var(--admin-bg-main);
 }
 
+[data-bs-theme="dark"] .admin-table th {
+  background-color: var(--admin-bg-white);
+  color: var(--admin-text-main);
+  border-color: var(--admin-border);
+}
+
+[data-bs-theme="dark"] .admin-table td {
+  color: var(--admin-text-main);
+  border-color: var(--admin-border);
+}
+
+[data-bs-theme="dark"] .admin-table tr:hover td {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--admin-text-main);
+}
+
 /* Badges */
 .admin-badge {
   padding: 0.35rem 0.75rem;
@@ -521,12 +584,247 @@ body {
 @media (max-width: 768px) {
   .admin-sidebar-wrapper {
     transform: translateX(-100%);
+    box-shadow: none;
+  }
+
+  .admin-sidebar-wrapper.mobile-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
   }
 
   .admin-main {
     margin-left: 0;
     max-width: 100vw;
   }
+
+  .admin-header {
+    padding: 0.75rem 1rem;
+    height: auto;
+    /* Allow height to adjust */
+    min-height: 64px;
+  }
+
+  .admin-header-start {
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+    /* Allow truncation */
+  }
+
+  .page-title {
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+
+  .admin-content-wrapper {
+    padding: 1rem;
+    /* Compact padding for mobile */
+  }
+
+  /* Compact Card Spacing */
+  .admin-card-header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .admin-card-header>div {
+    width: 100%;
+  }
+
+  .admin-card-header .d-flex {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem !important;
+  }
+
+  /* Make search and buttons full width on mobile */
+  .admin-search {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .admin-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-card-body {
+    padding: 1rem;
+  }
+
+  .admin-card-body.p-4 {
+    padding: 1rem !important;
+    /* Override inline Bootstrap classes */
+  }
+
+  /* Typography overrides for mobile */
+  .admin-card-title {
+    font-size: 1rem;
+  }
+
+  h3.fs-4 {
+    font-size: 1.25rem !important;
+    /* Scale down large numbers */
+  }
+
+  /* Table Responsiveness */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    margin-bottom: 1rem;
+    border: 1px solid var(--admin-border);
+    border-radius: var(--border-radius-base);
+  }
+
+  .admin-table {
+    min-width: 800px;
+    /* Force minimum width to trigger scroll */
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 0.75rem 0.5rem;
+    /* Tighter table spacing */
+    font-size: 0.85rem;
+  }
+
+  /* Adjust Card Actions for Mobile */
+  .d-flex.align-items-center {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Pagination fixes for mobile */
+  .admin-card-footer {
+    display: flex;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1rem;
+    padding: 1rem !important;
+  }
+
+  /* The two main groups: [Rows per page] and [Page X of Y + Buttons] */
+  .admin-card-footer>div {
+    display: flex;
+    width: 100%;
+    justify-content: space-between !important;
+    align-items: center;
+    flex-wrap: wrap;
+    /* Safety wrap */
+    gap: 0.75rem;
+  }
+
+  /* On very small screens, center everything */
+  @media (max-width: 480px) {
+    .admin-card-footer>div {
+      justify-content: center !important;
+      flex-direction: column;
+      text-align: center;
+    }
+
+    /* Wrap the "Showing..." text and "Buttons" group if they clash */
+    .admin-card-footer .d-flex.align-items-center.gap-2 {
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+    }
+
+    /* Specifically target the button group to allow multi-line wrapping */
+    .d-flex.gap-1 {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      width: 100%;
+      margin-top: 0.5rem;
+    }
+
+    /* Mobile Pagination Clean Up (Image 1 Style) */
+    .pagination-info {
+      display: none !important;
+    }
+
+    .pagination-number {
+      display: none !important;
+    }
+
+    .pagination-prev span,
+    .pagination-next span {
+      display: none !important;
+    }
+
+    /* Ensure only arrows are visible and centered */
+    .d-flex.gap-1 {
+      justify-content: center;
+      gap: 1rem !important;
+    }
+
+    .pagination-prev,
+    .pagination-next {
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      /* Circle buttons for cleaner look */
+    }
+  }
+
+  /* Make pagination buttons fit */
+  .admin-card-footer button {
+    flex-shrink: 0;
+  }
+
+  /* Ensure page info doesn't break layout */
+  .admin-card-footer .text-muted {
+    white-space: nowrap;
+  }
+
+  /* Hide specific elements on very small screens to save space */
+  @media (max-width: 480px) {
+    .page-title {
+      font-size: 1rem;
+    }
+
+    /* Make Action Buttons (Add Room etc) smaller */
+    .admin-btn {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      min-height: 38px;
+    }
+
+    /* Truncate button text if needed or rely on icon */
+    .admin-header-actions .btn span {
+      display: none;
+    }
+
+    /* Compact Search Input */
+    .admin-search-input,
+    .admin-form-control {
+      font-size: 0.9rem;
+      padding: 0.5rem;
+    }
+  }
+}
+
+/* Sidebar Overlay */
+.admin-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 45;
+  /* Below sidebar (50) but above header (40) */
+  animation: fadeIn 0.2s ease-out;
 }
 
 /* Helper Classes */
@@ -840,6 +1138,54 @@ body {
 .signature-label {
   font-weight: bold;
   font-size: 14px;
+}
+
+/* Admin Modal Styles */
+.admin-modal-content {
+  border: none;
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+}
+
+.admin-modal-header {
+  background-color: var(--admin-bg-white);
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-modal-footer {
+  background-color: var(--admin-bg-main);
+  border-top: 1px solid var(--admin-border);
+}
+
+[data-bs-theme="dark"] .admin-modal-content {
+  background-color: var(--admin-bg-white);
+  color: var(--admin-text-main);
+}
+
+[data-bs-theme="dark"] .admin-modal-header {
+  background-color: var(--admin-bg-white);
+  border-bottom-color: var(--admin-border);
+  color: var(--admin-text-main);
+}
+
+[data-bs-theme="dark"] .admin-modal-footer {
+  background-color: var(--admin-bg-white) !important;
+  border-top-color: var(--admin-border);
+  color: var(--admin-text-main);
+}
+
+/* Force bg-light to dark in dark mode modals */
+[data-bs-theme="dark"] .admin-modal-footer.bg-light {
+  background-color: var(--admin-bg-white) !important;
+}
+
+/* Fix text-dark inside modals */
+[data-bs-theme="dark"] .admin-modal-content .text-dark {
+  color: var(--admin-text-main) !important;
+}
+
+[data-bs-theme="dark"] .admin-modal-content .btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
 }
 
 /* Print Overrides */

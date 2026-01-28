@@ -393,7 +393,7 @@ const LiveDashboard: React.FC = () => {
   return (
     <div>
       <div className="row g-4 mb-4">
-        <div className="col-xl-3 col-md-6">
+        <div className="col-xl-3 col-md-6 col-12">
           <div className="admin-card h-100 no-hover">
             <div className="admin-card-body d-flex align-items-center">
               <div className="d-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-3 p-3 me-3" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
@@ -407,7 +407,7 @@ const LiveDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="col-xl-3 col-md-6">
+        <div className="col-xl-3 col-md-6 col-12">
           <div className="admin-card h-100 no-hover">
             <div className="admin-card-body d-flex align-items-center">
               <div className="d-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-3 p-3 me-3" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
@@ -421,7 +421,7 @@ const LiveDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="col-xl-3 col-md-6">
+        <div className="col-xl-3 col-md-6 col-12">
           <div className="admin-card h-100 no-hover">
             <div className="admin-card-body d-flex align-items-center">
               <div className="d-flex align-items-center justify-content-center bg-info bg-opacity-10 text-info rounded-3 p-3 me-3" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
@@ -435,7 +435,7 @@ const LiveDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="col-xl-3 col-md-6">
+        <div className="col-xl-3 col-md-6 col-12">
           <div className="admin-card h-100 no-hover">
             <div className="admin-card-body d-flex align-items-center">
               <div className="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning rounded-3 p-3 me-3" style={{ width: '48px', height: '48px', minWidth: '48px' }}>
