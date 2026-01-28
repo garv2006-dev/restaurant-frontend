@@ -42,24 +42,26 @@ const CustomerReviews: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      
+
       console.log('🔍 Fetching reviews from database...');
       console.log('🌐 API Base URL:', process.env.REACT_APP_API_URL || 'http://localhost:5000/api');
-      
+
       // Use the proper API service method
-      // For testing: add showAll=true to see unapproved reviews
-      const response = await reviewsAPI.getReviews({ 
-        limit: 3, 
-        page: 1
+      // Sort by createdAt desc to get latest reviews
+      const response = await reviewsAPI.getReviews({
+        limit: 3,
+        page: 1,
+        sortBy: 'createdAt',
+        order: 'desc'
       });
-      
+
       console.log('📦 Full API Response:', response);
-      
+
       if (response.success && response.data) {
         const reviewsData = Array.isArray(response.data) ? response.data : [];
-        
+
         console.log(`📊 Found ${reviewsData.length} reviews from database`);
-        
+
         if (reviewsData.length > 0) {
           // Convert API reviews to CustomerReview format
           const customerReviews: CustomerReview[] = reviewsData.map((review: any) => ({
@@ -81,7 +83,7 @@ const CustomerReviews: React.FC = () => {
             createdAt: review.createdAt,
             isApproved: review.isApproved
           }));
-          
+
           setReviews(customerReviews);
           console.log('✅ Successfully loaded reviews from database');
         } else {
@@ -101,7 +103,7 @@ const CustomerReviews: React.FC = () => {
         statusText: error.response?.statusText,
         data: error.response?.data
       });
-      
+
       setError('Unable to connect to server. Please try again later.');
       setReviews([]);
     } finally {
@@ -116,10 +118,10 @@ const CustomerReviews: React.FC = () => {
 
     for (let i = 0; i < fullStars; i++) {
       stars.push(
-        <IconWrapper 
-          key={i} 
-          icon={FaStar} 
-          className="text-warning" 
+        <IconWrapper
+          key={i}
+          icon={FaStar}
+          className="text-warning"
           style={{ fontSize: '0.9rem' }}
         />
       );
@@ -127,10 +129,10 @@ const CustomerReviews: React.FC = () => {
 
     if (hasHalfStar) {
       stars.push(
-        <IconWrapper 
-          key="half" 
-          icon={FaStar} 
-          className="text-warning" 
+        <IconWrapper
+          key="half"
+          icon={FaStar}
+          className="text-warning"
           style={{ opacity: 0.5, fontSize: '0.9rem' }}
         />
       );
@@ -140,10 +142,10 @@ const CustomerReviews: React.FC = () => {
     const remainingStars = 5 - Math.ceil(rating);
     for (let i = 0; i < remainingStars; i++) {
       stars.push(
-        <IconWrapper 
-          key={`empty-${i}`} 
-          icon={FaStar} 
-          className="text-muted" 
+        <IconWrapper
+          key={`empty-${i}`}
+          icon={FaStar}
+          className="text-muted"
           style={{ opacity: 0.3, fontSize: '0.9rem' }}
         />
       );
@@ -154,17 +156,10 @@ const CustomerReviews: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 1) return '1 day ago';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
@@ -258,9 +253,9 @@ const CustomerReviews: React.FC = () => {
                         src={getAvatarUrl(review.user)}
                         alt={`${review.user.name}'s profile`}
                         className="rounded-circle"
-                        style={{ 
-                          width: '50px', 
-                          height: '50px', 
+                        style={{
+                          width: '50px',
+                          height: '50px',
                           objectFit: 'cover',
                           border: '2px solid var(--bs-primary)'
                         }}
@@ -283,11 +278,11 @@ const CustomerReviews: React.FC = () => {
 
                   {/* Review Content */}
                   <div className="flex-grow-1">
-                    <h6 className="review-title mb-2 fw-semibold text-primary">
+                    <h6 className="review-title mb-2 fw-semibold">
                       {review.title}
                     </h6>
                     <p className="review-comment text-muted mb-3" style={{ lineHeight: '1.6' }}>
-                      "{truncateText(review.comment)}"
+                      {truncateText(review.comment)}
                     </p>
                   </div>
 

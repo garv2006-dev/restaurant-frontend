@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { useTheme } from '../../context/ThemeContext';
 
 interface ReportData {
   bookings: {
@@ -71,6 +72,7 @@ interface DateRange {
 }
 
 const ReportsAnalytics: React.FC = () => {
+  const { theme } = useTheme();
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -127,6 +129,17 @@ const ReportsAnalytics: React.FC = () => {
   // };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+
+  // Chart Styles based on Theme
+  const chartTextColor = theme === 'dark' ? '#cbd5e1' : '#64748B';
+  const chartGridColor = theme === 'dark' ? '#334155' : '#E2E8F0';
+  const tooltipStyle = {
+    backgroundColor: theme === 'dark' ? '#1e293b' : '#ffffff',
+    color: theme === 'dark' ? '#f1f5f9' : '#000000',
+    border: theme === 'dark' ? '1px solid #334155' : 'none',
+    borderRadius: '8px',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+  };
 
   if (loading) {
     return (
@@ -254,12 +267,12 @@ const ReportsAnalytics: React.FC = () => {
                 <div className="admin-card-body">
                   <ResponsiveContainer width="100%" height={300}>
                     <LineChart data={reportData.revenue?.monthlyRevenue || []}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} tickFormatter={(value) => `₹${value}`} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: chartTextColor }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: chartTextColor }} tickFormatter={(value) => `₹${value}`} />
                       <Tooltip
                         formatter={(value) => [`₹${value}`, 'Revenue']}
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                        contentStyle={tooltipStyle}
                       />
                       <Legend wrapperStyle={{ paddingTop: '20px' }} />
                       <Line type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
@@ -291,7 +304,7 @@ const ReportsAnalytics: React.FC = () => {
                       </Pie>
                       <Tooltip
                         formatter={(value, name) => [value, name]}
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                        contentStyle={tooltipStyle}
                       />
                       <Legend verticalAlign="bottom" height={36} />
                     </PieChart>
@@ -395,13 +408,13 @@ const ReportsAnalytics: React.FC = () => {
                 <div className="admin-card-body">
                   <ResponsiveContainer width="100%" height={400}>
                     <BarChart data={reportData.revenue?.monthlyRevenue || []}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} dy={10} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748B' }} tickFormatter={(value) => `₹${value}`} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartGridColor} />
+                      <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: chartTextColor }} dy={10} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: chartTextColor }} tickFormatter={(value) => `₹${value}`} />
                       <Tooltip
                         formatter={(value) => [`₹${value}`, 'Revenue']}
-                        cursor={{ fill: '#F1F5F9' }}
-                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                        cursor={{ fill: theme === 'dark' ? '#334155' : '#F1F5F9' }}
+                        contentStyle={tooltipStyle}
                       />
                       <Legend wrapperStyle={{ paddingTop: '20px' }} />
                       <Bar dataKey="revenue" fill="#3B82F6" radius={[4, 4, 0, 0]} barSize={40} />

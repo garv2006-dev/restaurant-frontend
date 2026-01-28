@@ -58,6 +58,20 @@ const RoomNumberManagement: React.FC = () => {
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
 
+    // Custom styles for the dropdown to ensure it stays clean
+    const dropdownStyles = `
+        .admin-form-select-sm:focus {
+            border-color: #dee2e6 !important;
+            box-shadow: none !important;
+            background-color: white !important;
+            outline: none !important;
+        }
+        .admin-form-select-sm:hover {
+            border-color: #ced4da !important;
+            background-color: white !important;
+        }
+    `;
+
     // Filters
     const [filters, setFilters] = useState(() => {
         const today = new Date();
@@ -257,6 +271,7 @@ const RoomNumberManagement: React.FC = () => {
 
     return (
         <div className="room-number-management">
+            <style>{dropdownStyles}</style>
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mb-4 gap-3">
                 <div>
                     <h2 className="h4 fw-bold text-dark mb-1">Room Number Management</h2>
@@ -482,12 +497,13 @@ const RoomNumberManagement: React.FC = () => {
                                             <div className="mt-3">
                                                 <Form.Select
                                                     size="sm"
+                                                    value=""
                                                     onChange={(e) => handleStatusChange(room._id, e.target.value)}
-                                                    defaultValue=""
-                                                    className="admin-form-select-sm"
+                                                    className="admin-form-select-sm shadow-none border-secondary"
+                                                    style={{ fontSize: '0.85rem' }}
                                                     disabled={updateStatusMutation.isPending}
                                                 >
-                                                    <option value="">Change Status...</option>
+                                                    <option value="" disabled hidden>Change Status...</option>
                                                     <option value="Available">Available</option>
                                                     <option value="Maintenance">Maintenance</option>
                                                     <option value="Out of Service">Out of Service</option>
@@ -558,12 +574,13 @@ const RoomNumberManagement: React.FC = () => {
                                                             <div style={{ width: '150px' }}>
                                                                 <Form.Select
                                                                     size="sm"
+                                                                    value=""
                                                                     onChange={(e) => handleStatusChange(room._id, e.target.value)}
-                                                                    defaultValue=""
-                                                                    className="admin-form-select-sm"
+                                                                    className="admin-form-select-sm shadow-none border-secondary text-muted"
+                                                                    style={{ fontSize: '0.85rem' }}
                                                                     disabled={updateStatusMutation.isPending}
                                                                 >
-                                                                    <option value="">Status...</option>
+                                                                    <option value="" disabled hidden>Status...</option>
                                                                     <option value="Available">Available</option>
                                                                     <option value="Maintenance">Maintenance</option>
                                                                     <option value="Out of Service">Out of Service</option>

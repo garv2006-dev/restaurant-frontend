@@ -529,8 +529,8 @@ const BookingManagement: React.FC = () => {
           {pagination.pages > 1 && (
             <div className="admin-card-footer mt-0">
               <div className="d-flex justify-content-between align-items-center w-100">
-                <div className="d-flex align-items-center gap-2">
-                  <span className="text-muted small">Show</span>
+                <div className="d-flex align-items-center gap-2 pagination-controls">
+                  <span className="text-muted small pagination-label">Items per page:</span>
                   <select
                     className="form-select form-select-sm"
                     style={{ width: 'auto', borderColor: 'var(--admin-border)' }}
@@ -542,21 +542,20 @@ const BookingManagement: React.FC = () => {
                     <option value={20}>20</option>
                     <option value={50}>50</option>
                   </select>
-                  <span className="text-muted small">entries</span>
                 </div>
 
                 <div className="d-flex align-items-center gap-2">
-                  <span className="text-muted small me-2">
+                  <span className="text-muted small me-2 pagination-info">
                     Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} entries
                   </span>
 
                   <div className="d-flex gap-1">
                     <button
-                      className="admin-btn admin-btn-sm admin-btn-outline"
+                      className="admin-btn admin-btn-sm admin-btn-outline pagination-prev"
                       disabled={pagination.page === 1}
                       onClick={() => handlePageChange(pagination.page - 1)}
                     >
-                      <ChevronLeft size={16} /> Previous
+                      <ChevronLeft size={16} /> <span className="d-none d-sm-inline ms-1">Previous</span>
                     </button>
 
                     {/* Page Numbers */}
@@ -575,7 +574,7 @@ const BookingManagement: React.FC = () => {
                       return (
                         <button
                           key={pageNum}
-                          className={`admin-btn admin-btn-sm ${pagination.page === pageNum ? 'admin-btn-primary' : 'admin-btn-outline'}`}
+                          className={`admin-btn admin-btn-sm pagination-number ${pagination.page === pageNum ? 'admin-btn-primary' : 'admin-btn-outline'}`}
                           onClick={() => handlePageChange(pageNum)}
                         >
                           {pageNum}
@@ -584,11 +583,11 @@ const BookingManagement: React.FC = () => {
                     })}
 
                     <button
-                      className="admin-btn admin-btn-sm admin-btn-outline"
+                      className="admin-btn admin-btn-sm admin-btn-outline pagination-next"
                       disabled={pagination.page === pagination.pages}
                       onClick={() => handlePageChange(pagination.page + 1)}
                     >
-                      Next <ChevronRight size={16} />
+                      <span className="d-none d-sm-inline me-1">Next</span> <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
