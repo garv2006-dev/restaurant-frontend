@@ -49,6 +49,8 @@ interface RoomType {
     _id: string;
     name: string;
     type: string;
+    totalRooms: number;
+    totalRoomNumbers: number;
 }
 
 const RoomNumberManagement: React.FC = () => {
@@ -137,6 +139,7 @@ const RoomNumberManagement: React.FC = () => {
         const socket = getSocket();
         const handleRefresh = () => {
             queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
+            queryClient.invalidateQueries({ queryKey: ['roomTypes'] }); // Refresh counts
         };
 
         socket.on('booking-status-change', handleRefresh);
@@ -157,6 +160,7 @@ const RoomNumberManagement: React.FC = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
+            queryClient.invalidateQueries({ queryKey: ['roomTypes'] });
             setSuccess('Room numbers created successfully!');
             setShowBulkModal(false);
             setBulkForm({
@@ -191,6 +195,7 @@ const RoomNumberManagement: React.FC = () => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
+            queryClient.invalidateQueries({ queryKey: ['roomTypes'] });
             toast.success('Room number deleted successfully');
         },
         onError: (err: any) => {
@@ -210,6 +215,30 @@ const RoomNumberManagement: React.FC = () => {
         e.preventDefault();
         setError('');
         setSuccess('');
+
+        if (bulkForm.startNumber && bulkForm.endNumber) {
+            const start = parseInt(bulkForm.startNumber);
+            const end = parseInt(bulkForm.endNumber);
+
+            if (end < start) {
+                setError('End number must be greater than or equal to start number');
+                return;
+            }
+
+            const count = end - start + 1;
+            const roomType = roomTypes.find((r: RoomType) => r._id === bulkForm.roomTypeId);
+
+            if (roomType) {
+                const currentCount = roomType.totalRoomNumbers || 0;
+                const limit = roomType.totalRooms || 0;
+
+                if (currentCount + count > limit) {
+                    setError(`Cannot add ${count} rooms. Room Type "${roomType.name}" allows ${limit} rooms in total, and already has ${currentCount}. You can only add ${limit - currentCount} more.`);
+                    return;
+                }
+            }
+        }
+
         bulkCreateMutation.mutate(bulkForm);
     };
 

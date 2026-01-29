@@ -19,6 +19,7 @@ const Login: React.FC = () => {
     password: ''
   });
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [socialError] = useState<string | null>(null);
@@ -36,23 +37,49 @@ const Login: React.FC = () => {
     }
   }, [isAuthenticated, navigate, location, user]);
 
+  const validateField = (name: string, value: string) => {
+    let error: string | undefined;
+
+    switch (name) {
+      case 'email':
+        if (!value) error = 'Email is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Please enter a valid email address';
+        break;
+      case 'password':
+        if (!value) error = 'Password is required';
+        else if (value.length < 6) error = 'Password must be at least 6 characters';
+        break;
+    }
+    return error;
+  };
+
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginCredentials> = {};
 
-    if (!credentials.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(credentials.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
+    const emailError = validateField('email', credentials.email);
+    if (emailError) newErrors.email = emailError;
 
-    if (!credentials.password) {
-      newErrors.password = 'Password is required';
-    } else if (credentials.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
+    const passwordError = validateField('password', credentials.password);
+    if (passwordError) newErrors.password = passwordError;
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: false }));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,17 +89,24 @@ const Login: React.FC = () => {
       [name]: value
     }));
 
-    // Clear error when user starts typing
-    if (errors[name as keyof LoginCredentials]) {
+    // Only validate if already touched to avoid aggressive errors while typing
+    if (touched[name]) {
+      const error = validateField(name, value);
       setErrors(prev => ({
         ...prev,
-        [name]: undefined
+        [name]: error
       }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Mark all fields as touched
+    setTouched({
+      email: true,
+      password: true
+    });
 
     if (!validateForm()) return;
 
@@ -121,8 +155,10 @@ const Login: React.FC = () => {
                       name="email"
                       value={credentials.email}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      onFocus={handleFocus}
                       placeholder="Enter your email"
-                      isInvalid={!!errors.email}
+                      isInvalid={touched.email && !!errors.email}
                       autoComplete="email"
                       className="py-2"
                     />
@@ -140,8 +176,10 @@ const Login: React.FC = () => {
                         name="password"
                         value={credentials.password}
                         onChange={handleChange}
+                        onBlur={handleBlur}
+                        onFocus={handleFocus}
                         placeholder="Enter your password"
-                        isInvalid={!!errors.password}
+                        isInvalid={touched.password && !!errors.password}
                         autoComplete="current-password"
                         className="py-2"
                       />
@@ -155,7 +193,7 @@ const Login: React.FC = () => {
                         {showPassword ? <IconWrapper icon={FaEyeSlash} /> : <IconWrapper icon={FaEye} />}
                       </Button>
                     </div>
-                    <Form.Control.Feedback type="invalid">
+                    <Form.Control.Feedback type="invalid" className={touched.password && errors.password ? 'd-block' : ''}>
                       {errors.password}
                     </Form.Control.Feedback>
                   </Form.Group>

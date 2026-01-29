@@ -26,6 +26,16 @@ const CustomerManagement: React.FC = () => {
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
 
+  // Add Customer Form State
+  const [addFormData, setAddFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: ''
+  });
+  const [addFormErrors, setAddFormErrors] = useState<Record<string, string>>({});
+  const [addFormTouched, setAddFormTouched] = useState<Record<string, boolean>>({});
+
   // Client-side pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -104,26 +114,88 @@ const CustomerManagement: React.FC = () => {
     // Debounce will trigger fetch
   };
 
+  const validateAddForm = (name: string, value: string) => {
+    let error = '';
+    switch (name) {
+      case 'name':
+        if (!value.trim()) error = 'Name is required';
+        break;
+      case 'email':
+        if (!value.trim()) error = 'Email is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Invalid email address';
+        break;
+      case 'phone':
+        if (!value.trim()) error = 'Phone is required';
+        else if (!/^\+?[\d\s-]{10,}$/.test(value)) error = 'Invalid phone number';
+        break;
+      case 'password':
+        if (!value) error = 'Password is required';
+        else if (value.length < 6) error = 'Password must be at least 6 characters';
+        break;
+    }
+    return error;
+  };
+
+  const handleAddFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddFormData(prev => ({ ...prev, [name]: value }));
+
+    if (addFormTouched[name]) {
+      const error = validateAddForm(name, value);
+      setAddFormErrors(prev => ({ ...prev, [name]: error }));
+    }
+  };
+
+  const handleAddFormBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setAddFormTouched(prev => ({ ...prev, [name]: true }));
+    const error = validateAddForm(name, value);
+    setAddFormErrors(prev => ({ ...prev, [name]: error }));
+  };
+
+  const handleAddFormFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    setAddFormTouched(prev => ({ ...prev, [name]: false }));
+    setAddFormErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const resetAddForm = () => {
+    setAddFormData({ name: '', email: '', phone: '', password: '' });
+    setAddFormErrors({});
+    setAddFormTouched({});
+  };
+
   const handleAddCustomer = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const customerData = {
-      name: formData.get('name') as string,
-      email: formData.get('email') as string,
-      phone: formData.get('phone') as string,
-      password: formData.get('password') as string,
-    };
+
+    // Validate all fields
+    const errors: Record<string, string> = {};
+    const touched: Record<string, boolean> = {};
+    let isValid = true;
+
+    Object.keys(addFormData).forEach(key => {
+      const error = validateAddForm(key, addFormData[key as keyof typeof addFormData]);
+      if (error) {
+        errors[key] = error;
+        isValid = false;
+      }
+      touched[key] = true;
+    });
+
+    setAddFormErrors(errors);
+    setAddFormTouched(touched);
+
+    if (!isValid) return;
 
     try {
       setAddLoading(true);
-      const response = await adminAPI.addCustomer(customerData);
+      const response = await adminAPI.addCustomer(addFormData);
 
       if (response.success) {
         setShowAddModal(false);
         fetchCustomers(); // Refresh customer list
         toast.success('Customer added successfully!');
-        // Reset form
-        e.currentTarget.reset();
+        resetAddForm();
       } else {
         setError(response.message || 'Failed to add customer');
         toast.error(response.message || 'Failed to add customer');
@@ -251,7 +323,7 @@ const CustomerManagement: React.FC = () => {
         )}
 
         {loading ? (
-          <div className="admin-table-responsive">
+          <div className="table-responsive">
             <table className="admin-table">
               <thead>
                 <tr>
@@ -284,7 +356,7 @@ const CustomerManagement: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="admin-table-responsive">
+            <div className="table-responsive">
               <table className="admin-table">
                 <thead>
                   <tr>
@@ -434,9 +506,16 @@ const CustomerManagement: React.FC = () => {
                 type="text"
                 name="name"
                 placeholder="Enter customer name"
-                required
+                value={addFormData.name}
+                onChange={handleAddFormChange}
+                onBlur={handleAddFormBlur}
+                onFocus={handleAddFormFocus}
+                isInvalid={addFormTouched.name && !!addFormErrors.name}
                 className="admin-form-control"
               />
+              <Form.Control.Feedback type="invalid">
+                {addFormErrors.name}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -445,9 +524,16 @@ const CustomerManagement: React.FC = () => {
                 type="email"
                 name="email"
                 placeholder="Enter customer email"
-                required
+                value={addFormData.email}
+                onChange={handleAddFormChange}
+                onBlur={handleAddFormBlur}
+                onFocus={handleAddFormFocus}
+                isInvalid={addFormTouched.email && !!addFormErrors.email}
                 className="admin-form-control"
               />
+              <Form.Control.Feedback type="invalid">
+                {addFormErrors.email}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -456,9 +542,16 @@ const CustomerManagement: React.FC = () => {
                 type="tel"
                 name="phone"
                 placeholder="Enter customer phone"
-                required
+                value={addFormData.phone}
+                onChange={handleAddFormChange}
+                onBlur={handleAddFormBlur}
+                onFocus={handleAddFormFocus}
+                isInvalid={addFormTouched.phone && !!addFormErrors.phone}
                 className="admin-form-control"
               />
+              <Form.Control.Feedback type="invalid">
+                {addFormErrors.phone}
+              </Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3">
@@ -467,10 +560,16 @@ const CustomerManagement: React.FC = () => {
                 type="password"
                 name="password"
                 placeholder="Enter temporary password"
-                required
-                minLength={6}
+                value={addFormData.password}
+                onChange={handleAddFormChange}
+                onBlur={handleAddFormBlur}
+                onFocus={handleAddFormFocus}
+                isInvalid={addFormTouched.password && !!addFormErrors.password}
                 className="admin-form-control"
               />
+              <Form.Control.Feedback type="invalid">
+                {addFormErrors.password}
+              </Form.Control.Feedback>
               <Form.Text className="text-muted">
                 Minimum 6 characters. Customer can change this later.
               </Form.Text>

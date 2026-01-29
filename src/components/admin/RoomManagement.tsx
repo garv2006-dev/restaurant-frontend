@@ -68,7 +68,7 @@ const RoomManagement: React.FC = () => {
     type: 'Standard' | 'Deluxe' | 'Suite';
     description: string;
     capacity: { adults: number; children: number };
-    price: { basePrice: number };
+    price: { basePrice: number | string };
     features: {
       airConditioning: boolean;
       wifi: boolean;
@@ -87,7 +87,7 @@ const RoomManagement: React.FC = () => {
     type: 'Standard',
     description: '',
     capacity: { adults: 2, children: 1 },
-    price: { basePrice: 0 },
+    price: { basePrice: '' },
     features: {
       airConditioning: true,
       wifi: true,
@@ -102,6 +102,50 @@ const RoomManagement: React.FC = () => {
     floor: 1,
     totalRooms: 1,
   });
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const validateField = (name: string, value: any): string => {
+    let error = '';
+    switch (name) {
+      case 'name':
+        if (!value.trim()) error = 'Room Name is required';
+        else if (value.trim().length < 3) error = 'Name must be at least 3 characters';
+        break;
+      case 'basePrice':
+        if (value === '' || value === null || value === undefined) error = 'Base Price is required';
+        else if (Number(value) <= 0) error = 'Base Price must be greater than 0';
+        break;
+      case 'area':
+        if (!value || Number(value) <= 0) error = 'Area must be greater than 0';
+        break;
+      case 'floor':
+        if (!value || Number(value) < 0) error = 'Floor must be a valid number';
+        break;
+      case 'totalRooms':
+        if (!value || Number(value) < 1) error = 'Total Rooms must be at least 1';
+        break;
+      case 'adults':
+        if (!value || Number(value) < 1) error = 'At least 1 adult is required';
+        break;
+      case 'description':
+        if (!value.trim()) error = 'Description is required';
+        break;
+    }
+    return error;
+  };
+
+  const handleBlur = (name: string, value: any) => {
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const error = validateField(name, value);
+    setFormErrors(prev => ({ ...prev, [name]: error }));
+  };
+
+  const handleFocus = (name: string) => {
+    setTouched(prev => ({ ...prev, [name]: false }));
+    setFormErrors(prev => ({ ...prev, [name]: '' }));
+  };
 
   // Fetch Rooms Query
   const { data: rooms = [], isLoading, isError, error: queryError, refetch } = useQuery({
@@ -248,6 +292,8 @@ const RoomManagement: React.FC = () => {
     });
     setSelectedImages([]);
     setImagePreview([]);
+    setFormErrors({});
+    setTouched({});
     setShowModal(true);
   };
 
@@ -260,7 +306,7 @@ const RoomManagement: React.FC = () => {
       type: 'Standard',
       description: '',
       capacity: { adults: 2, children: 1 },
-      price: { basePrice: 0 },
+      price: { basePrice: '' },
       features: {
         airConditioning: true,
         wifi: true,
@@ -277,6 +323,8 @@ const RoomManagement: React.FC = () => {
     });
     setSelectedImages([]);
     setImagePreview([]);
+    setFormErrors({});
+    setTouched({});
     setShowModal(true);
   };
 
@@ -301,11 +349,57 @@ const RoomManagement: React.FC = () => {
     setSuccess('');
 
     // Validation
-    const requiredFields = ['name', 'type', 'description', 'bedType'];
-    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
+    const errors: Record<string, string> = {};
+    const newTouched: Record<string, boolean> = {};
+    let isValid = true;
 
-    if (missingFields.length > 0) {
-      setError(`Please fill in all required fields: ${missingFields.join(', ')}`);
+    // Validate top-level fields
+    const fieldsToValidate = ['name', 'description'];
+    fieldsToValidate.forEach(field => {
+      newTouched[field] = true;
+      const error = validateField(field, formData[field as keyof typeof formData]);
+      if (error) {
+        errors[field] = error;
+        isValid = false;
+      }
+    });
+
+    // Validate nested fields manually since validateField is simple
+    newTouched['basePrice'] = true;
+    const priceError = validateField('basePrice', formData.price.basePrice);
+    if (priceError) {
+      errors['basePrice'] = priceError;
+      isValid = false;
+    }
+
+    newTouched['area'] = true;
+    if (!formData.area || formData.area <= 0) {
+      errors['area'] = 'Area must be greater than 0';
+      isValid = false;
+    }
+
+    newTouched['floor'] = true;
+    if (!formData.floor && formData.floor !== 0) {
+      errors['floor'] = 'Floor is required';
+      isValid = false;
+    }
+
+    newTouched['totalRooms'] = true;
+    if (!formData.totalRooms || formData.totalRooms < 1) {
+      errors['totalRooms'] = 'Total Rooms must be at least 1';
+      isValid = false;
+    }
+
+    newTouched['adults'] = true;
+    if (!formData.capacity.adults || formData.capacity.adults < 1) {
+      errors['adults'] = 'At least 1 adult is required';
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    setTouched(newTouched);
+
+    if (!isValid) {
       return;
     }
 
@@ -582,10 +676,18 @@ const RoomManagement: React.FC = () => {
                   <Form.Control
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({ ...formData, name: val });
+                      if (touched.name) setFormErrors(prev => ({ ...prev, name: validateField('name', val) }));
+                    }}
+                    onBlur={() => handleBlur('name', formData.name)}
+                    onFocus={() => handleFocus('name')}
+                    isInvalid={touched.name && !!formErrors.name}
                     required
                     placeholder="E.g., Deluxe Suite"
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.name}</Form.Control.Feedback>
                 </Form.Group>
               </Col>
             </Row>
@@ -632,12 +734,20 @@ const RoomManagement: React.FC = () => {
                     min="0"
                     step="0.01"
                     value={formData.price.basePrice}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      price: { ...formData.price, basePrice: parseFloat(e.target.value) || 0 }
-                    })}
+                    onChange={(e) => {
+                      const val = e.target.value === '' ? '' : parseFloat(e.target.value);
+                      setFormData({
+                        ...formData,
+                        price: { ...formData.price, basePrice: val }
+                      });
+                      if (touched.basePrice) setFormErrors(prev => ({ ...prev, basePrice: validateField('basePrice', val) }));
+                    }}
+                    onBlur={() => handleBlur('basePrice', formData.price.basePrice)}
+                    onFocus={() => handleFocus('basePrice')}
+                    isInvalid={touched.basePrice && !!formErrors.basePrice}
                     required
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.basePrice}</Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -647,9 +757,17 @@ const RoomManagement: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.floor}
-                    onChange={(e) => setFormData({ ...formData, floor: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setFormData({ ...formData, floor: val });
+                      if (touched.floor) setFormErrors(prev => ({ ...prev, floor: validateField('floor', val) }));
+                    }}
+                    onBlur={() => handleBlur('floor', formData.floor)}
+                    onFocus={() => handleFocus('floor')}
+                    isInvalid={touched.floor && !!formErrors.floor}
                     required
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.floor}</Form.Control.Feedback>
                 </Form.Group>
               </Col>
             </Row>
@@ -662,9 +780,17 @@ const RoomManagement: React.FC = () => {
                     type="number"
                     min="0"
                     value={formData.area}
-                    onChange={(e) => setFormData({ ...formData, area: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setFormData({ ...formData, area: val });
+                      if (touched.area) setFormErrors(prev => ({ ...prev, area: validateField('area', val) }));
+                    }}
+                    onBlur={() => handleBlur('area', formData.area)}
+                    onFocus={() => handleFocus('area')}
+                    isInvalid={touched.area && !!formErrors.area}
                     required
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.area}</Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -674,9 +800,17 @@ const RoomManagement: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.totalRooms}
-                    onChange={(e) => setFormData({ ...formData, totalRooms: parseInt(e.target.value) || 1 })}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setFormData({ ...formData, totalRooms: val });
+                      if (touched.totalRooms) setFormErrors(prev => ({ ...prev, totalRooms: validateField('totalRooms', val) }));
+                    }}
+                    onBlur={() => handleBlur('totalRooms', formData.totalRooms)}
+                    onFocus={() => handleFocus('totalRooms')}
+                    isInvalid={touched.totalRooms && !!formErrors.totalRooms}
                     required
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.totalRooms}</Form.Control.Feedback>
                   <Form.Text className="text-muted">
                     Number of room instances for this room type (create actual room numbers in Room Numbers page)
                   </Form.Text>
@@ -692,12 +826,20 @@ const RoomManagement: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.capacity.adults}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      capacity: { ...formData.capacity, adults: parseInt(e.target.value) || 1 }
-                    })}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 1;
+                      setFormData({
+                        ...formData,
+                        capacity: { ...formData.capacity, adults: val }
+                      });
+                      if (touched.adults) setFormErrors(prev => ({ ...prev, adults: validateField('adults', val) }));
+                    }}
+                    onBlur={() => handleBlur('adults', formData.capacity.adults)}
+                    onFocus={() => handleFocus('adults')}
+                    isInvalid={touched.adults && !!formErrors.adults}
                     required
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.adults}</Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -722,10 +864,18 @@ const RoomManagement: React.FC = () => {
                 as="textarea"
                 rows={3}
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData({ ...formData, description: val });
+                  if (touched.description) setFormErrors(prev => ({ ...prev, description: validateField('description', val) }));
+                }}
+                onBlur={() => handleBlur('description', formData.description)}
+                onFocus={() => handleFocus('description')}
+                isInvalid={touched.description && !!formErrors.description}
                 required
                 placeholder="Describe the room's features and amenities..."
               />
+              <Form.Control.Feedback type="invalid">{formErrors.description}</Form.Control.Feedback>
             </Form.Group>
 
             <Form.Group className="mb-3">
