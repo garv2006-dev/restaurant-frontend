@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaLock, FaArrowLeft, FaEnvelope } from 'react-icons/fa';
+import { FaLock, FaEnvelope } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
@@ -119,13 +119,7 @@ const VerifyCode: React.FC = () => {
         }
     };
 
-    const handleBack = () => {
-        if (mode === 'register') {
-            navigate('/register');
-        } else {
-            navigate('/forgot-password');
-        }
-    };
+
 
     if (!email) return null;
 
