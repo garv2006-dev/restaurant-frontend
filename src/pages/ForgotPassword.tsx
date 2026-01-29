@@ -14,7 +14,6 @@ const IconWrapper = ({ icon: Icon, className, size, ...props }: { icon: any; cla
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
 
@@ -75,51 +74,7 @@ const ForgotPassword: React.FC = () => {
     navigate('/login');
   };
 
-  if (success) {
-    return (
-      <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
-        <Container className="py-5">
-          <Row className="justify-content-center align-items-center min-vh-100">
-            <Col md={6} lg={5} xl={4}>
-              <Card className="shadow-sm border-0">
-                <Card.Body className="p-4">
-                  <div className="text-center mb-4">
-                    <div className="mb-3">
-                      <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '64px', height: '64px' }}>
-                        <IconWrapper icon={FaEnvelope} className="text-success" size={24} />
-                      </div>
-                    </div>
-                    <h3 className="text-success mb-2">Reset Email Sent!</h3>
-                    <p className="text-muted">
-                      We've sent a password reset link to your email address.
-                      Please check your inbox and follow the instructions to reset your password.
-                    </p>
-                  </div>
 
-                  <div className="d-grid">
-                    <Button
-                      variant="outline-primary"
-                      size="lg"
-                      onClick={handleBackToLogin}
-                      className="d-flex align-items-center justify-content-center"
-                    >
-                      <IconWrapper icon={FaArrowLeft} className="me-2" />
-                      Back to Login
-                    </Button>
-                  </div>
-
-                  <Alert variant="info" className="mt-3 small">
-                    <strong>Note:</strong> If you don't receive the email within a few minutes,
-                    please check your spam folder.
-                  </Alert>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </Container>
-      </div>
-    );
-  }
 
   return (
     <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
