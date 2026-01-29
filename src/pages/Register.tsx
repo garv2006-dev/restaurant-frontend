@@ -190,7 +190,7 @@ const Register: React.FC = () => {
 
     const success = await register(formData);
     if (success) {
-      navigate('/dashboard');
+      navigate('/verify-code', { state: { email: formData.email, mode: 'register' } });
     }
   };
 

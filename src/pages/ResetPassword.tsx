@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { FaLock, FaArrowLeft, FaCheckCircle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -16,7 +16,6 @@ interface ResetPasswordFormData {
 }
 
 const ResetPassword: React.FC = () => {
-  const { token } = useParams<{ token: string }>();
   const [formData, setFormData] = useState<ResetPasswordFormData>({
     password: '',
     confirmPassword: ''
@@ -27,16 +26,26 @@ const ResetPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
-  
+
   const { resetPassword } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  // Validate token on mount
+  const stateEmail = location.state?.email;
+  const stateOtp = location.state?.otp;
+  const queryEmail = searchParams.get('email');
+  const queryOtp = searchParams.get('otp');
+
+  const email = stateEmail || queryEmail;
+  const otp = stateOtp || queryOtp;
+
+  // Validate state on mount
   useEffect(() => {
-    if (!token) {
-      setTokenError('Invalid reset link. No token provided.');
+    if (!email || !otp) {
+      setTokenError('Invalid access. Please request a password reset again.');
     }
-  }, [token]);
+  }, [email, otp]);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<ResetPasswordFormData> = {};
@@ -78,8 +87,8 @@ const ResetPassword: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!token) {
-      setTokenError('Invalid reset link');
+    if (!email || !otp) {
+      setTokenError('Missing verification details. Please try again.');
       return;
     }
 
@@ -88,7 +97,7 @@ const ResetPassword: React.FC = () => {
     setLoading(true);
 
     try {
-      const success = await resetPassword(token, formData.password);
+      const success = await resetPassword(email, otp, formData.password);
       if (success) {
         setSuccess(true);
       }

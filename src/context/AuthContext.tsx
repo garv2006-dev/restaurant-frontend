@@ -8,8 +8,10 @@ interface AuthContextType extends AuthState {
   register: (userData: RegisterData) => Promise<boolean>;
   logout: () => void;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
-  forgotPassword: (email: string) => Promise<boolean>;
-  resetPassword: (token: string, password: string) => Promise<boolean>;
+  forgotPassword: (email: string, shouldThrow?: boolean) => Promise<boolean>;
+  resetPassword: (email: string, otp: string, password: string) => Promise<boolean>;
+  verifyOtp: (email: string, otp: string) => Promise<boolean>;
+  verifyAccount: (email: string, otp: string) => Promise<boolean>;
   verifyEmail: (token: string) => Promise<boolean>;
   resendVerification: (email: string) => Promise<boolean>;
   refreshUser: () => Promise<void>;
@@ -177,22 +179,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       const response = await authAPI.register(userData);
 
-      if (response.success && response.user && response.token) {
-        const { user, token } = response;
-
-        // Store in localStorage
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(user));
-
-        // Update state
-        updateAuthState({
-          user,
-          token,
-          isAuthenticated: true,
-          loading: false,
-        });
-
-        toast.success('Registration successful! Please verify your email.');
+      if (response.success) {
+        // We no longer set state or token here because user needs to verify email first
+        toast.success(response.message || 'Registration successful! Please verify your email.');
         return true;
       } else {
         throw new Error(response.message || 'Registration failed');
@@ -263,27 +252,80 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [updateAuthState]);
 
-  const forgotPassword = useCallback(async (email: string): Promise<boolean> => {
+  const forgotPassword = useCallback(async (email: string, shouldThrow = false): Promise<boolean> => {
     try {
       const response = await authAPI.forgotPassword(email);
 
       if (response.success) {
-        toast.success('Password reset email sent successfully');
+        toast.success('Verification code sent successfully');
         return true;
       } else {
-        throw new Error(response.message || 'Failed to send password reset email');
+        throw new Error(response.message || 'Failed to send verification code');
       }
     } catch (error: any) {
       console.error('Forgot password error:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to send password reset email';
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to send verification code';
+      toast.error(errorMessage);
+      if (shouldThrow) throw error;
+      return false;
+    }
+  }, []);
+
+  const verifyOtp = useCallback(async (email: string, otp: string): Promise<boolean> => {
+    try {
+      const response = await authAPI.verifyOtp(email, otp);
+
+      if (response.success) {
+        return true;
+      } else {
+        throw new Error(response.message || 'Verification failed');
+      }
+    } catch (error: any) {
+      console.error('OTP verification error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Verification failed';
       toast.error(errorMessage);
       return false;
     }
   }, []);
 
-  const resetPassword = useCallback(async (token: string, password: string): Promise<boolean> => {
+  const verifyAccount = useCallback(async (email: string, otp: string): Promise<boolean> => {
     try {
-      const response = await authAPI.resetPassword(token, password);
+      // We need to add this method to authAPI service first ideally, or call axios directly.
+      // Assuming authAPI will be updated or we can add it here.
+      // Use verifyOtp endpoint structure but point to verify-account
+      const response = await authAPI.verifyAccount(email, otp);
+
+      if (response.success && response.user && response.token) {
+        const { user, token } = response;
+
+        // Store in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        // Update state
+        updateAuthState({
+          user,
+          token,
+          isAuthenticated: true,
+          loading: false,
+        });
+
+        toast.success('Account verified successfully!');
+        return true;
+      } else {
+        throw new Error(response.message || 'Verification failed');
+      }
+    } catch (error: any) {
+      console.error('Account verification error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Verification failed';
+      toast.error(errorMessage);
+      return false;
+    }
+  }, [updateAuthState]);
+
+  const resetPassword = useCallback(async (email: string, otp: string, password: string): Promise<boolean> => {
+    try {
+      const response = await authAPI.resetPassword(email, otp, password);
 
       if (response.success && response.user && response.token) {
         const { user, token: newToken } = response;
@@ -386,6 +428,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updatePassword,
     forgotPassword,
     resetPassword,
+    verifyOtp,
+    verifyAccount,
     verifyEmail,
     resendVerification,
     refreshUser,
@@ -401,6 +445,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     updatePassword,
     forgotPassword,
     resetPassword,
+    verifyOtp,
+    verifyAccount,
     verifyEmail,
     resendVerification,
     refreshUser,
