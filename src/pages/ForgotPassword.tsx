@@ -61,7 +61,8 @@ const ForgotPassword: React.FC = () => {
     try {
       const success = await forgotPassword(email);
       if (success) {
-        setSuccess(true);
+        // Navigate to verify code page
+        navigate('/verify-code', { state: { email } });
       }
     } catch (err: any) {
       setError(err.message || 'Failed to send password reset email');

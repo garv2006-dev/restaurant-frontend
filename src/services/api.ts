@@ -132,9 +132,20 @@ export const authAPI = {
     return response.data;
   },
 
-  resetPassword: async (token: string, password: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
+  verifyOtp: async (email: string, otp: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.post('/auth/verify-otp', { email, otp });
+    return response.data;
+  },
+
+  verifyAccount: async (email: string, otp: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
+    const response: AxiosResponse<{ success: boolean; user?: User; token?: string; message?: string }> = await api.post('/auth/verify-account', { email, otp });
+    return response.data;
+  },
+
+  resetPassword: async (email: string, otp: string, password: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
     const response: AxiosResponse<{ success: boolean; user?: User; token?: string; message?: string }> = await api.put('/auth/resetpassword', {
-      token,
+      email,
+      otp,
       password,
     });
     return response.data;
