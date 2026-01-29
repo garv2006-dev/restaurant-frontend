@@ -19,6 +19,7 @@ const Register: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [errors, setErrors] = useState<Partial<RegisterData & { confirmPassword: string; terms: string }>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const { register, loading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -33,46 +34,20 @@ const Register: React.FC = () => {
   const validateForm = (): boolean => {
     const newErrors: Partial<RegisterData & { confirmPassword: string; terms: string }> = {};
 
-    // Name validation
-    if (!formData.name.trim()) {
-      newErrors.name = 'Full name is required';
-    } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
-    } else if (formData.name.trim().length > 50) {
-      newErrors.name = 'Name must be less than 50 characters';
-    }
+    const nameError = validateField('name', formData.name);
+    if (nameError) newErrors.name = nameError;
 
-    // Email validation
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
+    const emailError = validateField('email', formData.email);
+    if (emailError) newErrors.email = emailError;
 
-    // Phone validation
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^[+]?[1-9][\d]{0,15}$/.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
+    const phoneError = validateField('phone', formData.phone);
+    if (phoneError) newErrors.phone = phoneError;
 
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    } else if (formData.password.length > 128) {
-      newErrors.password = 'Password must be less than 128 characters';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain uppercase, lowercase, and number';
-    }
+    const passwordError = validateField('password', formData.password);
+    if (passwordError) newErrors.password = passwordError;
 
-    // Confirm password validation
-    if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (confirmPassword !== formData.password) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
+    const confirmError = validateField('confirmPassword', confirmPassword);
+    if (confirmError) newErrors.confirmPassword = confirmError;
 
     // Terms validation
     if (!agreeToTerms) {
@@ -81,6 +56,65 @@ const Register: React.FC = () => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const validateField = (name: string, value: string) => {
+    let error: string | undefined;
+
+    switch (name) {
+      case 'name':
+        if (!value.trim()) error = 'Full name is required';
+        else if (value.trim().length < 2) error = 'Name must be at least 2 characters';
+        else if (value.trim().length > 50) error = 'Name must be less than 50 characters';
+        break;
+      case 'email':
+        if (!value) error = 'Email is required';
+        else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Please enter a valid email address';
+        break;
+      case 'phone':
+        // strictly 10 digits
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!value) error = 'Phone number is required';
+        else if (!phoneRegex.test(value.replace(/\s|-/g, ''))) error = 'Phone number must be exactly 10 digits';
+        break;
+      case 'password':
+        if (!value) error = 'Password is required';
+        else if (value.length < 6) error = 'Password must be at least 6 characters';
+        else if (value.length > 128) error = 'Password must be less than 128 characters';
+        else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)) error = 'Password must contain uppercase, lowercase, and number';
+        break;
+      case 'confirmPassword':
+        if (!value) error = 'Please confirm your password';
+        else if (value !== formData.password) error = 'Passwords do not match';
+        break;
+      case 'terms':
+        // Terms validation is boolean based, handled separately or implicitly
+        break;
+    }
+    return error;
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+
+    // Special case for password confirm sync
+    if (name === 'password' && confirmPassword && touched.confirmPassword) {
+      const confirmError = value === confirmPassword ? undefined : 'Passwords do not match';
+      setErrors(prev => ({ ...prev, confirmPassword: confirmError }));
+    }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    // When focused, mark as untouched so error disappears
+    setTouched(prev => ({ ...prev, [name]: false }));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,70 +136,55 @@ const Register: React.FC = () => {
       [name]: value
     }));
 
-    // Live field validation to clear/set specific errors promptly
-    setErrors(prev => {
-      const updated = { ...prev };
+    // Only validate if already touched to avoid aggressive errors while typing
+    if (touched[name]) {
+      const error = validateField(name, value);
+      setErrors(prev => ({
+        ...prev,
+        [name]: error
+      }));
+    }
 
-      if (name === 'name') {
-        const n = value.trim();
-        updated.name = !n
-          ? 'Full name is required'
-          : n.length < 2
-            ? 'Name must be at least 2 characters'
-            : n.length > 50
-              ? 'Name must be less than 50 characters'
-              : undefined;
-      }
-
-      if (name === 'email') {
-        updated.email = !value
-          ? 'Email is required'
-          : /\S+@\S+\.\S+/.test(value)
-            ? undefined
-            : 'Please enter a valid email address';
-      }
-
-      if (name === 'phone') {
-        const phoneOk = /^\+?[1-9]\d{0,15}$/.test(value);
-        updated.phone = !value ? 'Phone number is required' : phoneOk ? undefined : 'Please enter a valid phone number';
-      }
-
-      if (name === 'password') {
-        const pwd = value;
-        let msg: string | undefined = undefined;
-        if (!pwd) msg = 'Password is required';
-        else if (pwd.length < 6) msg = 'Password must be at least 6 characters';
-        else if (pwd.length > 128) msg = 'Password must be less than 128 characters';
-        else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(pwd)) msg = 'Password must contain uppercase, lowercase, and number';
-        updated.password = msg;
-
-        // If confirm already filled, revalidate match
-        if (confirmPassword) {
-          updated.confirmPassword = confirmPassword === pwd ? undefined : 'Passwords do not match';
-        }
-      }
-
-      return updated;
-    });
+    // Special case: If typing in password, update confirm error if it was already touched
+    if (name === 'password' && touched.confirmPassword) {
+      const confirmError = confirmPassword === value ? undefined : 'Passwords do not match';
+      setErrors(prev => ({ ...prev, confirmPassword: confirmError }));
+    }
   };
 
   const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setConfirmPassword(val);
 
-    // Live validation for match with current password
+    if (touched.confirmPassword) {
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: val === formData.password ? undefined : 'Passwords do not match'
+      }));
+    }
+  };
+
+  const handleConfirmPasswordBlur = () => {
+    setTouched(prev => ({ ...prev, confirmPassword: true }));
     setErrors(prev => ({
       ...prev,
-      confirmPassword: !val
+      confirmPassword: !confirmPassword
         ? 'Please confirm your password'
-        : val === formData.password
-          ? undefined
-          : 'Passwords do not match',
+        : confirmPassword === formData.password ? undefined : 'Passwords do not match'
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Mark all fields as touched to show errors
+    setTouched({
+      name: true,
+      email: true,
+      phone: true,
+      password: true,
+      confirmPassword: true
+    });
 
     if (!validateForm()) return;
 
@@ -219,8 +238,10 @@ const Register: React.FC = () => {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      onFocus={handleFocus}
                       placeholder="Enter your full name"
-                      isInvalid={!!errors.name}
+                      isInvalid={touched.name && !!errors.name}
                       autoComplete="name"
                     />
                     <Form.Control.Feedback type="invalid">
@@ -239,8 +260,10 @@ const Register: React.FC = () => {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      onFocus={handleFocus}
                       placeholder="Enter your email"
-                      isInvalid={!!errors.email}
+                      isInvalid={touched.email && !!errors.email}
                       autoComplete="email"
                     />
                     <Form.Control.Feedback type="invalid">
@@ -259,8 +282,10 @@ const Register: React.FC = () => {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
+                      onBlur={handleBlur}
+                      onFocus={handleFocus}
                       placeholder="Enter your phone number"
-                      isInvalid={!!errors.phone}
+                      isInvalid={touched.phone && !!errors.phone}
                       autoComplete="tel"
                     />
                     <Form.Control.Feedback type="invalid">
@@ -283,8 +308,10 @@ const Register: React.FC = () => {
                         name="password"
                         value={formData.password}
                         onChange={handleChange}
+                        onBlur={handleBlur}
+                        onFocus={handleFocus}
                         placeholder="Create a strong password"
-                        isInvalid={!!errors.password}
+                        isInvalid={touched.password && !!errors.password}
                         autoComplete="new-password"
                       />
                       <Button
@@ -297,7 +324,7 @@ const Register: React.FC = () => {
                         {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </Button>
                     </div>
-                    <Form.Control.Feedback type="invalid">
+                    <Form.Control.Feedback type="invalid" className={touched.password && errors.password ? 'd-block' : ''}>
                       {errors.password}
                     </Form.Control.Feedback>
 
@@ -331,8 +358,10 @@ const Register: React.FC = () => {
                         type={showConfirmPassword ? 'text' : 'password'}
                         value={confirmPassword}
                         onChange={handleConfirmPasswordChange}
+                        onBlur={handleConfirmPasswordBlur}
+                        onFocus={() => setTouched(prev => ({ ...prev, confirmPassword: false }))}
                         placeholder="Confirm your password"
-                        isInvalid={!!errors.confirmPassword}
+                        isInvalid={touched.confirmPassword && !!errors.confirmPassword}
                         autoComplete="new-password"
                       />
                       <Button
@@ -345,7 +374,7 @@ const Register: React.FC = () => {
                         {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </Button>
                     </div>
-                    <Form.Control.Feedback type="invalid">
+                    <Form.Control.Feedback type="invalid" className={touched.confirmPassword && errors.confirmPassword ? 'd-block' : ''}>
                       {errors.confirmPassword}
                     </Form.Control.Feedback>
                   </Form.Group>

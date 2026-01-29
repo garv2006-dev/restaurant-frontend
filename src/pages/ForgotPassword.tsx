@@ -16,20 +16,42 @@ const ForgotPassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState(false);
 
   const { forgotPassword } = useAuth();
   const navigate = useNavigate();
 
+  const validateEmail = (value: string) => {
+    if (!value) return 'Please enter your email address';
+    if (!/\S+@\S+\.\S+/.test(value)) return 'Please enter a valid email address';
+    return null;
+  };
+
+  const handleBlur = () => {
+    setTouched(true);
+    setError(validateEmail(email));
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEmail(val);
+    if (touched) {
+      setError(validateEmail(val));
+    }
+  };
+
+  const handleFocus = () => {
+    setTouched(false);
+    setError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email) {
-      setError('Please enter your email address');
-      return;
-    }
-
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Please enter a valid email address');
+    setTouched(true);
+    const validationError = validateEmail(email);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -129,12 +151,18 @@ const ForgotPassword: React.FC = () => {
                     <Form.Control
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      onFocus={handleFocus}
                       placeholder="Enter your email"
                       required
+                      isInvalid={touched && !!error}
                       disabled={loading}
                       autoComplete="email"
                     />
+                    <Form.Control.Feedback type="invalid">
+                      {error}
+                    </Form.Control.Feedback>
                   </Form.Group>
 
                   <div className="d-grid mb-3">
