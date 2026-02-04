@@ -149,7 +149,9 @@ const LiveDashboard: React.FC = () => {
 
         // Calculate stats
         const totalBookings = bookings.length;
-        const totalRevenue = bookings.reduce((sum: number, b: any) => sum + (b.pricing?.totalAmount || 0), 0);
+        const totalRevenue = bookings
+          .filter((b: any) => b.status !== 'Cancelled')
+          .reduce((sum: number, b: any) => sum + (b.pricing?.totalAmount || 0), 0);
         const confirmedBookings = bookings.filter((b: any) => b.status === 'Confirmed').length;
         const occupancyRate = totalBookings > 0 ? Math.round((confirmedBookings / totalBookings) * 100) : 0;
         const pendingCheckins = bookings.filter((b: any) => b.status === 'Pending').length;
