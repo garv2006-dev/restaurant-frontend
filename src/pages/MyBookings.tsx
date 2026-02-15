@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Table, Alert, Spinner, Button, Modal, Form, Toast, ToastContainer, Badge } from 'react-bootstrap';
+import { Table, Alert, Spinner, Button, Modal, Form, Badge } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { bookingsAPI, reviewsAPI } from '../services/api';
 import { Booking } from '../types';
@@ -14,8 +14,6 @@ const MyBookings: React.FC = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [cancelReason, setCancelReason] = useState('');
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
   const [reviewStatuses, setReviewStatuses] = useState<{ [key: string]: any }>({});
 
   const { refreshNotifications } = useNotifications();
@@ -129,13 +127,11 @@ const MyBookings: React.FC = () => {
 
     socket.on('booking-status-change', handleBookingUpdate);
     socket.on('booking-update', handleBookingUpdate);
-    // Also listen for general notifications that might refer to bookings
-    socket.on('notification', handleBookingUpdate);
+    // Removed 'notification' listener - NotificationContext handles all notifications
 
     return () => {
       socket.off('booking-status-change', handleBookingUpdate);
       socket.off('booking-update', handleBookingUpdate);
-      socket.off('notification', handleBookingUpdate);
     };
   }, [socket, fetchBookings]);
 
@@ -178,8 +174,9 @@ const MyBookings: React.FC = () => {
         // Refresh notifications to show the cancellation notification
         refreshNotifications();
 
-        setSuccessMessage('Booking cancelled successfully');
-        setShowSuccessToast(true);
+        // Removed success toast - notification system provides feedback
+        // setSuccessMessage('Booking cancelled successfully');
+        // setShowSuccessToast(true);
       } else {
         console.error('Cancel booking failed:', response?.message);
         setError(response?.message || 'Failed to cancel booking');
@@ -424,18 +421,6 @@ const MyBookings: React.FC = () => {
           </Button>
         </Modal.Footer>
       </Modal>
-
-      {/* Success Toast */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast show={showSuccessToast} onClose={() => setShowSuccessToast(false)} bg="success">
-          <Toast.Header>
-            <strong className="me-auto">✅ Success</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">
-            {successMessage}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 };

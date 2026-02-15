@@ -56,6 +56,7 @@ import './styles/components.css';
 import './styles/responsive.css';
 import './styles/mobile-menu-fix.css';
 import './styles/dark-mode-buttons.css';
+import './styles/custom-toast.css';
 
 import { useAuth } from './context/AuthContext';
 import { useEffect } from 'react';
@@ -162,10 +163,10 @@ function App() {
               </Routes>
               {/* Toast Notifications */}
               <ToastContainer
-                position="top-right"
-                autoClose={5000}
+                position="top-center"
+                autoClose={4000}
                 hideProgressBar={false}
-                newestOnTop={false}
+                newestOnTop={true}
                 closeOnClick
                 rtl={false}
                 pauseOnFocusLoss
@@ -173,6 +174,8 @@ function App() {
                 pauseOnHover
                 theme="colored"
                 aria-live="polite"
+                className="custom-toast-container"
+                style={{ top: '80px', zIndex: 9999 }}
               />
 
               {/* Enhanced Notification Display */}
