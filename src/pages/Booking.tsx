@@ -328,7 +328,16 @@ const Booking: React.FC = () => {
       setShowPaymentModal(true);
     } catch (error: any) {
       console.error('Error preparing booking payload:', error);
-      setBookingError('Failed to prepare booking. Please try again.');
+      const errorMsg = 'Failed to prepare booking. Please try again.';
+      toast.error(errorMsg, {
+        position: "top-center",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setBookingError(errorMsg);
     }
   };
 
@@ -337,7 +346,16 @@ const Booking: React.FC = () => {
 
     // Validate payment method selection
     if (!selectedPaymentMethod) {
-      setBookingError('Please select a payment method');
+      const errorMsg = 'Please select a payment method';
+      toast.error(errorMsg, {
+        position: "top-center",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setBookingError(errorMsg);
       return;
     }
 
@@ -357,7 +375,16 @@ const Booking: React.FC = () => {
   // Handle Razorpay payment
   const handleRazorpayPayment = async () => {
     if (!selectedRoom) {
-      setBookingError('Please select a room');
+      const errorMsg = 'Please select a room';
+      toast.error(errorMsg, {
+        position: "top-center",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setBookingError(errorMsg);
       return;
     }
 
@@ -436,7 +463,16 @@ const Booking: React.FC = () => {
             await processBookingWithPayment(paymentData);
           } catch (verifyError: any) {
             console.error('Payment verification error:', verifyError);
-            setBookingError('Payment verification failed. Please contact support.');
+            const errorMsg = 'Payment verification failed. Please contact support.';
+            toast.error(errorMsg, {
+              position: "top-center",
+              autoClose: 5000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+            });
+            setBookingError(errorMsg);
             setProcessingPayment(false);
             setShowPaymentModal(true);
           }
@@ -459,7 +495,16 @@ const Booking: React.FC = () => {
 
     } catch (error: any) {
       console.error('Razorpay payment error:', error);
-      setBookingError(error.message || 'Failed to initiate Razorpay payment');
+      const errorMsg = error.message || 'Failed to initiate Razorpay payment';
+      toast.error(errorMsg, {
+        position: "top-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      setBookingError(errorMsg);
       setProcessingPayment(false);
       setShowPaymentModal(true);
     }
@@ -550,6 +595,11 @@ const Booking: React.FC = () => {
         errorMessage = error.message;
       }
 
+      // Show error as toast notification
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+      });
       setBookingError(errorMessage);
 
       // Reopen payment modal on error
@@ -674,7 +724,9 @@ const Booking: React.FC = () => {
                     style={{ height: '250px', objectFit: 'cover' }}
                   />
                   <div className="position-absolute top-0 end-0 m-2">
-                    {room.status === 'Available' ? (
+                    {room.hasAvailableRooms === false ? (
+                      <Badge bg="warning" text="dark">Under Maintenance</Badge>
+                    ) : room.status === 'Available' ? (
                       <Badge bg="success">Available</Badge>
                     ) : room.status === 'Occupied' ? (
                       <Badge bg="danger">Booked</Badge>
@@ -716,18 +768,20 @@ const Booking: React.FC = () => {
 
                   <div className="mt-auto">
                     <Button
-                      variant={room.status === 'Available' && !isAdmin ? "primary" : "secondary"}
+                      variant={room.hasAvailableRooms !== false && room.status === 'Available' && !isAdmin ? "primary" : "secondary"}
                       className="w-100"
-                      disabled={room.status !== 'Available' || isAdmin}
+                      disabled={room.hasAvailableRooms === false || room.status !== 'Available' || isAdmin}
                       onClick={() => handleBookRoom(room)}
                     >
                       {isAdmin
                         ? 'Admin View Only'
-                        : room.status === 'Available'
-                          ? 'Book Now'
-                          : room.status === 'Occupied'
-                            ? 'Booked'
-                            : 'Not Available'
+                        : room.hasAvailableRooms === false
+                          ? 'Under Maintenance'
+                          : room.status === 'Available'
+                            ? 'Book Now'
+                            : room.status === 'Occupied'
+                              ? 'Booked'
+                              : 'Not Available'
                       }
                     </Button>
                   </div>
@@ -913,7 +967,7 @@ const Booking: React.FC = () => {
                 </Form.Group>
               </Col>
 
-              <Col md={6} className="mb-3">
+              {/* <Col md={6} className="mb-3">
                 <Form.Group>
                   <Form.Label>Special Requests (Optional)</Form.Label>
                   <Form.Control
@@ -924,7 +978,7 @@ const Booking: React.FC = () => {
                     placeholder="Any special requirements..."
                   />
                 </Form.Group>
-              </Col>
+              </Col> */}
             </Row>
 
             {selectedRoom && bookingForm.checkInDate && bookingForm.checkOutDate && (

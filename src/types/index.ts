@@ -69,6 +69,8 @@ export interface Room {
   totalReviews: number;
   availableCount?: number;
   totalRoomNumbers?: number;
+  hasAvailableRooms?: boolean;
+  maintenanceCount?: number;
 }
 
 // Booking types

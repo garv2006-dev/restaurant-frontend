@@ -37,6 +37,9 @@ interface Room {
   };
   averageRating: number;
   totalReviews: number;
+  hasAvailableRooms?: boolean;
+  maintenanceCount?: number;
+  totalRoomNumbers?: number;
 }
 
 const Home: React.FC = () => {
@@ -235,6 +238,16 @@ const Home: React.FC = () => {
                         <span className="price-amount">₹{room.price.basePrice}</span>
                         <span className="price-period">/night</span>
                       </div>
+                      {room.hasAvailableRooms === false && (
+                        <div className="position-absolute top-0 start-0 m-2">
+                          <span className="badge bg-warning text-dark">MAINTENANCE</span>
+                        </div>
+                      )}
+                      {room.hasAvailableRooms === true && (
+                        <div className="position-absolute top-0 start-0 m-2">
+                          <span className="badge bg-success">AVAILABLE</span>
+                        </div>
+                      )}
                     </div>
                     <Card.Body className="d-flex flex-column">
                       <div className="d-flex justify-content-between align-items-start mb-2 flex-wrap">
@@ -269,9 +282,15 @@ const Home: React.FC = () => {
                       </div>
 
                       <div className="mt-auto">
-                        <Link to="/booking" className="btn btn-primary w-100 btn-sm">
-                          Book Now
-                        </Link>
+                        {room.hasAvailableRooms === false ? (
+                          <button className="btn btn-secondary w-100 btn-sm" disabled>
+                            Under Maintenance
+                          </button>
+                        ) : (
+                          <Link to="/booking" className="btn btn-primary w-100 btn-sm">
+                            Book Now
+                          </Link>
+                        )}
                       </div>
                     </Card.Body>
                   </Card>

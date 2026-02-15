@@ -156,6 +156,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           loading: false,
         });
 
+        // Show success toast
+        toast.success(`Welcome back, ${user.name || 'User'}!`, {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+
         // Redirect based on actual user role
         const redirectPath = userRole === 'admin' ? '/admin/dashboard' : '/dashboard';
         window.location.href = redirectPath;
@@ -167,7 +177,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error: any) {
       console.error('Login error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Login failed';
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-center",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       updateAuthState({ loading: false });
       return false;
     }
@@ -181,7 +198,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (response.success) {
         // We no longer set state or token here because user needs to verify email first
-        toast.success(response.message || 'Registration successful! Please verify your email.');
+        toast.success(response.message || 'Registration successful! Please verify your email.', {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         return true;
       } else {
         throw new Error(response.message || 'Registration failed');
@@ -222,7 +246,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       loading: false,
     });
 
-    toast.success('Logged out successfully');
+    toast.success('Logged out successfully', {
+      position: "top-center",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
   }, [updateAuthState]);
 
   const updatePassword = useCallback(async (currentPassword: string, newPassword: string): Promise<boolean> => {
