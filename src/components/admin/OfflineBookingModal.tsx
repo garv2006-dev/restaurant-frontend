@@ -354,6 +354,7 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                                     onChange={handleChange}
                                     min={1}
                                     max={formData.roomId ? rooms.find(r => r.id === formData.roomId || r._id === formData.roomId)?.capacity?.adults : undefined}
+                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     className="admin-form-control w-100"
                                 />
                             </div>
@@ -365,6 +366,7 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                                     value={formData.children}
                                     onChange={handleChange}
                                     min={0}
+                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     className="admin-form-control w-100"
                                 />
                             </div>

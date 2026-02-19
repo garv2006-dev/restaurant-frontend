@@ -104,6 +104,7 @@ const SystemSettings: React.FC = () => {
                                             step="0.01"
                                             value={settings.gstPercentage}
                                             onChange={(e) => setSettings({ ...settings, gstPercentage: parseFloat(e.target.value) })}
+                                            onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                             required
                                         />
                                         <span className="input-group-text bg-light border-start-0 text-muted">%</span>

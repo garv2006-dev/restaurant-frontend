@@ -744,6 +744,7 @@ const RoomManagement: React.FC = () => {
                     }}
                     onBlur={() => handleBlur('basePrice', formData.price.basePrice)}
                     onFocus={() => handleFocus('basePrice')}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.basePrice && !!formErrors.basePrice}
                     required
                   />
@@ -764,6 +765,7 @@ const RoomManagement: React.FC = () => {
                     }}
                     onBlur={() => handleBlur('floor', formData.floor)}
                     onFocus={() => handleFocus('floor')}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.floor && !!formErrors.floor}
                     required
                   />
@@ -787,6 +789,7 @@ const RoomManagement: React.FC = () => {
                     }}
                     onBlur={() => handleBlur('area', formData.area)}
                     onFocus={() => handleFocus('area')}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.area && !!formErrors.area}
                     required
                   />
@@ -807,6 +810,7 @@ const RoomManagement: React.FC = () => {
                     }}
                     onBlur={() => handleBlur('totalRooms', formData.totalRooms)}
                     onFocus={() => handleFocus('totalRooms')}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.totalRooms && !!formErrors.totalRooms}
                     required
                   />
@@ -836,6 +840,7 @@ const RoomManagement: React.FC = () => {
                     }}
                     onBlur={() => handleBlur('adults', formData.capacity.adults)}
                     onFocus={() => handleFocus('adults')}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.adults && !!formErrors.adults}
                     required
                   />
@@ -853,6 +858,7 @@ const RoomManagement: React.FC = () => {
                       ...formData,
                       capacity: { ...formData.capacity, children: parseInt(e.target.value) || 0 }
                     })}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                   />
                 </Form.Group>
               </Col>

@@ -679,6 +679,7 @@ const RoomNumberManagement: React.FC = () => {
                                         placeholder="e.g., 101"
                                         value={bulkForm.startNumber}
                                         onChange={(e) => setBulkForm({ ...bulkForm, startNumber: e.target.value })}
+                                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     />
                                 </Form.Group>
                             </Col>
@@ -691,6 +692,7 @@ const RoomNumberManagement: React.FC = () => {
                                         placeholder="e.g., 110"
                                         value={bulkForm.endNumber}
                                         onChange={(e) => setBulkForm({ ...bulkForm, endNumber: e.target.value })}
+                                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     />
                                 </Form.Group>
                             </Col>
@@ -703,6 +705,7 @@ const RoomNumberManagement: React.FC = () => {
                                         placeholder="e.g., 1"
                                         value={bulkForm.floor}
                                         onChange={(e) => setBulkForm({ ...bulkForm, floor: e.target.value })}
+                                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     />
                                 </Form.Group>
                             </Col>
