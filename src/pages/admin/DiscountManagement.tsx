@@ -41,7 +41,7 @@ interface Discount {
 interface DiscountFormData {
   code: string;
   type: 'percentage' | 'fixed' | 'buy_one_get_one';
-  value: number;
+  value: number | '';
   name: string;
   description: string;
   minimumOrderAmount: number;
@@ -56,16 +56,29 @@ interface DiscountFormData {
   };
 }
 
+interface FormErrors {
+  code?: string;
+  name?: string;
+  value?: string;
+  minimumOrderAmount?: string;
+  maxDiscount?: string;
+  usageLimitTotal?: string;
+  usageLimitPerUser?: string;
+  validFrom?: string;
+  validUntil?: string;
+}
+
 const DiscountManagement: React.FC = () => {
   const [discounts, setDiscounts] = useState<Discount[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingDiscount, setEditingDiscount] = useState<Discount | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [formData, setFormData] = useState<DiscountFormData>({
     code: '',
     type: 'percentage',
-    value: 0,
+    value: '',
     name: '',
     description: '',
     minimumOrderAmount: 0,
@@ -77,6 +90,74 @@ const DiscountManagement: React.FC = () => {
     isActive: true,
     restrictions: { firstTimeOnly: false }
   });
+
+  const validate = (data: DiscountFormData): FormErrors => {
+    const errors: FormErrors = {};
+
+    // Discount Code
+    if (!data.code.trim()) {
+      errors.code = 'Discount code is required.';
+    } else if (!/^[A-Z0-9]{3,20}$/.test(data.code.trim())) {
+      errors.code = 'Code must be 3–20 uppercase letters/numbers only.';
+    }
+
+    // Name
+    if (!data.name.trim()) {
+      errors.name = 'Discount name is required.';
+    } else if (data.name.trim().length < 2) {
+      errors.name = 'Name must be at least 2 characters.';
+    }
+
+    // Value
+    if (data.type !== 'buy_one_get_one') {
+      if (data.value === '' || data.value === undefined || isNaN(Number(data.value))) {
+        errors.value = 'Discount value is required.';
+      } else if (Number(data.value) < 1) {
+        errors.value = 'Discount value must be at least 1.';
+      } else if (data.type === 'percentage' && Number(data.value) > 100) {
+        errors.value = 'Percentage discount cannot exceed 100%.';
+      }
+    }
+
+    // Min Order Amount
+    if (data.minimumOrderAmount < 0 || isNaN(data.minimumOrderAmount)) {
+      errors.minimumOrderAmount = 'Minimum order amount cannot be negative.';
+    }
+
+    // Max Discount (only for percentage)
+    if (data.type === 'percentage' && data.maxDiscount !== undefined) {
+      if (data.maxDiscount <= 0) {
+        errors.maxDiscount = 'Max discount must be greater than 0.';
+      }
+    }
+
+    // Usage Limit — Total
+    if (data.usageLimit.total !== null) {
+      if (isNaN(data.usageLimit.total) || data.usageLimit.total < 1) {
+        errors.usageLimitTotal = 'Total usage limit must be at least 1, or leave blank for unlimited.';
+      }
+    }
+
+    // Usage Limit — Per User
+    if (isNaN(data.usageLimit.perUser) || data.usageLimit.perUser < 1) {
+      errors.usageLimitPerUser = 'Per user limit must be at least 1.';
+    }
+    if (data.usageLimit.total !== null && data.usageLimit.perUser > data.usageLimit.total) {
+      errors.usageLimitPerUser = 'Per user limit cannot exceed the total usage limit.';
+    }
+
+    // Dates
+    if (!data.validFrom) {
+      errors.validFrom = 'Start date is required.';
+    }
+    if (!data.validUntil) {
+      errors.validUntil = 'End date is required.';
+    } else if (data.validFrom && new Date(data.validUntil) <= new Date(data.validFrom)) {
+      errors.validUntil = 'End date must be after the start date.';
+    }
+
+    return errors;
+  };
 
   useEffect(() => {
     fetchDiscounts();
@@ -105,7 +186,7 @@ const DiscountManagement: React.FC = () => {
     setFormData({
       code: discount.code,
       type: discount.type,
-      value: discount.value,
+      value: discount.value ?? '',
       name: discount.name || '',
       description: discount.description || '',
       minimumOrderAmount: discount.minimumOrderAmount || 0,
@@ -171,7 +252,7 @@ const DiscountManagement: React.FC = () => {
     setFormData({
       code: '',
       type: 'percentage',
-      value: 0,
+      value: '',
       name: '',
       description: '',
       minimumOrderAmount: 0,
@@ -183,6 +264,7 @@ const DiscountManagement: React.FC = () => {
       isActive: true,
       restrictions: { firstTimeOnly: false }
     });
+    setFormErrors({});
     setEditingDiscount(null);
   };
 
@@ -197,9 +279,18 @@ const DiscountManagement: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = validate(formData);
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      toast.error('Please fix the errors before submitting.');
+      return;
+    }
+    setFormErrors({});
+    // Ensure value is always sent as a number to the API
+    const payload = { ...formData, value: Number(formData.value) };
     try {
       if (editingDiscount) {
-        const response = await adminAPI.updateDiscount(editingDiscount._id, formData);
+        const response = await adminAPI.updateDiscount(editingDiscount._id, payload);
         if (response.success) {
           toast.success('Discount updated successfully');
           setShowModal(false);
@@ -209,7 +300,7 @@ const DiscountManagement: React.FC = () => {
           toast.error(response.message || 'Failed to update discount');
         }
       } else {
-        const response = await adminAPI.createDiscount(formData);
+        const response = await adminAPI.createDiscount(payload);
         if (response.success) {
           toast.success('Discount created successfully');
           setShowModal(false);
@@ -390,11 +481,13 @@ const DiscountManagement: React.FC = () => {
                       value={formData.code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                       placeholder="DISCOUNT10"
+                      isInvalid={!!formErrors.code}
                       required
                     />
                     <button className="btn btn-outline-secondary text-muted bg-light border-start-0" type="button" onClick={generateCode}>
                       <RotateCcw size={16} />
                     </button>
+                    <Form.Control.Feedback type="invalid">{formErrors.code}</Form.Control.Feedback>
                   </div>
                 </Form.Group>
               </div>
@@ -409,7 +502,6 @@ const DiscountManagement: React.FC = () => {
                   >
                     <option value="percentage">Percentage</option>
                     <option value="fixed">Fixed Amount</option>
-                    <option value="buy_one_get_one">Buy One Get One</option>
                   </Form.Select>
                 </Form.Group>
               </div>
@@ -426,7 +518,9 @@ const DiscountManagement: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     placeholder="e.g. Summer Sale"
+                    isInvalid={!!formErrors.name}
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.name}</Form.Control.Feedback>
                 </Form.Group>
               </div>
               <div className="col-md-6">
@@ -440,13 +534,17 @@ const DiscountManagement: React.FC = () => {
                     className="admin-form-control"
                     type="number"
                     step={formData.type === 'percentage' ? '0.01' : '1'}
-                    min="0"
+                    min="1"
                     max={formData.type === 'percentage' ? '100' : undefined}
                     value={formData.value}
-                    onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, value: e.target.value === '' ? '' : parseFloat(e.target.value) })}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     disabled={formData.type === 'buy_one_get_one'}
                     required={formData.type !== 'buy_one_get_one'}
+                    placeholder={formData.type === 'percentage' ? 'e.g. 10' : 'e.g. 100'}
+                    isInvalid={!!formErrors.value}
                   />
+                  {formErrors.value && <div className="invalid-feedback d-block">{formErrors.value}</div>}
                 </Form.Group>
               </div>
             </div>
@@ -473,7 +571,11 @@ const DiscountManagement: React.FC = () => {
                     min="0"
                     value={formData.minimumOrderAmount}
                     onChange={(e) => setFormData({ ...formData, minimumOrderAmount: parseFloat(e.target.value) })}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                    placeholder="e.g. 500"
+                    isInvalid={!!formErrors.minimumOrderAmount}
                   />
+                  {formErrors.minimumOrderAmount && <div className="invalid-feedback d-block">{formErrors.minimumOrderAmount}</div>}
                 </Form.Group>
               </div>
               <div className="col-md-4">
@@ -485,11 +587,15 @@ const DiscountManagement: React.FC = () => {
                     min="0"
                     value={formData.maxDiscount || ''}
                     onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     disabled={formData.type === 'fixed' || formData.type === 'buy_one_get_one'}
+                    placeholder="e.g. 200"
+                    isInvalid={!!formErrors.maxDiscount}
                   />
+                  {formErrors.maxDiscount && <div className="invalid-feedback d-block">{formErrors.maxDiscount}</div>}
                 </Form.Group>
               </div>
-              <div className="col-md-4">
+              {/* <div className="col-md-4">
                 <Form.Group>
                   <Form.Label className="small fw-semibold text-muted">Applicable For</Form.Label>
                   <Form.Select
@@ -503,7 +609,7 @@ const DiscountManagement: React.FC = () => {
                     <option value="events">Events Only</option>
                   </Form.Select>
                 </Form.Group>
-              </div>
+              </div> */}
             </div>
 
             <div className="row g-3 mb-3">
@@ -522,8 +628,12 @@ const DiscountManagement: React.FC = () => {
                         total: e.target.value === '' ? null : parseInt(e.target.value)
                       }
                     })}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                    placeholder="Leave blank for unlimited"
+                    isInvalid={!!formErrors.usageLimitTotal}
                     required
                   />
+                  {formErrors.usageLimitTotal && <div className="invalid-feedback d-block">{formErrors.usageLimitTotal}</div>}
                 </Form.Group>
               </div>
               <div className="col-md-6">
@@ -541,8 +651,12 @@ const DiscountManagement: React.FC = () => {
                         perUser: parseInt(e.target.value)
                       }
                     })}
+                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                    placeholder="e.g. 1"
+                    isInvalid={!!formErrors.usageLimitPerUser}
                     required
                   />
+                  {formErrors.usageLimitPerUser && <div className="invalid-feedback d-block">{formErrors.usageLimitPerUser}</div>}
                 </Form.Group>
               </div>
             </div>
@@ -556,8 +670,10 @@ const DiscountManagement: React.FC = () => {
                     type="date"
                     value={formData.validFrom}
                     onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
+                    isInvalid={!!formErrors.validFrom}
                     required
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.validFrom}</Form.Control.Feedback>
                 </Form.Group>
               </div>
               <div className="col-md-6">
@@ -568,8 +684,10 @@ const DiscountManagement: React.FC = () => {
                     type="date"
                     value={formData.validUntil}
                     onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
+                    isInvalid={!!formErrors.validUntil}
                     required
                   />
+                  <Form.Control.Feedback type="invalid">{formErrors.validUntil}</Form.Control.Feedback>
                 </Form.Group>
               </div>
             </div>
