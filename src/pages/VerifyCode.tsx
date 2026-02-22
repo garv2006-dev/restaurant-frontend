@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, Form, Button, Alert } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FaLock, FaEnvelope } from 'react-icons/fa';
+import { FaClock, FaCheckCircle, FaUserShield } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import '../styles/VerifyCode.css';
 
-// Create a wrapper component for FontAwesome icons to ensure React 19 compatibility
+// Create a wrapper component for icons
 const IconWrapper = ({ icon: Icon, className, size, ...props }: { icon: any; className?: string; size?: number }) => {
     return <Icon className={className} size={size} {...props} />;
 };
@@ -13,18 +14,17 @@ const IconWrapper = ({ icon: Icon, className, size, ...props }: { icon: any; cla
 const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    if (mins > 0) {
-        return `${mins}m ${secs}s`;
-    }
-    return `${secs}s`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
 };
 
 const VerifyCode: React.FC = () => {
-    const [otp, setOtp] = useState('');
+    const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
     const [resendCooldown, setResendCooldown] = useState(0);
+
+    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     const { verifyOtp, verifyAccount, forgotPassword, resendVerification } = useAuth();
     const navigate = useNavigate();
@@ -34,13 +34,12 @@ const VerifyCode: React.FC = () => {
 
     useEffect(() => {
         if (!email) {
-            // If no email in state, redirect back to login or forgot password based on common usage
             navigate('/login');
         }
     }, [email, navigate]);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        let interval: any;
         if (resendCooldown > 0) {
             interval = setInterval(() => {
                 setResendCooldown((prev) => prev - 1);
@@ -49,11 +48,61 @@ const VerifyCode: React.FC = () => {
         return () => clearInterval(interval);
     }, [resendCooldown]);
 
+    const handleChange = (element: HTMLInputElement, index: number) => {
+        const val = element.value;
+        if (val && isNaN(Number(val))) return;
+
+        // Take only the last character entered
+        const char = val.slice(-1);
+        const newOtp = [...otp];
+        newOtp[index] = char;
+        setOtp(newOtp);
+
+        // Focus next input if char was added
+        if (char !== "" && index < 5) {
+            inputRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
+        if (e.key === "Backspace") {
+            if (otp[index] === "" && index > 0) {
+                // Focus previous and clear it
+                inputRefs.current[index - 1]?.focus();
+                const newOtp = [...otp];
+                newOtp[index - 1] = "";
+                setOtp(newOtp);
+            } else if (otp[index] !== "") {
+                // Clear current
+                const newOtp = [...otp];
+                newOtp[index] = "";
+                setOtp(newOtp);
+            }
+        }
+    };
+
+    const handlePaste = (e: React.ClipboardEvent) => {
+        e.preventDefault();
+        const data = e.clipboardData.getData("text").trim().slice(0, 6);
+        if (!/^\d+$/.test(data)) return;
+
+        const newOtp = [...otp];
+        data.split("").forEach((value, index) => {
+            if (index < 6) newOtp[index] = value;
+        });
+        setOtp(newOtp);
+
+        // Focus the last filled input or the next empty one
+        const lastIndex = Math.min(data.length, 5);
+        inputRefs.current[lastIndex]?.focus();
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const otpString = otp.join("");
 
-        if (!otp || otp.length !== 6) {
-            setError('Please enter a valid 6-digit verification code');
+        if (otpString.length !== 6) {
+            setError('Please enter the complete 6-digit code');
             return;
         }
 
@@ -62,17 +111,14 @@ const VerifyCode: React.FC = () => {
 
         try {
             if (mode === 'register') {
-                const success = await verifyAccount(email, otp);
-                if (success) {
-                    // verifyAccount already acts on context to login
+                const res = await verifyAccount(email, otpString);
+                if (res) {
                     navigate('/dashboard');
                 }
             } else {
-                // Password reset flow
-                const success = await verifyOtp(email, otp);
-                if (success) {
-                    setSuccess(true);
-                    // We wait for user to click button to reset password
+                const res = await verifyOtp(email, otpString);
+                if (res) {
+                    setIsVerified(true);
                 }
             }
         } catch (err: any) {
@@ -89,29 +135,23 @@ const VerifyCode: React.FC = () => {
         setError(null);
 
         try {
-            // Pass true to throw error so we can catch 429 status
-            let success = false;
-
+            let res = false;
             if (mode === 'register') {
-                success = await resendVerification(email);
+                res = await resendVerification(email);
             } else {
-                success = await forgotPassword(email, true);
+                res = await forgotPassword(email, true);
             }
 
-            if (success) {
-                setResendCooldown(60); // 60 seconds normal cooldown
+            if (res) {
+                setResendCooldown(60);
                 setError(null);
             }
         } catch (err: any) {
             const errorMessage = err.message || 'Failed to resend code';
             setError(errorMessage);
-
-            // Check for rate limit error (Status 429)
             if (err.response && err.response.status === 429) {
-                // Set cooldown to 30 minutes (1800 seconds)
                 setResendCooldown(1800);
             } else if (errorMessage.toLowerCase().includes('wait')) {
-                // Fallback if status not available but message says wait
                 setResendCooldown(1800);
             }
         } finally {
@@ -119,138 +159,100 @@ const VerifyCode: React.FC = () => {
         }
     };
 
-
-
     if (!email) return null;
 
-    if (success) {
+    if (isVerified) {
         return (
-            <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
-                <Container className="py-5">
-                    <Row className="justify-content-center align-items-center min-vh-100">
-                        <Col md={6} lg={5} xl={4}>
-                            <Card className="shadow-sm border-0">
-                                <Card.Body className="p-4 text-center">
-                                    <div className="mb-4">
-                                        <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '80px', height: '80px' }}>
-                                            <IconWrapper icon={FaEnvelope} className="text-success" size={32} />
-                                        </div>
-                                    </div>
-                                    <h2 className="text-success mb-3">Identity Verified</h2>
-                                    <p className="text-muted mb-4">
-                                        We've sent a password reset link to<br />
-                                        <strong>{email}</strong>
-                                    </p>
-                                    <p className="small text-muted mb-4">
-                                        Please click the link in the email to set your new password.
-                                    </p>
-                                    <Button variant="primary" as="a" href="/login">
-                                        Back to Login
-                                    </Button>
-                                </Card.Body>
-                            </Card>
-                        </Col>
-                    </Row>
-                </Container>
+            <div className="verify-code-container">
+                <Card className="verify-card text-center">
+                    <div className="mb-4">
+                        <div className="bg-success bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '100px', height: '100px' }}>
+                            <IconWrapper icon={FaCheckCircle} className="text-success" size={48} />
+                        </div>
+                    </div>
+                    <h2 className="verify-title text-success">Verified!</h2>
+                    <p className="verify-subtitle">
+                        Identity confirmed for<br />
+                        <strong>{email}</strong>
+                    </p>
+                    <p className="small text-muted mb-4">
+                        A password reset link has been sent to your inbox. Please check your email and follow the instructions.
+                    </p>
+                    <Button variant="primary" className="confirm-btn" onClick={() => navigate('/login')}>
+                        Back to Login
+                    </Button>
+                </Card>
             </div>
         );
     }
 
     return (
-        <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
-            <Container className="py-5">
-                <Row className="justify-content-center align-items-center min-vh-100">
-                    <Col md={6} lg={5} xl={4}>
-                        <Card className="shadow-sm border-0">
-                            <Card.Body className="p-4">
-                                <div className="text-center mb-4">
-                                    <div className="mb-3">
-                                        <div className="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center" style={{ width: '64px', height: '64px' }}>
-                                            <IconWrapper icon={FaLock} className="text-primary" size={24} />
-                                        </div>
-                                    </div>
-                                    <h2 className="text-primary mb-2">
-                                        {mode === 'register' ? 'Verify Account' : 'Recover Password'}
-                                    </h2>
-                                    <p className="text-muted">
-                                        {mode === 'register' ? (
-                                            <>
-                                                To complete your registration,<br />
-                                                please enter the code sent to<br />
-                                                <strong>{email}</strong>
-                                            </>
-                                        ) : (
-                                            <>
-                                                If an account exists for<br />
-                                                <strong>{email}</strong>, a verification code<br />
-                                                will be sent to your inbox.
-                                            </>
-                                        )}
-                                    </p>
-                                </div>
+        <div className="verify-code-container">
+            <Card className="verify-card">
+                <div className="illustration-box">
+                    <div className="illustration-bg"></div>
+                    <div className="illustration-img d-flex align-items-center justify-content-center">
+                        <IconWrapper icon={FaUserShield} size={60} className="text-primary opacity-75" />
+                    </div>
+                </div>
 
-                                {error && (
-                                    <Alert variant="danger" className="mb-3">
-                                        {error}
-                                    </Alert>
-                                )}
+                <h2 className="verify-title">Verification Code</h2>
+                <p className="verify-subtitle">
+                    Please enter the 6-digit code sent to<br />
+                    <strong>{email}</strong>
+                </p>
 
-                                <Form onSubmit={handleSubmit}>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>Email</Form.Label>
-                                        <Form.Control
-                                            type="email"
-                                            value={email}
-                                            readOnly
-                                            className="bg-light"
-                                        />
-                                    </Form.Group>
+                {error && (
+                    <Alert variant="danger" className="mb-4 py-2 small text-center rounded-3">
+                        {error}
+                    </Alert>
+                )}
 
-                                    <Form.Group className="mb-4">
-                                        <Form.Label>Verification Code</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            value={otp}
-                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                                            placeholder="Enter 6-digit code"
-                                            required
-                                            className="text-center letter-spacing-2"
-                                            style={{ letterSpacing: otp ? '0.5em' : 'normal', fontSize: '1.2rem' }}
-                                            autoFocus
-                                        />
-                                    </Form.Group>
+                <Form onSubmit={handleSubmit}>
+                    <div className="otp-input-group">
+                        {otp.map((data, index) => (
+                            <input
+                                key={index}
+                                type="text"
+                                maxLength={1}
+                                className={`otp-box ${data ? 'filled' : ''}`}
+                                value={data}
+                                ref={(el) => { inputRefs.current[index] = el; }}
+                                onChange={(e) => handleChange(e.target, index)}
+                                onKeyDown={(e) => handleKeyDown(e, index)}
+                                onPaste={index === 0 ? handlePaste : undefined}
+                                disabled={loading}
+                                autoComplete="one-time-code"
+                                inputMode="numeric"
+                            />
+                        ))}
+                    </div>
 
-                                    <div className="d-grid gap-3">
-                                        <Button
-                                            type="submit"
-                                            variant="primary"
-                                            size="lg"
-                                            disabled={loading}
-                                            className="d-flex align-items-center justify-content-center"
-                                        >
-                                            {loading ? (
-                                                <LoadingSpinner size="sm" message="" />
-                                            ) : (
-                                                'Verify code'
-                                            )}
-                                        </Button>
+                    <div className="resend-container">
+                        <span className="resend-text">Didn't receive the code?</span>
+                        <span
+                            className={`resend-link ${resendCooldown > 0 ? 'disabled' : ''}`}
+                            onClick={handleResendCode}
+                        >
+                            Resend Code
+                        </span>
+                        {resendCooldown > 0 && (
+                            <div className="timer-text">
+                                <IconWrapper icon={FaClock} size={12} />
+                                <span>{formatTime(resendCooldown)}</span>
+                            </div>
+                        )}
+                    </div>
 
-                                        <Button
-                                            variant="secondary"
-                                            size="lg"
-                                            onClick={handleResendCode}
-                                            disabled={loading || resendCooldown > 0}
-                                            className="d-flex align-items-center justify-content-center"
-                                        >
-                                            {resendCooldown > 0 ? `Resend available in ${formatTime(resendCooldown)}` : 'Send new code'}
-                                        </Button>
-                                    </div>
-                                </Form>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
-            </Container>
+                    <Button
+                        type="submit"
+                        className="confirm-btn"
+                        disabled={loading || otp.join("").length !== 6}
+                    >
+                        {loading ? <LoadingSpinner size="sm" message="" /> : 'Confirm'}
+                    </Button>
+                </Form>
+            </Card>
         </div>
     );
 };

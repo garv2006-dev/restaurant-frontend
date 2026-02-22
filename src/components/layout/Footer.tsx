@@ -57,6 +57,7 @@ const Footer: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="social-link"
+                  aria-label="Facebook"
                 >
                   <IconWrapper icon={FaFacebook} className="social-icon" />
                 </a>
@@ -65,6 +66,7 @@ const Footer: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="social-link"
+                  aria-label="Twitter"
                 >
                   <IconWrapper icon={FaTwitter} className="social-icon" />
                 </a>
@@ -73,6 +75,7 @@ const Footer: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="social-link"
+                  aria-label="Instagram"
                 >
                   <IconWrapper icon={FaInstagram} className="social-icon" />
                 </a>
@@ -81,6 +84,7 @@ const Footer: React.FC = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="social-link"
+                  aria-label="LinkedIn"
                 >
                   <IconWrapper icon={FaLinkedin} className="social-icon" />
                 </a>
@@ -88,7 +92,7 @@ const Footer: React.FC = () => {
             </Col>
 
             {/* Quick Links */}
-            <Col md={2} className="mb-4">
+            <Col md={3} sm={6} className="mb-4">
               <h6 className="text-gold text-uppercase mb-3 fw-bold">Quick Links</h6>
               <Nav className="flex-column">
                 <Nav.Link as={Link} to="/" className="footer-link p-0 mb-2">
@@ -103,39 +107,13 @@ const Footer: React.FC = () => {
               </Nav>
             </Col>
 
-            {/* Services */}
-            <Col md={2} className="mb-4">
-              <h6 className="text-gold text-uppercase mb-3 fw-bold">Services</h6>
-              <Nav className="flex-column">
-                <Nav.Link href="#" className="footer-link p-0 mb-2">
-                  Room Service
-                </Nav.Link>
-                <Nav.Link href="#" className="footer-link p-0 mb-2">
-                  Laundry
-                </Nav.Link>
-                <Nav.Link href="#" className="footer-link p-0 mb-2 ">
-                  Airport Pickup
-                </Nav.Link>
-                <Nav.Link href="#" className="footer-link p-0 mb-2">
-                  Event Hosting
-                </Nav.Link>
-                <Nav.Link href="#" className="footer-link p-0 mb-2">
-                  Spa & Wellness
-                </Nav.Link>
-                <Nav.Link href="#" className="footer-link p-0 mb-2">
-                  Business Center
-                </Nav.Link>
-              </Nav>
-            </Col>
-
             {/* Contact Info */}
-            <Col md={2} className="mb-4">
+            <Col md={3} sm={6} className="mb-4">
               <h6 className="text-gold text-uppercase mb-3 fw-bold">Contact Info</h6>
               <div className="text-light opacity-75 small">
-                <div className="mb-2">
-                  <IconWrapper icon={FaMapMarkerAlt} className="me-2" />
-                  123 Luxury Street<br />
-                  <span className="ms-3">City, State 12345</span>
+                <div className="mb-2 d-flex align-items-start">
+                  <IconWrapper icon={FaMapMarkerAlt} className="me-2 mt-1" />
+                  <span>123 Luxury Street<br />City, State 12345</span>
                 </div>
                 <div className="mb-2">
                   <IconWrapper icon={FaPhone} className="me-2" />
@@ -153,27 +131,26 @@ const Footer: React.FC = () => {
             </Col>
 
             {/* Newsletter */}
-            <Col md={3} className="mb-4">
+            <Col md={3} sm={6} className="mb-4">
               <h6 className="text-gold text-uppercase mb-3 fw-bold">Newsletter</h6>
               <p className="text-light opacity-75 small mb-3">
                 Subscribe to get special offers and updates.
               </p>
-              <Form onSubmit={handleNewsletterSubscribe}>
+              <Form onSubmit={handleNewsletterSubscribe} className="newsletter-form">
                 <Form.Group className="mb-2">
                   <Form.Control
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    size="sm"
+                    className="bg-transparent border-secondary text-light custom-input"
                   />
                 </Form.Group>
                 <Button
                   type="submit"
                   variant="primary"
-                  size="sm"
                   disabled={subscribing}
-                  className="w-100"
+                  className="w-100 btn-gold"
                 >
                   {subscribing ? 'Subscribing...' : 'Subscribe'}
                 </Button>
