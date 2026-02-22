@@ -172,7 +172,7 @@ function App() {
                 pauseOnFocusLoss
                 draggable
                 pauseOnHover
-                theme="colored"
+                theme="light"
                 aria-live="polite"
                 className="custom-toast-container"
                 style={{ top: '80px', zIndex: 9999 }}

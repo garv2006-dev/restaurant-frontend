@@ -17,33 +17,31 @@
   margin-bottom: 0.75rem;
   border: none;
   border-radius: 0.75rem;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
-  border-left: 4px solid #007bff;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  background: #ffffff;
+  border-left: 5px solid #2563eb;
   animation: slideInNotification 0.3s ease-out;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .notification-toast.room_booking {
-  border-left-color: #007bff;
-  background: rgba(255, 255, 255, 0.95);
+  border-left-color: #2563eb;
+  background: #ffffff;
 }
 
 .notification-toast.promotion {
-  border-left-color: #f59e0b;
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fef3c7 100%);
-  border: 1px solid #fbbf24;
-  box-shadow: 0 8px 25px rgba(251, 191, 36, 0.25), 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-left-color: #d97706;
+  background: #ffffff;
 }
 
 .notification-toast.payment {
-  border-left-color: #28a745;
-  background: rgba(248, 255, 248, 0.95);
+  border-left-color: #059669;
+  background: #ffffff;
 }
 
 .notification-toast.system {
-  border-left-color: #17a2b8;
-  background: rgba(240, 248, 255, 0.95);
+  border-left-color: #4b5563;
+  background: #ffffff;
 }
 
 /* Toast Header */
@@ -580,23 +578,23 @@
   }
 
   .notification-toast.room_booking {
-    background: rgba(45, 55, 72, 0.95);
+    background: #1f2937;
   }
 
   .notification-toast.promotion {
-    background: rgba(68, 64, 60, 0.95);
+    background: #1f2937;
   }
 
   .notification-toast.payment {
-    background: rgba(47, 68, 47, 0.95);
+    background: #1f2937;
   }
 
   .notification-toast.system {
-    background: rgba(45, 55, 72, 0.95);
+    background: #1f2937;
   }
 
   .notification-title {
-    color: #e2e8f0;
+    color: #f3f4f6;
   }
 
   .notification-message {
