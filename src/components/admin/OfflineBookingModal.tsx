@@ -30,6 +30,21 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
         amount: 0,
         paymentMethod: 'Cash'
     });
+    const [gstRate, setGstRate] = useState(18);
+
+    React.useEffect(() => {
+        const fetchGst = async () => {
+            try {
+                const response = await adminAPI.getSettings();
+                if (response.success && response.data) {
+                    setGstRate(response.data.gstPercentage);
+                }
+            } catch (err) {
+                console.error('Failed to fetch GST settings:', err);
+            }
+        };
+        fetchGst();
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -79,7 +94,7 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                 const end = new Date(formData.checkOutDate);
                 const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
                 const price = selectedRoom.price.basePrice * nights;
-                const gst = price * 0.18; // Approx GST
+                const gst = price * (gstRate / 100); // Dynamic GST
                 setFormData(prev => ({ ...prev, amount: price + gst }));
 
                 // Validate adults against room capacity

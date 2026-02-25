@@ -14,6 +14,7 @@ import {
   Users,
   LayoutDashboard,
   FileText,
+  MessageSquare,
   Menu,
   X
 } from 'lucide-react';
@@ -30,6 +31,7 @@ import ReportsAnalytics from '../../components/admin/ReportsAnalytics';
 import DiscountManagement from './DiscountManagement';
 import SystemSettings from '../../components/admin/SystemSettings';
 import LiveDashboard from '../../components/admin/LiveDashboard';
+import ReviewManagement from '../../components/admin/ReviewManagement';
 import OfflineBookingModal from '../../components/admin/OfflineBookingModal';
 
 const AdminDashboard: React.FC = () => {
@@ -168,6 +170,13 @@ const AdminDashboard: React.FC = () => {
             <FileText size={18} className="admin-nav-icon" />
             <span>Reports</span>
           </button>
+          <button
+            className={`admin-nav-item ${activeTab === 'reviews' ? 'active' : ''}`}
+            onClick={() => handleTabChange('reviews')}
+          >
+            <MessageSquare size={18} className="admin-nav-icon" />
+            <span>Reviews</span>
+          </button>
 
           <button
             className={`admin-nav-item ${activeTab === 'settings' ? 'active' : ''}`}
@@ -210,6 +219,7 @@ const AdminDashboard: React.FC = () => {
               {activeTab === 'customers' && 'Customer Database'}
               {activeTab === 'discounts' && 'Discount Management'}
               {activeTab === 'reports' && 'Reports & Analytics'}
+              {activeTab === 'reviews' && 'Customer Reviews'}
               {activeTab === 'settings' && 'System Settings'}
             </h1>
             <div className="live-indicator d-none d-sm-flex">
@@ -253,6 +263,7 @@ const AdminDashboard: React.FC = () => {
             {activeTab === 'customers' && <CustomerManagement />}
             {activeTab === 'discounts' && <DiscountManagement />}
             {activeTab === 'reports' && <ReportsAnalytics />}
+            {activeTab === 'reviews' && <ReviewManagement />}
             {activeTab === 'settings' && <SystemSettings />}
           </div>
         </div>
