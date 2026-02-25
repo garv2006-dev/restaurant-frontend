@@ -409,6 +409,12 @@ body {
   padding: 1.5rem;
 }
 
+/* Ensure data-loader tables have consistent width and colspan handling */
+.admin-table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
 /* Form Controls */
 .admin-form-control,
 .admin-form-select,
@@ -514,6 +520,11 @@ body {
 }
 
 /* Tables */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
 .admin-table th {
   background-color: var(--admin-bg-main);
   color: var(--admin-text-secondary);
@@ -522,6 +533,7 @@ body {
   font-size: 0.75rem;
   letter-spacing: 0.05em;
   padding: 1rem;
+  text-align: left;
 }
 
 .admin-table td {
@@ -529,6 +541,7 @@ body {
   border-bottom: 1px solid var(--admin-border);
   color: var(--admin-text-main);
   font-size: 0.9rem;
+  vertical-align: middle;
 }
 
 .admin-table tr:hover td {
@@ -676,7 +689,7 @@ body {
   .table-responsive {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    width: 100%;
+    width: 100% !important;
     margin-bottom: 1rem;
     border: 1px solid var(--admin-border);
     border-radius: var(--border-radius-base);
