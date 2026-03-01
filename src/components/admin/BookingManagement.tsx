@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import DataLoader from '../common/DataLoader';
 import OfflineBookingModal from './OfflineBookingModal';
-import { getSocket } from '../../services/socket';
+import { useSocket } from '../../contexts/SocketContext';
 
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -90,8 +90,9 @@ const BookingManagement: React.FC = () => {
   }, [filters.status, filters.date, debouncedSearchTerm, pagination.page, pagination.limit]);
 
   // Socket listeners for real-time updates
+  const { socket } = useSocket();
   useEffect(() => {
-    const socket = getSocket();
+    if (!socket) return;
 
     const handleRefresh = () => {
       fetchBookings();
@@ -106,7 +107,7 @@ const BookingManagement: React.FC = () => {
       socket.off('booking-status-change', handleRefresh);
       socket.off('booking-update', handleRefresh);
     };
-  }, [fetchBookings]);
+  }, [socket, fetchBookings]);
 
   // Debounce search term
   useEffect(() => {
@@ -165,7 +166,7 @@ const BookingManagement: React.FC = () => {
     setShowDetailsModal(true);
   };
 
-  const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
+  const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow' | 'PartiallyCancelled') => {
     // Add confirmation for destructive actions
     if (status === 'Cancelled' || status === 'NoShow') {
       const confirmMessage = status === 'Cancelled'
@@ -257,16 +258,36 @@ const BookingManagement: React.FC = () => {
 
 
 
-  const getStatusBadge = (status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
-    const variants: { [key: string]: string } = {
-      'Confirmed': 'success',
-      'Pending': 'warning',
-      'Cancelled': 'danger',
-      'CheckedIn': 'info',
-      'CheckedOut': 'dark',
-      'NoShow': 'dark'
+  const getStatusBadge = (status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow' | 'PartiallyCancelled') => {
+    const statusStyles: { [key: string]: { bg: string; color: string; label: string } } = {
+      'Pending': { bg: '#fef3c7', color: '#92400e', label: 'Pending' },
+      'Confirmed': { bg: '#d1fae5', color: '#065f46', label: 'Confirmed' },
+      'CheckedIn': { bg: '#dbeafe', color: '#1e40af', label: 'Checked In' },
+      'CheckedOut': { bg: '#e2e8f0', color: '#334155', label: 'Checked Out' },
+      'Cancelled': { bg: '#fee2e2', color: '#991b1b', label: 'Cancelled' },
+      'NoShow': { bg: '#fce7f3', color: '#9d174d', label: 'No Show' },
+      'PartiallyCancelled': { bg: '#ffedd5', color: '#9a3412', label: 'Partial Cancel' }
     };
-    return <Badge bg={variants[status] || 'secondary'}>{status}</Badge>;
+    const style = statusStyles[status] || { bg: '#f1f5f9', color: '#475569', label: status };
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          padding: '5px 12px',
+          borderRadius: '6px',
+          fontSize: '11.5px',
+          fontWeight: 600,
+          letterSpacing: '0.3px',
+          textTransform: 'uppercase' as const,
+          backgroundColor: style.bg,
+          color: style.color,
+          lineHeight: '1.4',
+          whiteSpace: 'nowrap' as const
+        }}
+      >
+        {style.label}
+      </span>
+    );
   };
 
   const handleOpenOfflineModal = async () => {
@@ -384,18 +405,33 @@ const BookingManagement: React.FC = () => {
                   <th>Check-in</th>
                   <th>Check-out</th>
                   <th>Amount</th>
+                  <th>Payment</th>
                   <th>Status</th>
                   <th className="text-end">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {loading && bookings.length === 0 ? (
-                  <DataLoader type="table" count={5} columns={9} />
+                  <DataLoader type="table" count={5} columns={10} />
                 ) : bookings.length > 0 ? (
                   bookings.map((booking) => {
-                    const room = typeof booking.room === 'object' && booking.room !== null ? booking.room : null;
                     const guestName = booking.guestDetails?.primaryGuest?.name || 'Unknown';
-                    const roomLabel = room ? `${room.name || ''}`.trim() : '-';
+                    let roomLabel = 'No Rooms';
+                    let roomNumbersDisplay: string[] = [];
+
+                    if (booking.rooms && booking.rooms.length > 0) {
+                      const roomTypes = new Set<string>();
+                      booking.rooms.forEach(r => {
+                        const type = typeof r.roomType === 'object' && r.roomType !== null ? (r.roomType as any).name || '' : 'Room';
+                        roomTypes.add(type);
+                        roomNumbersDisplay.push(r.roomNumberInfo ? r.roomNumberInfo.number : r.roomNumber);
+                      });
+                      roomLabel = Array.from(roomTypes).join(', ') + ` (${booking.rooms.length})`;
+                    } else if ((booking as any).room) {
+                      const room = typeof (booking as any).room === 'object' && (booking as any).room !== null ? (booking as any).room : null;
+                      roomLabel = room ? `${room.name || ''}`.trim() : '-';
+                      if ((booking as any).roomNumberInfo?.number) roomNumbersDisplay.push((booking as any).roomNumberInfo.number);
+                    }
 
                     return (
                       <tr key={booking.id || booking._id}>
@@ -413,8 +449,29 @@ const BookingManagement: React.FC = () => {
                         </td>
                         <td><span className="badge bg-light text-dark border fw-normal">{roomLabel}</span></td>
                         <td>
-                          {booking.roomNumberInfo?.number ? (
-                            <Badge bg="info" className="fw-normal">{booking.roomNumberInfo.number}</Badge>
+                          {roomNumbersDisplay.length > 0 ? (
+                            <div className="d-flex flex-wrap gap-1">
+                              {roomNumbersDisplay.map((num, i) => (
+                                <span
+                                  key={i}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '4px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px',
+                                    fontWeight: 600,
+                                    backgroundColor: '#eef2ff',
+                                    color: '#4338ca',
+                                    border: '1px solid #c7d2fe',
+                                    minWidth: '36px'
+                                  }}
+                                >
+                                  {num}
+                                </span>
+                              ))}
+                            </div>
                           ) : (
                             ['Cancelled', 'NoShow'].includes(booking.status) ? (
                               <span className="text-muted small">-</span>
@@ -431,6 +488,59 @@ const BookingManagement: React.FC = () => {
                         </td>
                         <td><div className="text-dark">{formatDate(booking.bookingDates.checkOutDate)}</div></td>
                         <td><span className="fw-bold text-dark">₹{getTotalPrice(booking)}</span></td>
+                        <td>
+                          {(() => {
+                            const method = (booking as any).paymentDetails?.method || '';
+                            const isCash = method.toLowerCase() === 'cash';
+                            const isOnline = ['Razorpay', 'UPI', 'Online', 'Card', 'CreditCard', 'DebitCard', 'netbanking', 'wallet', 'PayPal', 'Stripe', 'BankTransfer', 'emi', 'cardless_emi', 'paylater'].some(
+                              m => m.toLowerCase() === method.toLowerCase()
+                            );
+
+                            if (isCash) {
+                              return (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '5px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '11.5px',
+                                    fontWeight: 600,
+                                    backgroundColor: '#fef3c7',
+                                    color: '#92400e',
+                                    letterSpacing: '0.3px',
+                                    textTransform: 'uppercase' as const
+                                  }}
+                                >
+                                  Cash
+                                </span>
+                              );
+                            } else if (isOnline) {
+                              return (
+                                <span
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    padding: '5px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '11.5px',
+                                    fontWeight: 600,
+                                    backgroundColor: '#d1fae5',
+                                    color: '#065f46',
+                                    letterSpacing: '0.3px',
+                                    textTransform: 'uppercase' as const
+                                  }}
+                                >
+                                  Online
+                                </span>
+                              );
+                            } else {
+                              return <span className="text-muted small">—</span>;
+                            }
+                          })()}
+                        </td>
                         <td>{getStatusBadge(booking.status)}</td>
                         <td className="text-end">
                           <div className="admin-action-buttons justify-content-end">
@@ -509,7 +619,7 @@ const BookingManagement: React.FC = () => {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={9} className="text-center py-5">
+                    <td colSpan={10} className="text-center py-5">
                       {loading ? (
                         <div className="d-flex justify-content-center align-items-center">
                           <Loader2 size={24} className="animate-spin text-primary me-2" />
@@ -736,13 +846,28 @@ const BookingManagement: React.FC = () => {
                 </thead>
                 <tbody>
                   {/* Room Charges */}
-                  <tr>
-                    <td>{selectedBooking.roomNumberInfo?.number || '-'}</td>
-                    <td className="text-left">Room Charges ({selectedBooking.room && typeof selectedBooking.room === 'object' ? selectedBooking.room.name : 'Standard Room'})</td>
-                    <td>{selectedBooking.bookingDates.nights}</td>
-                    <td>₹{selectedBooking.pricing?.roomPrice ? (selectedBooking.pricing.roomPrice / selectedBooking.bookingDates.nights).toFixed(2) : '0.00'}</td>
-                    <td>₹{selectedBooking.pricing?.roomPrice?.toFixed(2)}</td>
-                  </tr>
+                  {selectedBooking.rooms && selectedBooking.rooms.length > 0 ? (
+                    selectedBooking.rooms.map((roomItem, idx) => (
+                      <tr key={`room-${idx}`}>
+                        <td>{roomItem.roomNumberInfo?.number || roomItem.roomNumber || '-'}</td>
+                        <td className="text-left">
+                          Room Charges ({typeof roomItem.roomType === 'object' && roomItem.roomType !== null ? (roomItem.roomType as any).name : 'Standard Room'})
+                          {roomItem.status === 'Cancelled' && <span className="text-danger ms-2">(Cancelled)</span>}
+                        </td>
+                        <td>{selectedBooking.bookingDates.nights}</td>
+                        <td>₹{(roomItem.price / selectedBooking.bookingDates.nights).toFixed(2)}</td>
+                        <td>₹{roomItem.price.toFixed(2)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td>{(selectedBooking as any).roomNumberInfo?.number || '-'}</td>
+                      <td className="text-left">Room Charges ({(selectedBooking as any).room && typeof (selectedBooking as any).room === 'object' ? (selectedBooking as any).room.name : 'Standard Room'})</td>
+                      <td>{selectedBooking.bookingDates.nights}</td>
+                      <td>₹{selectedBooking.pricing?.roomPrice ? (selectedBooking.pricing.roomPrice / selectedBooking.bookingDates.nights).toFixed(2) : '0.00'}</td>
+                      <td>₹{selectedBooking.pricing?.roomPrice?.toFixed(2)}</td>
+                    </tr>
+                  )}
 
                   {/* Extra Services */}
                   {selectedBooking.pricing?.extraServices?.map((service, index) => (

@@ -247,6 +247,11 @@ export const roomsAPI = {
     const response: AxiosResponse<ApiResponse<Review[]>> = await api.get(`/rooms/${roomId}/reviews`);
     return response.data;
   },
+
+  getRoomNumbers: async (roomId: string, filters?: any): Promise<ApiResponse<any[]>> => {
+    const response: AxiosResponse<ApiResponse<any[]>> = await api.get(`/room-numbers/available/${roomId}`, { params: filters });
+    return response.data;
+  },
 };
 
 // Bookings API
@@ -310,6 +315,11 @@ export const bookingsAPI = {
       console.error('API: Cancel booking error:', error);
       throw error;
     }
+  },
+
+  partialCancelBooking: async (id: string, roomNumberIds: string[], reason: string): Promise<ApiResponse> => {
+    const response: AxiosResponse<ApiResponse> = await api.put(`/bookings/${id}/partial-cancel`, { roomNumberIds, reason });
+    return response.data;
   },
 
   updateBooking: async (id: string, updateData: any): Promise<ApiResponse<Booking>> => {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Table, Alert, Spinner, Button, Modal, Form, Badge } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { bookingsAPI, reviewsAPI } from '../services/api';
 import { Booking } from '../types';
 import { useNotifications } from '../context/NotificationContext';
@@ -14,6 +15,7 @@ const MyBookings: React.FC = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [reviewStatuses, setReviewStatuses] = useState<{ [key: string]: any }>({});
 
   const { refreshNotifications } = useNotifications();
@@ -143,7 +145,37 @@ const MyBookings: React.FC = () => {
     setSelectedBooking(booking);
     setShowCancelModal(true);
     setCancelReason('');
+    setSelectedRooms([]); // Reset selected rooms
     setError(null); // Clear any previous errors
+  };
+
+  const handlePartialCancelConfirm = async () => {
+    if (!selectedBooking || selectedRooms.length === 0) return;
+
+    try {
+      setCancelLoading(selectedBooking._id);
+      const response = await bookingsAPI.partialCancelBooking(
+        selectedBooking._id,
+        selectedRooms,
+        cancelReason || 'Partial customer cancellation'
+      );
+
+      if (response?.success) {
+        toast.success('Partial cancellation successful');
+        fetchBookings(true);
+        setShowCancelModal(false);
+        setSelectedBooking(null);
+        setSelectedRooms([]);
+        setCancelReason('');
+        refreshNotifications();
+      } else {
+        setError(response?.message || 'Failed to cancel rooms');
+      }
+    } catch (err: any) {
+      setError(err?.response?.data?.message || err?.message || 'Failed to cancel rooms');
+    } finally {
+      setCancelLoading(null);
+    }
   };
 
   const handleCancelConfirm = async () => {
@@ -298,9 +330,20 @@ const MyBookings: React.FC = () => {
           </thead>
           <tbody>
             {bookings && bookings.map ? bookings.map((b, idx) => {
-              // Handle both string and object room references
-              const room = typeof b.room === 'object' && b.room !== null ? b.room : null;
-              const roomLabel = room ? `${room.name || ''} ${room.type ? `(${room.type})` : ''}`.trim() : 'Unknown Room';
+              // Handle multiple rooms
+              let roomLabel = 'No Rooms';
+              if (b.rooms && b.rooms.length > 0) {
+                const roomInfo = b.rooms.map(r => {
+                  const type = typeof r.roomType === 'object' && r.roomType !== null ? (r.roomType as any).name || '' : 'Room';
+                  const num = r.roomNumberInfo ? r.roomNumberInfo.number : r.roomNumber;
+                  return `${type} #${num}${r.status === 'Cancelled' ? ' (Cancelled)' : ''}`;
+                });
+                roomLabel = roomInfo.join(', ');
+              } else if ((b as any).room) {
+                // Fallback for old single-room bookings
+                const room = typeof (b as any).room === 'object' && (b as any).room !== null ? (b as any).room : null;
+                roomLabel = room ? `${room.name || ''} ${room.type ? `(${room.type})` : ''}`.trim() : 'Unknown Room';
+              }
               const ci = new Date(b.bookingDates.checkInDate).toLocaleDateString();
               const co = new Date(b.bookingDates.checkOutDate).toLocaleDateString();
 
@@ -381,13 +424,38 @@ const MyBookings: React.FC = () => {
             <div className="mb-3">
               <strong>Booking Details:</strong>
               <ul className="mt-2">
-                <li>Room: {typeof selectedBooking.room === 'object' && selectedBooking.room !== null
-                  ? `${selectedBooking.room.name || ''}`.trim()
-                  : 'Unknown Room'}</li>
                 <li>Check-in: {new Date(selectedBooking.bookingDates.checkInDate).toLocaleDateString()}</li>
                 <li>Check-out: {new Date(selectedBooking.bookingDates.checkOutDate).toLocaleDateString()}</li>
                 <li>Total: ₹{selectedBooking.pricing.totalAmount?.toFixed(2) || '0.00'}</li>
               </ul>
+
+              {(selectedBooking as any).rooms && (selectedBooking as any).rooms.length > 1 && (
+                <div className="mt-3">
+                  <strong>Select Rooms to Cancel:</strong>
+                  <div className="mt-2 border rounded p-3">
+                    {(selectedBooking as any).rooms.map((roomItem: any) => (
+                      <Form.Check
+                        key={roomItem.roomNumber}
+                        type="checkbox"
+                        id={`room-${roomItem.roomNumber}`}
+                        label={`Room ${roomItem.roomNumberInfo.number} (${roomItem.status})`}
+                        disabled={roomItem.status === 'Cancelled'}
+                        checked={selectedRooms.includes(roomItem.roomNumber)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedRooms([...selectedRooms, roomItem.roomNumber]);
+                          } else {
+                            setSelectedRooms(selectedRooms.filter(id => id !== roomItem.roomNumber));
+                          }
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <small className="text-muted d-block mt-1">
+                    Select specific rooms to cancel or click "Cancel Full Booking" to cancel everything.
+                  </small>
+                </div>
+              )}
             </div>
           )}
           <Form.Group>
@@ -405,6 +473,22 @@ const MyBookings: React.FC = () => {
           <Button variant="secondary" onClick={handleCloseModal}>
             Keep Booking
           </Button>
+          {selectedRooms.length > 0 && selectedBooking && (selectedBooking as any).rooms && selectedRooms.length < (selectedBooking as any).rooms.filter((r: any) => r.status !== 'Cancelled').length && (
+            <Button
+              variant="warning"
+              onClick={handlePartialCancelConfirm}
+              disabled={cancelLoading !== null}
+            >
+              {cancelLoading ? (
+                <>
+                  <Spinner animation="border" size="sm" className="me-2" />
+                  Cancelling Rooms...
+                </>
+              ) : (
+                'Cancel Selected Rooms'
+              )}
+            </Button>
+          )}
           <Button
             variant="danger"
             onClick={handleCancelConfirm}
@@ -416,7 +500,7 @@ const MyBookings: React.FC = () => {
                 Cancelling...
               </>
             ) : (
-              'Cancel Booking'
+              selectedRooms.length > 0 ? 'Cancel Full Booking' : 'Cancel Full Booking'
             )}
           </Button>
         </Modal.Footer>

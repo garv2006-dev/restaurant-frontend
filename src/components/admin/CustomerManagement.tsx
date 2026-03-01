@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Badge, Modal, Form, Spinner } from 'react-bootstrap';
+import { Modal, Form, Spinner } from 'react-bootstrap';
 import { Search, UserPlus, Trash2, User, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { User as UserType } from '../../types';
@@ -255,12 +255,31 @@ const CustomerManagement: React.FC = () => {
     setCustomerToDelete(null);
   };
 
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case 'admin': return 'danger';
-      case 'staff': return 'warning';
-      default: return 'primary';
-    }
+  const getRoleBadge = (role: string) => {
+    const roleStyles: { [key: string]: { bg: string; color: string; label: string } } = {
+      'admin': { bg: '#fee2e2', color: '#991b1b', label: 'Admin' },
+      'staff': { bg: '#fef3c7', color: '#92400e', label: 'Staff' },
+      'customer': { bg: '#eef2ff', color: '#4338ca', label: 'Customer' }
+    };
+    const style = roleStyles[role] || roleStyles['customer'];
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          padding: '4px 12px',
+          borderRadius: '6px',
+          fontSize: '11.5px',
+          fontWeight: 600,
+          letterSpacing: '0.3px',
+          textTransform: 'uppercase' as const,
+          backgroundColor: style.bg,
+          color: style.color,
+          whiteSpace: 'nowrap' as const
+        }}
+      >
+        {style.label}
+      </span>
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -382,9 +401,7 @@ const CustomerManagement: React.FC = () => {
                       </td>
                       <td>{customer.phone || '-'}</td>
                       <td>
-                        <Badge bg={getRoleBadgeVariant(customer.role)}>
-                          {customer.role || 'customer'}
-                        </Badge>
+                        {getRoleBadge(customer.role || 'customer')}
                       </td>
                       <td>
                         <div className="admin-status">
@@ -393,14 +410,39 @@ const CustomerManagement: React.FC = () => {
                         </div>
                       </td>
                       <td>
-                        <Badge bg="info">
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            fontSize: '12.5px',
+                            fontWeight: 600,
+                            backgroundColor: '#eef2ff',
+                            color: '#4338ca',
+                            minWidth: '32px'
+                          }}
+                        >
                           {customer.totalBookings || 0}
-                        </Badge>
+                        </span>
                       </td>
                       <td>
-                        <Badge bg="success">
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            fontSize: '12.5px',
+                            fontWeight: 600,
+                            backgroundColor: '#d1fae5',
+                            color: '#065f46',
+                            whiteSpace: 'nowrap' as const
+                          }}
+                        >
                           {formatCurrency(customer.totalSpent || 0)}
-                        </Badge>
+                        </span>
                       </td>
                       <td>{formatDate(customer.createdAt)}</td>
                       <td>
