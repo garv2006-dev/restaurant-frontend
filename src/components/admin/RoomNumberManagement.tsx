@@ -12,7 +12,7 @@ import {
 import { Plus, Filter, RefreshCw, Home, User, Calendar, Trash2 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
-import { getSocket } from '../../services/socket';
+import { useSocket } from '../../contexts/SocketContext';
 import DataLoader from '../common/DataLoader';
 import { toast } from 'react-toastify';
 
@@ -135,8 +135,9 @@ const RoomNumberManagement: React.FC = () => {
     });
 
     // Socket listeners
+    const { socket } = useSocket();
     useEffect(() => {
-        const socket = getSocket();
+        if (!socket) return;
         const handleRefresh = () => {
             queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
             queryClient.invalidateQueries({ queryKey: ['roomTypes'] }); // Refresh counts
@@ -151,7 +152,7 @@ const RoomNumberManagement: React.FC = () => {
             socket.off('new-booking', handleRefresh);
             socket.off('booking-update', handleRefresh);
         };
-    }, [queryClient]);
+    }, [socket, queryClient]);
 
     // Mutations
     const bulkCreateMutation = useMutation({

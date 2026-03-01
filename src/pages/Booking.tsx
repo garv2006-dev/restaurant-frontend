@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Alert, Badge, Modal, Spinner } from 'react-bootstrap';
-import { Calendar, Users, XCircle, ShieldAlert } from 'lucide-react';
+import { Container, Row, Col, Card, Button, Alert, Badge, Spinner } from 'react-bootstrap';
+import { Users, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI, paymentsAPI } from '../services/api';
 import { differenceInDays } from 'date-fns';
 import type { Room, BookingFormData } from '../types';
 // import { triggerBookingNotification } from '../utils/bookingNotification';
-import DiscountCode from '../components/booking/DiscountCode';
+import BookingFormModal from '../components/booking/BookingFormModal';
+import PaymentModal from '../components/booking/PaymentModal';
 import { toast } from 'react-toastify';
 
 const Booking: React.FC = () => {
@@ -65,9 +66,15 @@ const Booking: React.FC = () => {
       earlyCheckIn: false,
       lateCheckOut: false
     },
-    extraServices: []
+    extraServices: [],
+    roomCount: 1,
+    roomNumbers: []
   });
+
+  const [availableRoomNumbers, setAvailableRoomNumbers] = useState<any[]>([]);
+  const [fetchingRoomNumbers, setFetchingRoomNumbers] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [roomsTouched, setRoomsTouched] = useState(false); // track if user has clicked any checkbox
 
   // Update form when selected room changes
   useEffect(() => {
@@ -145,7 +152,9 @@ const Booking: React.FC = () => {
         earlyCheckIn: false,
         lateCheckOut: false
       },
-      extraServices: []
+      extraServices: [],
+      roomCount: 1,
+      roomNumbers: []
     };
 
     console.log('Updated booking form:', newForm);
@@ -155,7 +164,52 @@ const Booking: React.FC = () => {
     setShowBookingModal(true);
   };
 
-  const handleFormChange = (field: string, value: string | number | boolean): void => {
+  const validateField = (field: string, value: any): string => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Handle nested fields
+    if (field === 'guestDetails.name') {
+      return !value?.trim() ? 'Name is required' : '';
+    }
+
+    if (field === 'guestDetails.email') {
+      if (!value?.trim()) return 'Email is required';
+      if (!/\S+@\S+\.\S+/.test(value)) return 'Email is invalid';
+      return '';
+    }
+
+    if (field === 'guestDetails.phone') {
+      if (!value?.trim()) return 'Phone number is required';
+      const cleanPhone = value.replace(/[^0-9]/g, '');
+      if (!/^[0-9]{10,15}$/.test(cleanPhone)) return 'Please enter a valid phone number';
+      return '';
+    }
+
+    if (field === 'checkInDate') {
+      if (!value) return 'Check-in date is required';
+      const checkInDate = new Date(value);
+      checkInDate.setHours(0, 0, 0, 0);
+      if (checkInDate < today) return 'Check-in date cannot be in the past';
+      return '';
+    }
+
+    if (field === 'checkOutDate') {
+      if (!value) return 'Check-out date is required';
+      if (bookingForm.checkInDate) {
+        const checkInDate = new Date(bookingForm.checkInDate);
+        const checkOutDate = new Date(value);
+        checkInDate.setHours(0, 0, 0, 0);
+        checkOutDate.setHours(0, 0, 0, 0);
+        if (checkOutDate <= checkInDate) return 'Check-out date must be after check-in date';
+      }
+      return '';
+    }
+
+    return '';
+  };
+
+  const handleFormChange = (field: string, value: string | number | boolean | string[]): void => {
     if (field.includes('.')) {
       // Handle nested fields like 'guests.adults' or 'guestDetails.name'
       const [parent, child] = field.split('.');
@@ -166,17 +220,21 @@ const Booking: React.FC = () => {
         currentGuests[child as 'adults' | 'children'] = value as number;
 
         const totalGuests = currentGuests.adults + currentGuests.children;
-        const maxCapacity = selectedRoom.capacity.adults + selectedRoom.capacity.children;
+        const roomCount = bookingForm.roomCount || 1;
+        const maxCapacity = (selectedRoom.capacity.adults + selectedRoom.capacity.children) * roomCount;
 
         // Prevent exceeding capacity
         if (totalGuests > maxCapacity) {
           setErrors(prev => ({
             ...prev,
-            guests: `Maximum capacity for this room is ${maxCapacity} guests (${selectedRoom.capacity.adults} adults + ${selectedRoom.capacity.children} children)`
+            guests: `Maximum capacity for ${roomCount} room(s) is ${maxCapacity} guests`
           }));
-          return; // Don't update if it exceeds capacity
+          setBookingForm(prev => ({
+            ...prev,
+            [parent]: currentGuests
+          }));
+          return;
         } else {
-          // Clear error if within capacity
           setErrors(prev => {
             const newErrors = { ...prev };
             delete newErrors.guests;
@@ -184,6 +242,19 @@ const Booking: React.FC = () => {
           });
         }
       }
+
+      // Real-time validation for guest detail fields
+      const fieldKey = `${parent}.${child}`;
+      const validationError = validateField(fieldKey, value);
+      setErrors(prev => {
+        if (validationError) {
+          return { ...prev, [fieldKey]: validationError };
+        } else {
+          const newErrors = { ...prev };
+          delete newErrors[fieldKey];
+          return newErrors;
+        }
+      });
 
       setBookingForm(prev => ({
         ...prev,
@@ -194,17 +265,95 @@ const Booking: React.FC = () => {
       }));
     } else {
       // Handle top-level fields
-      setBookingForm(prev => ({
-        ...prev,
-        [field]: value
-      }));
+      const validationError = validateField(field, value);
+      setErrors(prev => {
+        if (validationError) {
+          return { ...prev, [field]: validationError };
+        } else {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        }
+      });
+
+      setBookingForm(prev => {
+        const newState = { ...prev, [field]: value };
+
+        // If roomCount changes, reset selected room numbers
+        if (field === 'roomCount') {
+          newState.roomNumbers = [];
+        }
+
+        // if user clicked room checkbox mark touched
+        if (field === 'roomNumbers') {
+          setRoomsTouched(true);
+        }
+
+        return newState;
+      });
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: any = {};
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Fetch available room numbers when room or dates change
+    useEffect(() => {
+      const fetchAvailableRoomNumbers = async () => {
+        if (!bookingForm.roomId || !bookingForm.checkInDate || !bookingForm.checkOutDate) return;
+
+        try {
+          setFetchingRoomNumbers(true);
+          const response = await roomsAPI.getRoomNumbers(bookingForm.roomId, {
+            checkInDate: bookingForm.checkInDate,
+            checkOutDate: bookingForm.checkOutDate,
+            status: 'Available'
+          });
+          if (response.success) {
+            setAvailableRoomNumbers(response.data || []);
+          }
+        } catch (err) {
+          console.error('Error fetching room numbers:', err);
+        } finally {
+          setFetchingRoomNumbers(false);
+        }
+      };
+
+      fetchAvailableRoomNumbers();
+    }, [bookingForm.roomId, bookingForm.checkInDate, bookingForm.checkOutDate]);
+
+    // validate room selection after user interaction
+    useEffect(() => {
+      if (!bookingForm.checkInDate || !bookingForm.checkOutDate) {
+        setErrors(prev => {
+          const { roomAvailability, ...rest } = prev;
+          return rest;
+        });
+        return;
+      }
+      if (fetchingRoomNumbers) return;
+
+      let availabilityError: string | undefined;
+      const selectedRoomsCount = bookingForm.roomNumbers?.length || 0;
+      if (availableRoomNumbers.length === 0) {
+        availabilityError = 'No rooms available for selected dates';
+      } else if (roomsTouched && selectedRoomsCount === 0) {
+        availabilityError = 'Please select at least one room';
+      }
+
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        if (availabilityError) newErrors.roomAvailability = availabilityError;
+        else delete newErrors.roomAvailability;
+        return newErrors;
+      });
+
+      if (selectedRoomsCount > 0) {
+        setBookingForm(prev => ({ ...prev, roomCount: selectedRoomsCount }));
+      }
+    }, [bookingForm.checkInDate, bookingForm.checkOutDate, bookingForm.roomNumbers, availableRoomNumbers, fetchingRoomNumbers, roomsTouched]);
+
+    const validateForm = (): boolean => {
+      const newErrors: any = {};
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
 
     console.log('Validating form:', bookingForm);
 
@@ -258,14 +407,25 @@ const Booking: React.FC = () => {
       newErrors['guestDetails.phone'] = 'Please enter a valid phone number';
     }
 
+    // Check room availability - verify at least one room is selected
+    if (bookingForm.checkInDate && bookingForm.checkOutDate) {
+      // if there are no available room numbers at all, fail immediately
+      if (availableRoomNumbers.length === 0) {
+        newErrors.roomAvailability = 'No rooms available for selected dates';
+      } else if (!bookingForm.roomNumbers || bookingForm.roomNumbers.length === 0) {
+        newErrors.roomAvailability = 'Please select at least one room';
+      }
+    }
+
     // Check room capacity
+    const numRoomsSelected = bookingForm.roomNumbers?.length || 0;
     const roomToCheck = selectedRoom || rooms.find(r => r._id === bookingForm.roomId || r.id === bookingForm.roomId);
-    if (roomToCheck) {
+    if (roomToCheck && numRoomsSelected > 0) {
       const totalGuests = bookingForm.guests.adults + bookingForm.guests.children;
-      const maxCapacity = roomToCheck.capacity.adults + roomToCheck.capacity.children;
+      const maxCapacity = (roomToCheck.capacity.adults + roomToCheck.capacity.children) * numRoomsSelected;
 
       if (totalGuests > maxCapacity) {
-        newErrors.guests = `Maximum capacity for this room is ${maxCapacity} guests`;
+        newErrors.guests = `Maximum capacity for ${numRoomsSelected} room(s) is ${maxCapacity} guests`;
       } else if (bookingForm.guests.adults < 1) {
         newErrors.guests = 'At least one adult is required';
       }
@@ -282,19 +442,31 @@ const Booking: React.FC = () => {
     console.log('Current form state:', bookingForm);
     console.log('Selected room:', selectedRoom);
 
-    // Ensure we have a room selected
-    if (!selectedRoom && bookingForm.roomId) {
+    // Resolve room synchronously using a local variable
+    let currentRoom = selectedRoom;
+    if (!currentRoom && bookingForm.roomId) {
       const room = rooms.find(r => r._id === bookingForm.roomId || r.id === bookingForm.roomId);
       if (room) {
+        currentRoom = room;
         setSelectedRoom(room);
       }
     }
 
     // Validate form
-    if (!validateForm() || !selectedRoom) {
-      console.log('Form validation failed or no room selected');
-      console.log('Validation result:', !validateForm());
-      console.log('Selected room exists:', !!selectedRoom);
+    const isValid = validateForm();
+    if (!isValid || !currentRoom) {
+      console.log('Form validation failed or no room selected', errors);
+      // Show toast notification for validation errors; prefer room availability message if present
+      const toastMsg = errors.roomAvailability || 'Please fill in all required fields correctly before proceeding.';
+      toast.error(toastMsg, {
+        position: "top-center",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      // keep booking modal open (it already is) and do not open payment
       return;
     }
 
@@ -307,10 +479,15 @@ const Booking: React.FC = () => {
       const checkOutDate = new Date(bookingForm.checkOutDate);
       checkOutDate.setUTCHours(12, 0, 0, 0);
 
+      // Ensure roomCount matches the number of selected rooms
+      const selectedRoomsCount = bookingForm.roomNumbers?.length || 0;
+
       const bookingData = {
-        roomId: selectedRoom._id || selectedRoom.id, // Use _id if available, fallback to id
+        roomId: currentRoom._id || currentRoom.id,
         checkInDate: checkInDate.toISOString(),
         checkOutDate: checkOutDate.toISOString(),
+        roomCount: selectedRoomsCount,
+        roomNumbers: bookingForm.roomNumbers || [],
         guestDetails: {
           primaryGuest: {
             name: bookingForm.guestDetails.name.trim(),
@@ -320,7 +497,9 @@ const Booking: React.FC = () => {
           totalAdults: bookingForm.guests.adults,
           totalChildren: bookingForm.guests.children,
           additionalGuests: bookingForm.additionalGuests || []
-        }
+        },
+        discountCode: appliedDiscount?.code,
+        paymentMethod: selectedPaymentMethod
       };
 
       setPendingBookingPayload(bookingData);
@@ -602,9 +781,20 @@ const Booking: React.FC = () => {
       });
       setBookingError(errorMessage);
 
-      // Reopen payment modal on error
-      setShowPaymentModal(true);
-      // Payment specific modals removed
+      // Check if error is related to room availability - go back to booking modal
+      const isRoomAvailabilityError = errorMessage.toLowerCase().includes('available') ||
+        errorMessage.toLowerCase().includes('room') ||
+        errorMessage.toLowerCase().includes('capacity') ||
+        errorMessage.toLowerCase().includes('invalid booking data');
+
+      if (isRoomAvailabilityError) {
+        // Go back to booking modal so user can fix the issue
+        setShowPaymentModal(false);
+        setShowBookingModal(true);
+      } else {
+        // Reopen payment modal for other errors (payment failures, etc.)
+        setShowPaymentModal(true);
+      }
     } finally {
       setProcessingPayment(false);
     }
@@ -621,7 +811,8 @@ const Booking: React.FC = () => {
       ) || 1;
 
       const basePrice = selectedRoom.price.basePrice;
-      const subtotal = basePrice * nights;
+      const numRooms = bookingForm.roomNumbers?.length || 1;
+      const subtotal = basePrice * nights * numRooms;
 
       setTotalNights(nights);
       setSubtotalAmount(subtotal);
@@ -635,7 +826,7 @@ const Booking: React.FC = () => {
         setTotalAmount(subtotal);
       }
     }
-  }, [bookingForm.checkInDate, bookingForm.checkOutDate, selectedRoom, appliedDiscount]);
+  }, [bookingForm.checkInDate, bookingForm.checkOutDate, bookingForm.roomNumbers, selectedRoom, appliedDiscount]);
 
   const handleDiscountApplied = (discount: {
     code: string;
@@ -806,361 +997,50 @@ const Booking: React.FC = () => {
         )}
       </Row>
 
-      {/* Booking Modal */}
-      <Modal show={showBookingModal} onHide={() => setShowBookingModal(false)} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Book {selectedRoom?.name}</Modal.Title>
-        </Modal.Header>
-        <Form onSubmit={handleSubmitBooking}>
-          <Modal.Body>
-            {bookingError ? (
-              <Alert variant="danger" className="mb-4">
-                <XCircle size={20} className="me-2" />
-                {bookingError}
-              </Alert>
-            ) : null}
-            <Row>
-              <Col md={6} className="mb-3">
-                <Form.Group>
-                  <Form.Label>
-                    <Calendar size={16} className="me-1" />
-                    Check-in Date
-                  </Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={bookingForm.checkInDate}
-                    onChange={(e) => handleFormChange('checkInDate', e.target.value)}
-                    isInvalid={!!errors.checkInDate}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.checkInDate}
-                  </Form.Control.Feedback>
-                </Form.Group>
-              </Col>
+      {/* Booking Form Modal - Component */}
+      <BookingFormModal
+        show={showBookingModal}
+        selectedRoom={selectedRoom}
+        bookingForm={bookingForm}
+        errors={errors}
+        bookingError={bookingError}
+        totalNights={totalNights}
+        subtotalAmount={subtotalAmount}
+        finalAmount={finalAmount}
+        appliedDiscount={appliedDiscount}
+        onHide={() => setShowBookingModal(false)}
+        onFormChange={handleFormChange}
+        onSubmit={handleSubmitBooking}
+        availableRoomCount={selectedRoom?.availableCount || selectedRoom?.totalRoomNumbers || 5}
+        availableRoomNumbers={availableRoomNumbers}
+        fetchingRoomNumbers={fetchingRoomNumbers}
+      />
 
-              <Col md={6} className="mb-3">
-                <Form.Group>
-                  <Form.Label>
-                    <Calendar size={16} className="me-1" />
-                    Check-out Date
-                  </Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={bookingForm.checkOutDate}
-                    onChange={(e) => handleFormChange('checkOutDate', e.target.value)}
-                    isInvalid={!!errors.checkOutDate}
-                    min={bookingForm.checkInDate || new Date().toISOString().split('T')[0]}
-                    required
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors.checkOutDate}
-                  </Form.Control.Feedback>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6} className="mb-3">
-                <Form.Group>
-                  <Form.Label>Adults</Form.Label>
-                  <Form.Select
-                    value={bookingForm.guests.adults}
-                    onChange={(e) => handleFormChange('guests.adults', parseInt(e.target.value))}
-                    isInvalid={!!errors.guests}
-                  >
-                    {Array.from({ length: selectedRoom?.capacity.adults || 4 }, (_, i) => i + 1).map(num => (
-                      <option key={num} value={num}>{num}</option>
-                    ))}
-                  </Form.Select>
-                  {selectedRoom && (
-                    <Form.Text className="text-muted">
-                      {/* Maximum {selectedRoom.capacity.adults} adults */}
-                    </Form.Text>
-                  )}
-                </Form.Group>
-              </Col>
-
-              <Col md={6} className="mb-3">
-                <Form.Group>
-                  <Form.Label>Children</Form.Label>
-                  <Form.Select
-                    value={bookingForm.guests.children}
-                    onChange={(e) => handleFormChange('guests.children', parseInt(e.target.value))}
-                    isInvalid={!!errors.guests}
-                  >
-                    {Array.from({ length: (selectedRoom?.capacity.children || 3) + 1 }, (_, i) => i).map(num => (
-                      <option key={num} value={num}>{num}</option>
-                    ))}
-                  </Form.Select>
-                  {selectedRoom && (
-                    <Form.Text className="text-muted">
-                      {/* Maximum {selectedRoom.capacity.children} children */}
-                    </Form.Text>
-                  )}
-                </Form.Group>
-              </Col>
-            </Row>
-
-            {/* {errors.guests && (
-              <Alert variant="danger" className="mb-3">
-                {errors.guests}
-              </Alert>
-            )}
-            
-            {selectedRoom && (
-              <Alert variant="info" className="mb-3">
-                <strong>Room Capacity:</strong> Maximum {selectedRoom.capacity.adults + selectedRoom.capacity.children} guests 
-                ({selectedRoom.capacity.adults} {selectedRoom.capacity.adults === 1 ? 'adult' : 'adults'} + {selectedRoom.capacity.children} {selectedRoom.capacity.children === 1 ? 'child' : 'children'})
-                <br />
-                <small>Current selection: {bookingForm.guests.adults + bookingForm.guests.children} guests 
-                ({bookingForm.guests.adults} {bookingForm.guests.adults === 1 ? 'adult' : 'adults'} + {bookingForm.guests.children} {bookingForm.guests.children === 1 ? 'child' : 'children'})</small>
-              </Alert>
-            )} */}
-
-            <Row>
-              <Col md={6} className="mb-3">
-                <Form.Group>
-                  <Form.Label>Full Name</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={bookingForm.guestDetails.name}
-                    onChange={(e) => handleFormChange('guestDetails.name', e.target.value)}
-                    isInvalid={!!errors['guestDetails.name']}
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors['guestDetails.name']}
-                  </Form.Control.Feedback>
-                </Form.Group>
-              </Col>
-
-              <Col md={6} className="mb-3">
-                <Form.Group>
-                  <Form.Label>Email</Form.Label>
-                  <Form.Control
-                    type="email"
-                    value={bookingForm.guestDetails.email}
-                    onChange={(e) => handleFormChange('guestDetails.email', e.target.value)}
-                    isInvalid={!!errors['guestDetails.email']}
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors['guestDetails.email']}
-                  </Form.Control.Feedback>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6} className="mb-3">
-                <Form.Group>
-                  <Form.Label>Phone</Form.Label>
-                  <Form.Control
-                    type="tel"
-                    value={bookingForm.guestDetails.phone}
-                    onChange={(e) => handleFormChange('guestDetails.phone', e.target.value)}
-                    isInvalid={!!errors['guestDetails.phone']}
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    {errors['guestDetails.phone']}
-                  </Form.Control.Feedback>
-                </Form.Group>
-              </Col>
-
-              {/* <Col md={6} className="mb-3">
-                <Form.Group>
-                  <Form.Label>Special Requests (Optional)</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={2}
-                    value={bookingForm.specialRequests}
-                    onChange={(e) => handleFormChange('specialRequests', e.target.value)}
-                    placeholder="Any special requirements..."
-                  />
-                </Form.Group>
-              </Col> */}
-            </Row>
-
-            {selectedRoom && bookingForm.checkInDate && bookingForm.checkOutDate && (
-              <Alert variant="info">
-                <div className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong>Subtotal: ₹{subtotalAmount.toFixed(2)}</strong>
-                    <br />
-                    <small>
-                      {totalNights} nights × ₹{selectedRoom.price.basePrice}/night
-                    </small>
-                  </div>
-                </div>
-                {appliedDiscount && (
-                  <div className="mt-2 pt-2 border-top">
-                    <div className="d-flex justify-content-between">
-                      <small>Discount ({appliedDiscount.code}):</small>
-                      <small className="text-success">-₹{appliedDiscount.discountAmount.toFixed(2)}</small>
-                    </div>
-                    <div className="d-flex justify-content-between">
-                      <strong>Final Total:</strong>
-                      <strong className="text-primary">₹{finalAmount.toFixed(2)}</strong>
-                    </div>
-                  </div>
-                )}
-              </Alert>
-            )}
-          </Modal.Body>
-
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowBookingModal(false)}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit">
-              Continue to Payment
-            </Button>
-          </Modal.Footer>
-        </Form>
-      </Modal>
-
-      {/* Payment Method Modal */}
-      <Modal show={showPaymentModal} onHide={() => setShowPaymentModal(false)} centered size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Complete Your Booking</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {bookingError && (
-            <Alert variant="danger" className="mb-3">
-              {bookingError}
-            </Alert>
-          )}
-
-          {/* Booking Summary */}
-          {selectedRoom && (
-            <Card className="mb-4">
-              <Card.Header>
-                <h6 className="mb-0">Booking Summary</h6>
-              </Card.Header>
-              <Card.Body>
-                <Row>
-                  <Col md={6}>
-                    <p className="mb-1"><strong>Room:</strong> {selectedRoom.name}</p>
-                    <p className="mb-1"><strong>Check-in:</strong> {bookingForm.checkInDate}</p>
-                    <p className="mb-1"><strong>Check-out:</strong> {bookingForm.checkOutDate}</p>
-                    <p className="mb-0"><strong>Nights:</strong> {totalNights}</p>
-                  </Col>
-                  <Col md={6}>
-                    <p className="mb-1"><strong>Guests:</strong> {bookingForm.guests.adults} Adults{bookingForm.guests.children > 0 && `, ${bookingForm.guests.children} Children`}</p>
-                    <p className="mb-1"><strong>Rate:</strong> ₹{selectedRoom.price.basePrice}/night</p>
-                    <p className="mb-1"><strong>Subtotal:</strong> ₹{subtotalAmount.toFixed(2)}</p>
-                    {appliedDiscount && (
-                      <>
-                        <p className="mb-1 text-success">
-                          <strong>Discount ({appliedDiscount.code}):</strong> -₹{appliedDiscount.discountAmount.toFixed(2)}
-                        </p>
-                        <p className="mb-0 text-primary">
-                          <strong>Final Total:</strong> ₹{finalAmount.toFixed(2)}
-                        </p>
-                      </>
-                    )}
-                    {!appliedDiscount && (
-                      <p className="mb-0 text-primary">
-                        <strong>Total:</strong> ₹{totalAmount.toFixed(2)}
-                      </p>
-                    )}
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          )}
-
-          {/* Discount Code Section */}
-          <Card className="mb-4 discount-card">
-            <Card.Body>
-              <DiscountCode
-                subtotal={subtotalAmount}
-                onDiscountApplied={handleDiscountApplied}
-                disabled={processingPayment}
-              />
-            </Card.Body>
-          </Card>
-
-          {/* Payment Method Selection */}
-          <Card>
-            <Card.Header>
-              <h6 className="mb-0">Payment Method</h6>
-            </Card.Header>
-            <Card.Body>
-              <Form>
-                <Form.Group className="mb-3">
-                  <Form.Label>Select Payment Method *</Form.Label>
-                  <Form.Select
-                    value={selectedPaymentMethod}
-                    onChange={(e) => {
-                      setSelectedPaymentMethod(e.target.value as any);
-                      setBookingError(null); // Clear errors when changing payment method
-                    }}
-                    disabled={processingPayment}
-                    required
-                  >
-                    <option value="Cash">💰 Cash on Arrival - Pay at hotel during check-in</option>
-                    <option value="Razorpay">💳 Razorpay - Pay online securely via Razorpay</option>
-                  </Form.Select>
-                  <Form.Text className="text-muted">
-                    {selectedPaymentMethod === 'Cash' && '✓ Your booking will be confirmed immediately. Pay at the hotel during check-in.'}
-                    {selectedPaymentMethod === 'Razorpay' && '✓ Secure payment via Razorpay gateway. Booking confirmed after successful payment.'}
-                  </Form.Text>
-                </Form.Group>
-
-                {selectedPaymentMethod === 'Cash' && (
-                  <Alert variant="info" className="mb-0">
-                    <strong>Cash Payment Information:</strong>
-                    <ul className="mb-0 mt-2">
-                      <li>Your booking will be confirmed immediately</li>
-                      <li>No online payment required</li>
-                      <li>Pay the full amount at the hotel during check-in</li>
-                      <li>Cancellation policy applies as per terms</li>
-                    </ul>
-                  </Alert>
-                )}
-
-                {selectedPaymentMethod === 'Razorpay' && (
-                  <Alert variant="success" className="mb-0">
-                    <strong>Razorpay Payment:</strong>
-                    <p className="mb-0">You will be redirected to Razorpay to complete your payment securely. Razorpay supports all major credit/debit cards, UPI, net banking, and wallet payments.</p>
-                  </Alert>
-                )}
-              </Form>
-            </Card.Body>
-          </Card>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button
-            variant="secondary"
-            onClick={() => {
-              setShowPaymentModal(false);
-              setShowBookingModal(true);
-            }}
-            disabled={processingPayment}
-          >
-            Back
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleConfirmPayment}
-            disabled={processingPayment}
-            size="lg"
-          >
-            {processingPayment ? (
-              <>
-                <Spinner size="sm" className="me-2" />
-                Processing...
-              </>
-            ) : selectedPaymentMethod === 'Cash' ? (
-              `Confirm Booking - Pay ₹${(appliedDiscount ? finalAmount : totalAmount).toFixed(2)} at Hotel`
-            ) : (
-              `Proceed to ${selectedPaymentMethod} Payment`
-            )}
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
+      {/* Payment Modal - Component */}
+      <PaymentModal
+        show={showPaymentModal}
+        selectedRoom={selectedRoom}
+        bookingForm={bookingForm}
+        totalNights={totalNights}
+        subtotalAmount={subtotalAmount}
+        finalAmount={finalAmount}
+        totalAmount={totalAmount}
+        appliedDiscount={appliedDiscount}
+        selectedPaymentMethod={selectedPaymentMethod}
+        processingPayment={processingPayment}
+        bookingError={bookingError}
+        onHide={() => setShowPaymentModal(false)}
+        onPaymentMethodChange={(method) => {
+          setSelectedPaymentMethod(method);
+          setBookingError(null);
+        }}
+        onConfirmPayment={handleConfirmPayment}
+        onDiscountApplied={handleDiscountApplied}
+        onBackClick={() => {
+          setShowPaymentModal(false);
+          setShowBookingModal(true);
+        }}
+      />
 
     </Container>
   );

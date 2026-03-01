@@ -62,7 +62,7 @@ export interface Room {
     altText?: string;
     isPrimary: boolean;
   }>;
-  status: 'Available' | 'Occupied' | 'Maintenance' | 'Out of Order';
+  status: 'Available' | 'Occupied' | 'Maintenance' | 'Out of Service' | 'Partially Available';
   floor: number;
   isActive: boolean;
   averageRating: number;
@@ -79,7 +79,16 @@ export interface Booking {
   _id: string; // MongoDB _id field
   bookingId: string;
   user: string | User;
-  room: string | Room;
+  rooms: Array<{
+    roomType: string | Room;
+    roomNumber: string;
+    roomNumberInfo: {
+      number: string;
+      floor: number;
+    };
+    price: number;
+    status: 'Confirmed' | 'Cancelled';
+  }>;
   guestDetails: {
     primaryGuest: {
       name: string;
@@ -119,15 +128,20 @@ export interface Booking {
     };
     totalAmount: number;
   };
-  status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow';
+  status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'PartiallyCancelled' | 'NoShow';
   paymentStatus: 'Pending' | 'Paid' | 'PartiallyPaid' | 'Refunded' | 'Failed';
-  specialRequests?: string;
-  roomNumber?: string;
-  roomNumberInfo?: {
-    number: string;
-    floor: number;
-    allocatedAt: string;
+  paymentDetails?: {
+    paymentId?: string;
+    method?: string;
+    transactionId?: string;
+    paidAmount?: number;
+    paymentDate?: string;
+    refundAmount?: number;
+    refundDate?: string;
+    refundReason?: string;
   };
+  specialRequests?: string;
+  // roomNumber and roomNumberInfo are now part of the rooms array
   createdAt: string;
   updatedAt: string;
 }
@@ -251,6 +265,8 @@ export interface BookingFormData {
     floorPreference?: number;
   };
   extraServices: string[];
+  roomCount: number;
+  roomNumbers: string[];
 }
 
 // Dashboard types

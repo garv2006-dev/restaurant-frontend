@@ -848,57 +848,129 @@ body {
 }
 
 .admin-action-btn {
-  width: 32px;
-  height: 32px;
-  display: flex;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: var(--border-radius-base);
+  border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--admin-text-secondary);
-  transition: var(--transition-base);
+  transition: all 0.2s ease;
   padding: 0;
+  cursor: pointer;
+  outline: none;
 }
 
-.admin-action-btn:hover {
-  background-color: var(--admin-bg-main);
+.admin-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── View (Eye) ── */
+.admin-action-btn.view {
   color: var(--admin-primary);
+  background-color: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
 .admin-action-btn.view:hover {
-  color: var(--admin-primary);
-  background-color: var(--admin-primary-bg);
+  color: #fff;
+  background-color: var(--admin-primary);
+  border-color: var(--admin-primary);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Edit (Pencil) ── */
+.admin-action-btn.edit {
+  color: var(--admin-warning);
+  background-color: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.2);
 }
 
 .admin-action-btn.edit:hover {
-  color: var(--admin-warning);
-  background-color: rgba(245, 158, 11, 0.1);
+  color: #fff;
+  background-color: var(--admin-warning);
+  border-color: var(--admin-warning);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Delete / Cancel (XCircle) ── */
+.admin-action-btn.delete {
+  color: var(--admin-danger);
+  background-color: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .admin-action-btn.delete:hover {
-  color: var(--admin-danger);
-  background-color: rgba(239, 68, 68, 0.1);
+  color: #fff;
+  background-color: var(--admin-danger);
+  border-color: var(--admin-danger);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Confirm (CheckCircle) ── */
+.admin-action-btn.confirm {
+  color: var(--admin-success);
+  background-color: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
 }
 
 .admin-action-btn.confirm:hover {
-  color: var(--admin-success);
-  background-color: rgba(16, 185, 129, 0.1);
+  color: #fff;
+  background-color: var(--admin-success);
+  border-color: var(--admin-success);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Check-in (LogIn) ── */
+.admin-action-btn.checkin {
+  color: var(--admin-info);
+  background-color: rgba(6, 182, 212, 0.08);
+  border-color: rgba(6, 182, 212, 0.2);
 }
 
 .admin-action-btn.checkin:hover {
-  color: var(--admin-info);
-  background-color: rgba(6, 182, 212, 0.1);
+  color: #fff;
+  background-color: var(--admin-info);
+  border-color: var(--admin-info);
+  box-shadow: 0 2px 8px rgba(6, 182, 212, 0.35);
+  transform: translateY(-1px);
+}
+
+/* ── Check-out (LogOut) ── */
+.admin-action-btn.checkout {
+  color: var(--admin-dark, #334155);
+  background-color: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.15);
 }
 
 .admin-action-btn.checkout:hover {
-  color: var(--admin-dark);
-  background-color: rgba(15, 23, 42, 0.1);
+  color: #fff;
+  background-color: var(--admin-dark, #334155);
+  border-color: var(--admin-dark, #334155);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.3);
+  transform: translateY(-1px);
+}
+
+/* ── Upload ── */
+.admin-action-btn.upload {
+  color: var(--admin-primary);
+  background-color: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.2);
 }
 
 .admin-action-btn.upload:hover {
-  color: var(--admin-primary);
-  background-color: var(--admin-primary-bg);
+  color: #fff;
+  background-color: var(--admin-primary);
+  border-color: var(--admin-primary);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
 }
 
 .admin-form-label {

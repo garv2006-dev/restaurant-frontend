@@ -71,11 +71,12 @@ interface RecentBooking {
       phone: string;
     };
   };
-  room: {
+  room?: {
     _id: string;
     name: string;
     type: string;
   };
+  rooms?: any[];
   bookingDates: {
     checkInDate: string;
     checkOutDate: string;
@@ -282,7 +283,7 @@ const LiveDashboard: React.FC = () => {
     }
   };
 
-  const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow') => {
+  const handleStatusUpdate = async (bookingId: string, status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow' | 'PartiallyCancelled') => {
     // Add confirmation for destructive actions
     if (status === 'Cancelled' || status === 'NoShow') {
       const confirmMessage = status === 'Cancelled'
@@ -599,9 +600,21 @@ const LiveDashboard: React.FC = () => {
                         </div>
                       </td>
                       <td>
-                        <div className="d-flex align-items-center gap-2">
-                          <span className="badge bg-light text-dark border">{booking?.room?.name}</span>
-                          <span className="small text-muted">{booking?.room?.type || 'Room'}</span>
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                          {booking.rooms && (booking as any).rooms.length > 0 ? (
+                            (booking as any).rooms.map((r: any, idx: number) => (
+                              <div key={idx} className="d-flex align-items-center gap-1">
+                                <span className="badge bg-light text-dark border">
+                                  {typeof r.roomType === 'object' ? r.roomType.name : 'Room'} #{r.roomNumberInfo ? r.roomNumberInfo.number : r.roomNumber}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <>
+                              <span className="badge bg-light text-dark border">{booking?.room?.name}</span>
+                              <span className="small text-muted">{booking?.room?.type || 'Room'}</span>
+                            </>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -808,6 +821,26 @@ const LiveDashboard: React.FC = () => {
                         <span className="info-label">Phone:</span>
                         <span className="info-value">{selectedBooking.guestDetails.primaryGuest.phone}</span>
                       </div>
+                      <hr />
+                      <h6>Rooms Allocated</h6>
+                      {(selectedBooking as any).rooms && (selectedBooking as any).rooms.length > 0 ? (
+                        (selectedBooking as any).rooms.map((r: any, idx: number) => (
+                          <div key={idx} className="mb-2 p-2 border rounded bg-light bg-opacity-50">
+                            <div className="d-flex justify-content-between align-items-center">
+                              <strong>Room {r.roomNumberInfo ? r.roomNumberInfo.number : r.roomNumber}</strong>
+                              <Badge bg={r.status === 'Cancelled' ? 'danger' : 'success'}>{r.status}</Badge>
+                            </div>
+                            <div className="small text-muted">
+                              {typeof r.roomType === 'object' ? r.roomType.name : 'Standard Room'}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="info-item">
+                          <span className="info-label">Room:</span>
+                          <span className="info-value">{selectedBooking.room?.name} ({selectedBooking.room?.type})</span>
+                        </div>
+                      )}
                     </Card.Body>
                   </Card>
                 </Col>
@@ -823,14 +856,6 @@ const LiveDashboard: React.FC = () => {
                         <span className="info-label">Check-out:</span>
                         <span className="info-value">{formatDate(selectedBooking.bookingDates.checkOutDate)}</span>
                       </div>
-                      <div className="info-item">
-                        <span className="info-label">Room:</span>
-                        <span className="info-value">{selectedBooking.room.name}</span>
-                      </div>
-                      <div className="info-item">
-                        <span className="info-label">Room Type:</span>
-                        <span className="info-value">{selectedBooking.room.type}</span>
-                      </div>
                     </Card.Body>
                   </Card>
                 </Col>
@@ -845,7 +870,7 @@ const LiveDashboard: React.FC = () => {
           )}
         </Modal.Body>
       </Modal>
-    </div>
+    </div >
   );
 };
 

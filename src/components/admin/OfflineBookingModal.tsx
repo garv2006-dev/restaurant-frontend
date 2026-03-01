@@ -27,6 +27,7 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
         checkOutDate: '',
         adults: 1,
         children: 0,
+        roomCount: 1,
         amount: 0,
         paymentMethod: 'Cash'
     });
@@ -93,7 +94,7 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                 const start = new Date(formData.checkInDate);
                 const end = new Date(formData.checkOutDate);
                 const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
-                const price = selectedRoom.price.basePrice * nights;
+                const price = selectedRoom.price.basePrice * nights * (formData.roomCount || 1);
                 const gst = price * (gstRate / 100); // Dynamic GST
                 setFormData(prev => ({ ...prev, amount: price + gst }));
 
@@ -205,13 +206,19 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
 
     const createBooking = async (paymentDetails: any) => {
         try {
+            const roomsToBook = Array.from({ length: formData.roomCount || 1 }, () => ({
+                roomId: formData.roomId,
+                adults: Math.ceil(Number(formData.adults) / (formData.roomCount || 1)),
+                children: Math.floor(Number(formData.children) / (formData.roomCount || 1))
+            }));
+
             await adminAPI.createOfflineBooking({
                 customerDetails: {
                     name: formData.name,
                     email: formData.email,
                     phone: formData.phone
                 },
-                roomId: formData.roomId,
+                rooms: roomsToBook,
                 checkInDate: formData.checkInDate,
                 checkOutDate: formData.checkOutDate,
                 guestDetails: {
@@ -235,6 +242,7 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                 checkOutDate: '',
                 adults: 1,
                 children: 0,
+                roomCount: 1,
                 amount: 0,
                 paymentMethod: 'Cash'
             });
@@ -339,6 +347,19 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                                         </option>
                                     ))}
                                 </select>
+                            </div>
+                            <div className="col-12">
+                                <label className="admin-form-label">Number of Rooms <span className="text-danger">*</span></label>
+                                <input
+                                    type="number"
+                                    name="roomCount"
+                                    value={formData.roomCount}
+                                    onChange={handleChange}
+                                    min={1}
+                                    max={10}
+                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                                    className="admin-form-control w-100"
+                                />
                             </div>
                             <div className="col-md-6">
                                 <label className="admin-form-label">Check-in Date <span className="text-danger">*</span></label>
@@ -452,7 +473,7 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                     )}
                 </div>
             </Modal.Footer>
-        </Modal>
+        </Modal >
     );
 };
 
