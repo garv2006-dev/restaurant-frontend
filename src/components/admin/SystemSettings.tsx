@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Spinner } from 'react-bootstrap';
 import { Save, Settings, CheckCircle, XCircle } from 'lucide-react';
 import { adminAPI } from '../../services/api';
+import { useSocket } from '../../contexts/SocketContext';
+
 
 const standardGstRates = [0, 5, 12, 18, 28];
 
@@ -12,15 +14,17 @@ const SystemSettings: React.FC = () => {
     const [isCustomGst, setIsCustomGst] = useState(false);
     const [customValue, setCustomValue] = useState('18');
 
+    const { socket } = useSocket();
+
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    const fetchSettings = useCallback(async () => {
+    const fetchSettings = useCallback(async (silent: boolean = false) => {
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             const response = await adminAPI.getSettings();
             if (response.success && response.data) {
                 const percentage = response.data.gstPercentage;
@@ -45,6 +49,31 @@ const SystemSettings: React.FC = () => {
     useEffect(() => {
         fetchSettings();
     }, [fetchSettings]);
+
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleSettingsChange = (newSettings?: any) => {
+            console.log('Real-time settings change detected');
+            if (newSettings && newSettings.gstPercentage !== undefined) {
+                const percentage = newSettings.gstPercentage;
+                setSettings({ gstPercentage: percentage });
+                if (standardGstRates.includes(percentage)) {
+                    setIsCustomGst(false);
+                } else {
+                    setIsCustomGst(true);
+                    setCustomValue(percentage.toString());
+                }
+            } else {
+                fetchSettings(true);
+            }
+        };
+
+        socket.on('settings-change', handleSettingsChange);
+        return () => {
+            socket.off('settings-change', handleSettingsChange);
+        };
+    }, [socket, fetchSettings]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

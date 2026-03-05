@@ -25,6 +25,8 @@ import {
 import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { useTheme } from '../../context/ThemeContext';
+import { useSocket } from '../../contexts/SocketContext';
+
 
 interface ReportData {
   bookings: {
@@ -81,9 +83,11 @@ const ReportsAnalytics: React.FC = () => {
     endDate: new Date().toISOString().split('T')[0],
   });
 
-  const fetchReportData = React.useCallback(async () => {
+  const { socket } = useSocket();
+
+  const fetchReportData = React.useCallback(async (silent: boolean = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const { data } = await api.get('/admin/reports', {
         params: { startDate: dateRange.startDate, endDate: dateRange.endDate },
       });
@@ -100,6 +104,30 @@ const ReportsAnalytics: React.FC = () => {
     fetchReportData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Socket updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRefresh = () => {
+      console.log('Refreshing report data due to real-time update');
+      fetchReportData(true);
+    };
+
+    socket.on('booking-status-change', handleRefresh);
+    socket.on('new-booking', handleRefresh);
+    socket.on('rooms-change', handleRefresh);
+    socket.on('room-numbers-change', handleRefresh);
+    socket.on('customers-change', handleRefresh);
+
+    return () => {
+      socket.off('booking-status-change', handleRefresh);
+      socket.off('new-booking', handleRefresh);
+      socket.off('rooms-change', handleRefresh);
+      socket.off('room-numbers-change', handleRefresh);
+      socket.off('customers-change', handleRefresh);
+    };
+  }, [socket, fetchReportData]);
 
   const handleDateRangeChange = (field: keyof DateRange, value: string) => {
     setDateRange((prev) => ({ ...prev, [field]: value }));
@@ -197,7 +225,7 @@ const ReportsAnalytics: React.FC = () => {
               </div>
             </div>
             <div className="col-md-3">
-              <button className="admin-btn admin-btn-primary w-100" onClick={fetchReportData}>
+              <button className="admin-btn admin-btn-primary w-100" onClick={() => fetchReportData()}>
                 Update Report
               </button>
             </div>

@@ -118,9 +118,9 @@ const LiveDashboard: React.FC = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Fetch bookings with search functionality
-  const fetchBookings = useCallback(async (search?: string) => {
+  const fetchBookings = useCallback(async (search?: string, silent: boolean = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
 
       // Use admin endpoint to get all bookings with search
@@ -173,7 +173,7 @@ const LiveDashboard: React.FC = () => {
       console.error('Error fetching bookings:', err);
       setError(err?.response?.data?.message || 'Failed to load bookings');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
       setSearchLoading(false);
     }
   }, []);
@@ -212,26 +212,36 @@ const LiveDashboard: React.FC = () => {
     const handleNewBooking = (data: any) => {
       console.log('🔔 New booking received via socket:', data);
       // Refresh data to show new booking
-      fetchBookings();
+      fetchBookings(searchTerm, true);
       fetchRoomMetrics();
     };
 
     const handleBookingStatusChange = (data: any) => {
       console.log('🔔 Booking status changed via socket:', data);
       // Refresh data to reflect status change
-      fetchBookings();
+      fetchBookings(searchTerm, true);
       fetchRoomMetrics();
     };
 
     const handleDashboardUpdate = (data: any) => {
       console.log('🔔 Dashboard update received via socket:', data);
       // Refresh stats
-      fetchBookings();
+      fetchBookings(searchTerm, true);
       fetchRoomMetrics();
     };
 
     const handleRoomUpdate = (data: any) => {
       console.log('🔔 Room update received via socket:', data);
+      fetchRoomMetrics();
+    };
+
+    const handleRoomNumbersChange = () => {
+      console.log('🔔 Room numbers change received via socket');
+      fetchRoomMetrics();
+    };
+
+    const handleRoomsChange = () => {
+      console.log('🔔 Rooms change received via socket');
       fetchRoomMetrics();
     };
 
@@ -242,6 +252,8 @@ const LiveDashboard: React.FC = () => {
     socket.on('booking_cancelled', handleBookingStatusChange); // Also listen for cancellations
     socket.on('dashboard-update', handleDashboardUpdate);
     socket.on('room_updated', handleRoomUpdate);
+    socket.on('room-numbers-change', handleRoomNumbersChange);
+    socket.on('rooms-change', handleRoomsChange);
 
     // Cleanup listeners
     return () => {
@@ -251,8 +263,10 @@ const LiveDashboard: React.FC = () => {
       socket.off('booking_cancelled', handleBookingStatusChange);
       socket.off('dashboard-update', handleDashboardUpdate);
       socket.off('room_updated', handleRoomUpdate);
+      socket.off('room-numbers-change', handleRoomNumbersChange);
+      socket.off('rooms-change', handleRoomsChange);
     };
-  }, [socket, fetchBookings]);
+  }, [socket, fetchBookings, searchTerm]);
 
   // Fetch room number metrics
   const fetchRoomMetrics = async () => {

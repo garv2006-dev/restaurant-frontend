@@ -4,6 +4,8 @@ import { Plus, Search, Tag, Trash2, Edit2, CheckCircle, XCircle, RotateCcw } fro
 import { toast } from 'react-toastify';
 import { adminAPI } from '../../services/api';
 import DataLoader from '../../components/common/DataLoader';
+import { useSocket } from '../../contexts/SocketContext';
+
 import '../../styles/admin-panel.css';
 
 interface UsageLimit {
@@ -91,6 +93,8 @@ const DiscountManagement: React.FC = () => {
     restrictions: { firstTimeOnly: false }
   });
 
+  const { socket } = useSocket();
+
   const validate = (data: DiscountFormData): FormErrors => {
     const errors: FormErrors = {};
 
@@ -163,9 +167,23 @@ const DiscountManagement: React.FC = () => {
     fetchDiscounts();
   }, []);
 
-  const fetchDiscounts = async () => {
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleDiscountsChange = () => {
+      console.log('Real-time discounts change detected');
+      fetchDiscounts(true);
+    };
+
+    socket.on('discounts-change', handleDiscountsChange);
+    return () => {
+      socket.off('discounts-change', handleDiscountsChange);
+    };
+  }, [socket]);
+
+  const fetchDiscounts = async (silent: boolean = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const response = await adminAPI.getDiscounts();
       if (response.success && response.data) {
         // Handle different response structures gracefully

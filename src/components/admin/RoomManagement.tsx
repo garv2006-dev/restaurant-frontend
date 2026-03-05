@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Button,
   Modal,
@@ -16,6 +16,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import ImageUploadModal from './ImageUploadModal';
 import DataLoader from '../common/DataLoader';
+import { useSocket } from '../../contexts/SocketContext';
+
 
 interface Room {
   _id: string;
@@ -105,6 +107,23 @@ const RoomManagement: React.FC = () => {
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const { socket } = useSocket();
+
+  // Socket updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRoomsChange = () => {
+      console.log('Real-time rooms change detected');
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    };
+
+    socket.on('rooms-change', handleRoomsChange);
+    return () => {
+      socket.off('rooms-change', handleRoomsChange);
+    };
+  }, [socket, queryClient]);
 
   const validateField = (name: string, value: any): string => {
     let error = '';

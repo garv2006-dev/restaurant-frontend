@@ -48,9 +48,9 @@ const BookingManagement: React.FC = () => {
   const [showOfflineModal, setShowOfflineModal] = useState(false);
   const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
 
-  const fetchBookings = useCallback(async () => {
+  const fetchBookings = useCallback(async (silent: boolean = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
 
       console.log('Fetching bookings with filters:', { status: filters.status, date: filters.date, search: debouncedSearchTerm }); // Debug log
@@ -84,7 +84,7 @@ const BookingManagement: React.FC = () => {
       setError(errorMessage);
       setBookings([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
       setSearchLoading(false);
     }
   }, [filters.status, filters.date, debouncedSearchTerm, pagination.page, pagination.limit]);
@@ -95,7 +95,7 @@ const BookingManagement: React.FC = () => {
     if (!socket) return;
 
     const handleRefresh = () => {
-      fetchBookings();
+      fetchBookings(true);
     };
 
     socket.on('new-booking', handleRefresh);
@@ -119,7 +119,7 @@ const BookingManagement: React.FC = () => {
   }, [filters.search]);
 
   useEffect(() => {
-    fetchBookings();
+    fetchBookings(false);
   }, [fetchBookings]);
 
 

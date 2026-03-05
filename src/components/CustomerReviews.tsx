@@ -27,6 +27,7 @@ interface CustomerReview {
   reviewType: string;
   createdAt: string;
   isApproved: boolean;
+  roomType?: string;
 }
 
 const CustomerReviews: React.FC = () => {
@@ -67,19 +68,19 @@ const CustomerReviews: React.FC = () => {
           const customerReviews: CustomerReview[] = reviewsData.map((review: any) => ({
             _id: review._id || review.id,
             user: {
-              _id: review.user._id || review.user.id,
-              name: review.user.name,
-              avatar: review.user.avatar
+              _id: review.user?._id || review.user?.id || 'deleted',
+              name: review.user?.name || 'Former Guest',
+              avatar: review.user?.avatar
             },
             room: {
-              _id: review.room._id || review.room.id,
-              name: review.room.name,
-              type: review.room.type
+              _id: review.room?._id || review.room?.id || 'deleted',
+              name: review.room?.name || review.roomType || 'Room',
+              type: review.room?.type || 'Standard'
             },
-            rating: review.rating,
-            title: review.title,
-            comment: review.comment,
-            reviewType: review.reviewType,
+            rating: review.rating || 5,
+            title: review.title || 'Excellent Stay',
+            comment: review.comment || '',
+            reviewType: review.reviewType || 'overall',
             createdAt: review.createdAt,
             isApproved: review.isApproved
           }));

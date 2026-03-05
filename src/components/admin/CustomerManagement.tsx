@@ -4,6 +4,8 @@ import { Search, UserPlus, Trash2, User, ChevronLeft, ChevronRight, XCircle } fr
 import { adminAPI } from '../../services/api';
 import { User as UserType } from '../../types';
 import { toast } from 'react-toastify';
+import { useSocket } from '../../contexts/SocketContext';
+
 import '../../styles/admin-panel.css';
 import DataLoader from '../common/DataLoader';
 
@@ -40,6 +42,8 @@ const CustomerManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  const { socket } = useSocket();
+
   // Debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -49,9 +53,9 @@ const CustomerManagement: React.FC = () => {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  const fetchCustomers = useCallback(async () => {
+  const fetchCustomers = useCallback(async (silent: boolean = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError('');
 
       // Fetch all customers for client-side pagination
@@ -92,6 +96,21 @@ const CustomerManagement: React.FC = () => {
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
+
+  // Socket updates
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleCustomersChange = () => {
+      console.log('Real-time customers change detected');
+      fetchCustomers(true);
+    };
+
+    socket.on('customers-change', handleCustomersChange);
+    return () => {
+      socket.off('customers-change', handleCustomersChange);
+    };
+  }, [socket, fetchCustomers]);
 
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
