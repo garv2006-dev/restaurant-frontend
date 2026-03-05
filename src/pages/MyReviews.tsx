@@ -21,6 +21,7 @@ interface Review {
     bookingId: string;
   };
   createdAt: string;
+  roomType?: string;
 }
 
 interface Booking {
@@ -100,12 +101,18 @@ const MyReviews: React.FC = () => {
 
       if (response?.success) {
         let bookingsData: any[] = [];
+        const raw: any = response.data;
 
-        if (Array.isArray(response.data)) {
-          bookingsData = response.data;
+        // Backend returns: { success, count, total, pagination, data: Booking[] }
+        if (Array.isArray(raw)) {
+          bookingsData = raw;
+        } else if (raw && Array.isArray(raw.data)) {
+          bookingsData = raw.data;
+        } else if (raw && Array.isArray(raw.bookings)) {
+          bookingsData = raw.bookings;
         }
 
-        // Filter only completed bookings that haven't been reviewed
+        // Include ALL CheckedOut bookings — room may be null if the room was deleted
         const completedBookings = bookingsData.filter((booking: any) =>
           booking.status === 'CheckedOut'
         );
@@ -131,7 +138,11 @@ const MyReviews: React.FC = () => {
 
   const handleEditClick = (review: Review) => {
     setEditingReview(review);
-    setSelectedBooking(review.booking._id); // Pre-select booking, but disable it
+    // booking may be a populated object or just a string ID
+    const bookingId = review.booking && typeof review.booking === 'object'
+      ? review.booking._id
+      : (review.booking as any) as string;
+    setSelectedBooking(bookingId || '');
     setRating(review.rating);
     setTitle(review.title);
     setComment(review.comment);
@@ -220,9 +231,11 @@ const MyReviews: React.FC = () => {
       setSubmitError('');
       setSubmitSuccess('');
 
-      // Get room ID from selected booking
+      // Get room ID from selected booking (room may be null if the room was deleted)
       const booking = completedBookings.find(b => b._id === selectedBooking);
-      const roomId = booking?.room._id;
+      const roomId = booking?.room
+        ? (typeof booking.room === 'object' ? booking.room._id : booking.room)
+        : undefined;
 
       const reviewData = {
         booking: selectedBooking,
@@ -371,7 +384,11 @@ const MyReviews: React.FC = () => {
               <tr key={r._id}>
                 <td>{idx + 1}</td>
                 <td><strong>{r.title}</strong></td>
-                <td>{r.room?.name} ({r.room?.type})</td>
+                <td>
+                  {r.room && typeof r.room === 'object'
+                    ? `${r.room.name || r.roomType || ''}${r.room.type ? ` (${r.room.type})` : ''}`.trim() || 'Room'
+                    : r.roomType || 'Room'}
+                </td>
                 <td>
                   <div className="d-flex align-items-center gap-1">
                     {renderStars(r.rating)}
@@ -444,11 +461,16 @@ const MyReviews: React.FC = () => {
                     const isEditingCurrentBooking = editingReview?.booking?._id === booking._id;
                     return !hasReview || isEditingCurrentBooking;
                   })
-                  .map((booking) => (
-                    <option key={booking._id} value={booking._id}>
-                      {booking.bookingId} - {booking.room.name} ({booking.room.type})
-                    </option>
-                  ))}
+                  .map((booking) => {
+                    const roomLabel = booking.room && typeof booking.room === 'object'
+                      ? `${booking.room.name || ''}${booking.room.type ? ` (${booking.room.type})` : ''}`.trim()
+                      : 'Checked Out Stay';
+                    return (
+                      <option key={booking._id} value={booking._id}>
+                        {booking.bookingId} — {roomLabel}
+                      </option>
+                    );
+                  })}
               </Form.Select>
               {completedBookings.filter(b => !reviews.some(r => r.booking?._id === b._id)).length === 0 && !editingReview && (
                 <Form.Text className="text-muted">

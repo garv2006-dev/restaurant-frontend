@@ -174,6 +174,7 @@ export interface Review {
   isVerified: boolean;
   visitType?: 'Business' | 'Leisure' | 'Family' | 'Couple' | 'Solo' | 'Group';
   stayDuration?: string;
+  roomType?: string;
   createdAt: string;
 }
 

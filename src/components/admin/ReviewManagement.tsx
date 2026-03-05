@@ -10,6 +10,7 @@ import {
     User as UserIcon
 } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useSocket } from '../../contexts/SocketContext';
 
 const ReviewManagement: React.FC = () => {
     const [reviews, setReviews] = useState<Review[]>([]);
@@ -22,9 +23,11 @@ const ReviewManagement: React.FC = () => {
         pages: 1
     });
 
-    const fetchReviews = useCallback(async (page: number = 1, search: string = '') => {
+    const { socket } = useSocket();
+
+    const fetchReviews = useCallback(async (page: number = 1, search: string = '', silent: boolean = false) => {
         try {
-            setLoading(true);
+            if (!silent) setLoading(true);
             const response = await reviewsAPI.getReviews({
                 page,
                 limit: 10,
@@ -35,9 +38,12 @@ const ReviewManagement: React.FC = () => {
             if (response.success && response.data) {
                 setReviews(response.data);
                 const rawResponse = response as any;
-                if (rawResponse.pagination) {
-                    setPagination(rawResponse.pagination);
-                }
+                setPagination({
+                    page: rawResponse.pagination?.page || 1,
+                    limit: rawResponse.pagination?.limit || 10,
+                    pages: rawResponse.pagination?.pages || 1,
+                    total: rawResponse.total || 0
+                });
             }
         } catch (error) {
             console.error('Error fetching reviews:', error);
@@ -54,6 +60,27 @@ const ReviewManagement: React.FC = () => {
 
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm, fetchReviews]);
+
+    // Socket events for real-time updates
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleNewReview = () => {
+            fetchReviews(pagination.page, searchTerm, true);
+        };
+
+        const handleReviewDeleted = () => {
+            fetchReviews(pagination.page, searchTerm, true);
+        };
+
+        socket.on('new-review', handleNewReview);
+        socket.on('review-deleted', handleReviewDeleted);
+
+        return () => {
+            socket.off('new-review', handleNewReview);
+            socket.off('review-deleted', handleReviewDeleted);
+        };
+    }, [socket, pagination.page, searchTerm, fetchReviews]);
 
     const handleDelete = async (id: string) => {
         if (!window.confirm('Are you sure you want to delete this review?')) {
@@ -181,7 +208,7 @@ const ReviewManagement: React.FC = () => {
                                             </td>
                                             <td>
                                                 <span className="admin-badge admin-badge-primary text-uppercase" style={{ fontSize: '0.7rem' }}>
-                                                    {room?.name || 'Room'}
+                                                    {room?.name || review.roomType || 'Room'}
                                                 </span>
                                             </td>
                                             <td className="text-end">

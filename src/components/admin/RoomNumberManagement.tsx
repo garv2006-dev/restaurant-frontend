@@ -146,11 +146,15 @@ const RoomNumberManagement: React.FC = () => {
         socket.on('booking-status-change', handleRefresh);
         socket.on('new-booking', handleRefresh);
         socket.on('booking-update', handleRefresh);
+        socket.on('room-numbers-change', handleRefresh);
+        socket.on('rooms-change', handleRefresh);
 
         return () => {
             socket.off('booking-status-change', handleRefresh);
             socket.off('new-booking', handleRefresh);
             socket.off('booking-update', handleRefresh);
+            socket.off('room-numbers-change', handleRefresh);
+            socket.off('rooms-change', handleRefresh);
         };
     }, [socket, queryClient]);
 
