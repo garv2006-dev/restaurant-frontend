@@ -4,7 +4,6 @@ import { Users, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI, paymentsAPI } from '../services/api';
-import { differenceInDays } from 'date-fns';
 import type { Room, BookingFormData } from '../types';
 // import { triggerBookingNotification } from '../utils/bookingNotification';
 import BookingFormModal from '../components/booking/BookingFormModal';
