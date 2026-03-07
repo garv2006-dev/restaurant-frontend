@@ -95,9 +95,11 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
     // Recalculate amount whenever room count / dates change
     useEffect(() => {
         if (!selectedRoom || !formData.checkInDate || !formData.checkOutDate) return;
-        const nights = Math.ceil(
-            (new Date(formData.checkOutDate).getTime() - new Date(formData.checkInDate).getTime()) / (1000 * 3600 * 24)
-        );
+        const d1 = new Date(formData.checkInDate);
+        d1.setHours(0, 0, 0, 0);
+        const d2 = new Date(formData.checkOutDate);
+        d2.setHours(0, 0, 0, 0);
+        const nights = Math.round((d2.getTime() - d1.getTime()) / (1000 * 3600 * 24));
         if (nights <= 0) return;
         const priceBeforeGst = selectedRoom.price.basePrice * nights * (roomCount || 1);
         const gst = priceBeforeGst * (gstRate / 100);
