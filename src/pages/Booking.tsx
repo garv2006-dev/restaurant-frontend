@@ -4,7 +4,6 @@ import { Users, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI, paymentsAPI } from '../services/api';
-import { differenceInDays } from 'date-fns';
 import type { Room, BookingFormData } from '../types';
 // import { triggerBookingNotification } from '../utils/bookingNotification';
 import BookingFormModal from '../components/booking/BookingFormModal';
@@ -294,66 +293,66 @@ const Booking: React.FC = () => {
     }
   };
 
-    // Fetch available room numbers when room or dates change
-    useEffect(() => {
-      const fetchAvailableRoomNumbers = async () => {
-        if (!bookingForm.roomId || !bookingForm.checkInDate || !bookingForm.checkOutDate) return;
+  // Fetch available room numbers when room or dates change
+  useEffect(() => {
+    const fetchAvailableRoomNumbers = async () => {
+      if (!bookingForm.roomId || !bookingForm.checkInDate || !bookingForm.checkOutDate) return;
 
-        try {
-          setFetchingRoomNumbers(true);
-          const response = await roomsAPI.getRoomNumbers(bookingForm.roomId, {
-            checkInDate: bookingForm.checkInDate,
-            checkOutDate: bookingForm.checkOutDate,
-            status: 'Available'
-          });
-          if (response.success) {
-            setAvailableRoomNumbers(response.data || []);
-          }
-        } catch (err) {
-          console.error('Error fetching room numbers:', err);
-        } finally {
-          setFetchingRoomNumbers(false);
-        }
-      };
-
-      fetchAvailableRoomNumbers();
-    }, [bookingForm.roomId, bookingForm.checkInDate, bookingForm.checkOutDate]);
-
-    // validate room selection after user interaction
-    useEffect(() => {
-      if (!bookingForm.checkInDate || !bookingForm.checkOutDate) {
-        setErrors(prev => {
-          const { roomAvailability, ...rest } = prev;
-          return rest;
+      try {
+        setFetchingRoomNumbers(true);
+        const response = await roomsAPI.getRoomNumbers(bookingForm.roomId, {
+          checkInDate: bookingForm.checkInDate,
+          checkOutDate: bookingForm.checkOutDate,
+          status: 'Available'
         });
-        return;
+        if (response.success) {
+          setAvailableRoomNumbers(response.data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching room numbers:', err);
+      } finally {
+        setFetchingRoomNumbers(false);
       }
-      if (fetchingRoomNumbers) return;
+    };
 
-      let availabilityError: string | undefined;
-      const selectedRoomsCount = bookingForm.roomNumbers?.length || 0;
-      if (availableRoomNumbers.length === 0) {
-        availabilityError = 'No rooms available for selected dates';
-      } else if (roomsTouched && selectedRoomsCount === 0) {
-        availabilityError = 'Please select at least one room';
-      }
+    fetchAvailableRoomNumbers();
+  }, [bookingForm.roomId, bookingForm.checkInDate, bookingForm.checkOutDate]);
 
+  // validate room selection after user interaction
+  useEffect(() => {
+    if (!bookingForm.checkInDate || !bookingForm.checkOutDate) {
       setErrors(prev => {
-        const newErrors = { ...prev };
-        if (availabilityError) newErrors.roomAvailability = availabilityError;
-        else delete newErrors.roomAvailability;
-        return newErrors;
+        const { roomAvailability, ...rest } = prev;
+        return rest;
       });
+      return;
+    }
+    if (fetchingRoomNumbers) return;
 
-      if (selectedRoomsCount > 0) {
-        setBookingForm(prev => ({ ...prev, roomCount: selectedRoomsCount }));
-      }
-    }, [bookingForm.checkInDate, bookingForm.checkOutDate, bookingForm.roomNumbers, availableRoomNumbers, fetchingRoomNumbers, roomsTouched]);
+    let availabilityError: string | undefined;
+    const selectedRoomsCount = bookingForm.roomNumbers?.length || 0;
+    if (availableRoomNumbers.length === 0) {
+      availabilityError = 'No rooms available for selected dates';
+    } else if (roomsTouched && selectedRoomsCount === 0) {
+      availabilityError = 'Please select at least one room';
+    }
 
-    const validateForm = (): boolean => {
-      const newErrors: any = {};
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      if (availabilityError) newErrors.roomAvailability = availabilityError;
+      else delete newErrors.roomAvailability;
+      return newErrors;
+    });
+
+    if (selectedRoomsCount > 0) {
+      setBookingForm(prev => ({ ...prev, roomCount: selectedRoomsCount }));
+    }
+  }, [bookingForm.checkInDate, bookingForm.checkOutDate, bookingForm.roomNumbers, availableRoomNumbers, fetchingRoomNumbers, roomsTouched]);
+
+  const validateForm = (): boolean => {
+    const newErrors: any = {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     console.log('Validating form:', bookingForm);
 
@@ -805,10 +804,13 @@ const Booking: React.FC = () => {
   // Calculate total price when dates or room changes
   useEffect(() => {
     if (selectedRoom && bookingForm.checkInDate && bookingForm.checkOutDate) {
-      const nights = differenceInDays(
-        new Date(bookingForm.checkOutDate),
-        new Date(bookingForm.checkInDate)
-      ) || 1;
+      // Normalize dates to midnight for accurate day difference
+      const d1 = new Date(bookingForm.checkInDate);
+      d1.setHours(0, 0, 0, 0);
+      const d2 = new Date(bookingForm.checkOutDate);
+      d2.setHours(0, 0, 0, 0);
+
+      const nights = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) || 1;
 
       const basePrice = selectedRoom.price.basePrice;
       const numRooms = bookingForm.roomNumbers?.length || 1;
