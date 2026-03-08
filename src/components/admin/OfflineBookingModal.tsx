@@ -107,7 +107,10 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
     }, [selectedRoom, formData.checkInDate, formData.checkOutDate, roomCount, gstRate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+        if (name === 'phone') {
+            value = value.replace(/[^0-9]/g, '').slice(0, 10);
+        }
         setFormData(prev => ({ ...prev, [name]: name === 'adults' || name === 'children' ? Number(value) : value }));
     };
 
@@ -300,7 +303,7 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                             </div>
                             <div className="col-md-6">
                                 <label className="admin-form-label">Phone Number <span className="text-danger">*</span></label>
-                                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="Enter phone" className="admin-form-control w-100" />
+                                <input type="tel" name="phone" maxLength={10} value={formData.phone} onChange={handleChange} placeholder="Enter 10-digit phone" className="admin-form-control w-100" />
                             </div>
                             <div className="col-12">
                                 <label className="admin-form-label">Email <span className="text-danger">*</span></label>

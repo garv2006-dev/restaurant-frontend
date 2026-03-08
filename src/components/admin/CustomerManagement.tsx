@@ -144,8 +144,8 @@ const CustomerManagement: React.FC = () => {
         else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) error = 'Invalid email address';
         break;
       case 'phone':
-        if (!value.trim()) error = 'Phone is required';
-        else if (!/^\+?[\d\s-]{10,}$/.test(value)) error = 'Invalid phone number';
+        if (!value.trim()) error = 'Phone number is required';
+        else if (!/^[0-9]{10}$/.test(value.replace(/\D/g, ''))) error = 'Phone number must be exactly 10 digits';
         break;
       case 'password':
         if (!value) error = 'Password is required';
@@ -156,7 +156,12 @@ const CustomerManagement: React.FC = () => {
   };
 
   const handleAddFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+
+    if (name === 'phone') {
+      value = value.replace(/[^0-9]/g, '').slice(0, 10);
+    }
+
     setAddFormData(prev => ({ ...prev, [name]: value }));
 
     if (addFormTouched[name]) {
@@ -602,7 +607,8 @@ const CustomerManagement: React.FC = () => {
               <Form.Control
                 type="tel"
                 name="phone"
-                placeholder="Enter customer phone"
+                maxLength={10}
+                placeholder="Enter 10-digit phone number"
                 value={addFormData.phone}
                 onChange={handleAddFormChange}
                 onBlur={handleAddFormBlur}

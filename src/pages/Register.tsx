@@ -121,9 +121,9 @@ const Register: React.FC = () => {
     const { name } = e.target;
     let { value } = e.target;
 
-    // Normalize phone like backend expects (digits or +digits, no spaces/dashes)
+    // Normalize phone like backend expects - strictly 10 digits
     if (name === 'phone') {
-      value = value.replace(/\s|-/g, '');
+      value = value.replace(/[^0-9]/g, '').slice(0, 10);
     }
 
     if (name === 'password') {
@@ -280,11 +280,12 @@ const Register: React.FC = () => {
                     <Form.Control
                       type="tel"
                       name="phone"
+                      maxLength={10}
                       value={formData.phone}
                       onChange={handleChange}
                       onBlur={handleBlur}
                       onFocus={handleFocus}
-                      placeholder="Enter your phone number"
+                      placeholder="Enter 10-digit phone number"
                       isInvalid={touched.phone && !!errors.phone}
                       autoComplete="tel"
                     />

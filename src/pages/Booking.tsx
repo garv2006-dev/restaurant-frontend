@@ -185,7 +185,7 @@ const Booking: React.FC = () => {
     if (field === 'guestDetails.phone') {
       if (!value?.trim()) return 'Phone number is required';
       const cleanPhone = value.replace(/[^0-9]/g, '');
-      if (!/^[0-9]{10,15}$/.test(cleanPhone)) return 'Please enter a valid phone number';
+      if (!/^[0-9]{10}$/.test(cleanPhone)) return 'Phone number must be exactly 10 digits';
       return '';
     }
 
@@ -406,8 +406,8 @@ const Booking: React.FC = () => {
 
     if (!bookingForm.guestDetails.phone?.trim()) {
       newErrors['guestDetails.phone'] = 'Phone number is required';
-    } else if (!/^[0-9]{10,15}$/.test(bookingForm.guestDetails.phone.replace(/[^0-9]/g, ''))) {
-      newErrors['guestDetails.phone'] = 'Please enter a valid phone number';
+    } else if (!/^[0-9]{10}$/.test(bookingForm.guestDetails.phone.replace(/[^0-9]/g, ''))) {
+      newErrors['guestDetails.phone'] = 'Phone number must be exactly 10 digits';
     }
 
     // Check room availability - verify at least one room is selected

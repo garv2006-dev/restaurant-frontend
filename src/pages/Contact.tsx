@@ -43,9 +43,8 @@ const Contact: React.FC = () => {
         if (!value.trim()) error = 'Phone number is required';
         else {
           const phoneDigits = value.replace(/\D/g, '');
-          if (phoneDigits.length < 10) error = 'Phone number must be at least 10 digits';
-          else if (phoneDigits.length > 15) error = 'Phone number cannot exceed 15 digits';
-          else if (!/^[0-9+\-\s()]+$/.test(value)) error = 'Please enter a valid phone number';
+          if (phoneDigits.length !== 10) error = 'Phone number must be exactly 10 digits';
+          else if (!/^[0-9]+$/.test(phoneDigits)) error = 'Please enter a valid phone number';
         }
         break;
       case 'subject':
@@ -90,7 +89,12 @@ const Contact: React.FC = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+
+    if (name === 'phone') {
+      value = value.replace(/[^0-9]/g, '').slice(0, 10);
+    }
+
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -331,18 +335,19 @@ const Contact: React.FC = () => {
                         <Form.Control
                           type="tel"
                           name="phone"
+                          maxLength={10}
                           value={formData.phone}
                           onChange={handleChange}
                           onBlur={handleBlur}
                           onFocus={handleFocus}
-                          placeholder="+91 1234567890"
+                          placeholder="Enter 10-digit phone number"
                           isInvalid={touched.phone && !!errors.phone}
                         />
                         <Form.Control.Feedback type="invalid">
                           {errors.phone}
                         </Form.Control.Feedback>
                         <Form.Text className="text-muted">
-                          Enter 10-15 digits (e.g., +91 1234567890)
+                          Enter exactly 10 digits
                         </Form.Text>
                       </Form.Group>
                     </Col>
