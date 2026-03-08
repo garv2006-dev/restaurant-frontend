@@ -4,6 +4,9 @@ import { adminAPI, roomsAPI } from '../../services/api';
 import { Booking, Room } from '../../types';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
+import isSameDay from 'date-fns/isSameDay';
+import isAfter from 'date-fns/isAfter';
+import startOfDay from 'date-fns/startOfDay';
 import {
   Eye,
   CheckCircle,
@@ -433,6 +436,21 @@ const BookingManagement: React.FC = () => {
                       if ((booking as any).roomNumberInfo?.number) roomNumbersDisplay.push((booking as any).roomNumberInfo.number);
                     }
 
+                    // Strict Validation Logic for Admin Actions
+                    const now = new Date();
+                    const today = startOfDay(now);
+                    const checkInDate = startOfDay(parseISO(booking.bookingDates.checkInDate));
+                    const checkOutDate = startOfDay(parseISO(booking.bookingDates.checkOutDate));
+
+                    // 1. Confirm: Only for Pending
+                    const isCheckInDateReached = isSameDay(today, checkInDate) || isAfter(today, checkInDate);
+                    const canCheckIn = booking.status === 'Confirmed' && isCheckInDateReached;
+
+                    const isCheckOutDateReached = isSameDay(today, checkOutDate) || isAfter(today, checkOutDate);
+                    const canCheckOut = booking.status === 'CheckedIn' && isCheckOutDateReached;
+
+                    const isLoading = actionLoading[booking.id] || actionLoading[booking._id];
+
                     return (
                       <tr key={booking.id || booking._id}>
                         <td>
@@ -544,23 +562,25 @@ const BookingManagement: React.FC = () => {
                         <td>{getStatusBadge(booking.status)}</td>
                         <td className="text-end">
                           <div className="admin-action-buttons justify-content-end">
+                            {/* 👁 View Detail - Always Show */}
                             <button
                               className="admin-action-btn view"
                               onClick={() => handleViewDetails(booking)}
                               title="View Details"
-                              disabled={actionLoading[booking.id] || actionLoading[booking._id]}
+                              disabled={isLoading}
                             >
                               <Eye size={16} />
                             </button>
 
+                            {/* ✅ Confirm Button: Show only for Pending */}
                             {booking.status === 'Pending' && (
                               <button
                                 className="admin-action-btn confirm"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'Confirmed')}
-                                disabled={actionLoading[booking.id] || actionLoading[booking._id]}
+                                disabled={isLoading}
                                 title="Confirm this booking"
                               >
-                                {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
+                                {isLoading ? (
                                   <Loader2 size={16} className="animate-spin" />
                                 ) : (
                                   <CheckCircle size={16} />
@@ -568,29 +588,19 @@ const BookingManagement: React.FC = () => {
                               </button>
                             )}
 
-                            {['Pending', 'Confirmed'].includes(booking.status) && (
-                              <button
-                                className="admin-action-btn delete"
-                                onClick={() => handleStatusUpdate(booking.id || booking._id, 'Cancelled')}
-                                disabled={actionLoading[booking.id] || actionLoading[booking._id]}
-                                title="Cancel this booking"
-                              >
-                                {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
-                                  <Loader2 size={16} className="animate-spin" />
-                                ) : (
-                                  <XCircle size={16} />
-                                )}
-                              </button>
-                            )}
-
+                            {/* ✔ Check-In Button: Show only for Confirmed */}
                             {booking.status === 'Confirmed' && (
                               <button
                                 className="admin-action-btn checkin"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'CheckedIn')}
-                                disabled={actionLoading[booking.id] || actionLoading[booking._id]}
-                                title="Check in guest"
+                                disabled={!canCheckIn || isLoading}
+                                title={
+                                  isCheckInDateReached
+                                    ? "Check in guest"
+                                    : `Check-in allowed from ${format(checkInDate, 'MMM dd, yyyy')}`
+                                }
                               >
-                                {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
+                                {isLoading ? (
                                   <Loader2 size={16} className="animate-spin" />
                                 ) : (
                                   <LogIn size={16} />
@@ -598,17 +608,38 @@ const BookingManagement: React.FC = () => {
                               </button>
                             )}
 
+                            {/* 🚪 Check-Out Button: Show only for Checked-In */}
                             {booking.status === 'CheckedIn' && (
                               <button
                                 className="admin-action-btn checkout"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'CheckedOut')}
-                                disabled={actionLoading[booking.id] || actionLoading[booking._id]}
-                                title="Check out guest"
+                                disabled={!canCheckOut || isLoading}
+                                title={
+                                  isCheckOutDateReached
+                                    ? "Check out guest"
+                                    : `Check-out allowed from ${format(checkOutDate, 'MMM dd, yyyy')}`
+                                }
                               >
-                                {(actionLoading[booking.id] || actionLoading[booking._id]) ? (
+                                {isLoading ? (
                                   <Loader2 size={16} className="animate-spin" />
                                 ) : (
                                   <LogOut size={16} />
+                                )}
+                              </button>
+                            )}
+
+                            {/* ⛔ Cancel Button: Show only for Pending or Confirmed */}
+                            {['Pending', 'Confirmed'].includes(booking.status) && (
+                              <button
+                                className="admin-action-btn delete"
+                                onClick={() => handleStatusUpdate(booking.id || booking._id, 'Cancelled')}
+                                disabled={isLoading}
+                                title="Cancel this booking"
+                              >
+                                {isLoading ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <XCircle size={16} />
                                 )}
                               </button>
                             )}
