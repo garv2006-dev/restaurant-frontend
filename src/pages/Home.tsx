@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Col, Container, Row, Alert } from 'react-bootstrap';
 import { FaCar, FaCoffee, FaSnowflake, FaStar, FaTv, FaWifi, FaLock } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CustomerReviews from '../components/CustomerReviews';
@@ -46,6 +46,8 @@ const Home: React.FC = () => {
   const [featuredRooms, setFeaturedRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetchFeaturedRooms();
@@ -287,9 +289,19 @@ const Home: React.FC = () => {
                             Under Maintenance
                           </button>
                         ) : (
-                          <Link to="/booking" className="btn btn-primary w-100 btn-sm">
+                          <Button
+                            variant="primary"
+                            className="w-100 btn-sm"
+                            onClick={() => {
+                              if (!isAuthenticated) {
+                                navigate('/login', { state: { from: location } });
+                              } else {
+                                navigate('/booking');
+                              }
+                            }}
+                          >
                             Book Now
-                          </Link>
+                          </Button>
                         )}
                       </div>
                     </Card.Body>

@@ -166,9 +166,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           draggable: true,
         });
 
-        // Redirect based on actual user role
-        const redirectPath = userRole === 'admin' ? '/admin/dashboard' : '/dashboard';
-        window.location.href = redirectPath;
+        // State update will trigger re-render in Login component,
+        // which handles the redirect logic including the return path.
 
         return true;
       } else {

@@ -11,7 +11,7 @@ import PaymentModal from '../components/booking/PaymentModal';
 import { toast } from 'react-toastify';
 
 const Booking: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'staff';
   const navigate = useNavigate();
   const location = useLocation();
@@ -127,6 +127,10 @@ const Booking: React.FC = () => {
   }, [roomId]);
 
   const handleBookRoom = (room: Room): void => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location } });
+      return;
+    }
     console.log('Booking room:', room);
     setSelectedRoom(room);
 
