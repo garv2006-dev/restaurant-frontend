@@ -15,6 +15,11 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import format from 'date-fns/format';
+import parseISO from 'date-fns/parseISO';
+import isSameDay from 'date-fns/isSameDay';
+import isAfter from 'date-fns/isAfter';
+import startOfDay from 'date-fns/startOfDay';
 import { adminAPI } from '../../services/api';
 import api from '../../services/api';
 import '../../styles/admin-panel.css';
@@ -633,25 +638,56 @@ const LiveDashboard: React.FC = () => {
                       </td>
                       <td>
                         <div className="d-flex flex-column small">
-                          <div><span className="text-muted w-25 d-inline-block">In:</span> <span className="fw-medium">{new Date(booking.bookingDates.checkInDate).toLocaleDateString()}</span></div>
-                          <div><span className="text-muted w-25 d-inline-block">Out:</span> <span className="fw-medium">{new Date(booking.bookingDates.checkOutDate).toLocaleDateString()}</span></div>
+                          {(() => {
+                            try {
+                              const checkIn = parseISO(booking.bookingDates.checkInDate);
+                              const checkOut = parseISO(booking.bookingDates.checkOutDate);
+                              return (
+                                <>
+                                  <div><span className="text-muted w-25 d-inline-block">In:</span> <span className="fw-medium">{format(checkIn, 'MMM dd, yyyy')}</span></div>
+                                  <div><span className="text-muted w-25 d-inline-block">Out:</span> <span className="fw-medium">{format(checkOut, 'MMM dd, yyyy')}</span></div>
+                                </>
+                              );
+                            } catch (e) {
+                              return (
+                                <>
+                                  <div><span className="text-muted w-25 d-inline-block">In:</span> <span className="fw-medium">{new Date(booking.bookingDates.checkInDate).toLocaleDateString()}</span></div>
+                                  <div><span className="text-muted w-25 d-inline-block">Out:</span> <span className="fw-medium">{new Date(booking.bookingDates.checkOutDate).toLocaleDateString()}</span></div>
+                                </>
+                              );
+                            }
+                          })()}
                         </div>
                       </td>
                       <td>
-                        <span className="fw-bold text-dark">₹{booking.pricing.totalAmount?.toFixed(2) || '0.00'}</span>
+                        <span className="fw-bold text-dark">₹{booking.pricing?.totalAmount?.toFixed(2) || '0.00'}</span>
                       </td>
                       <td>
                         {(() => {
                           const status = booking.status;
-                          let badgeClass = 'bg-secondary text-white';
-                          if (status === 'Confirmed') badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
-                          else if (status === 'Pending') badgeClass = 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25';
-                          else if (status === 'CheckedIn') badgeClass = 'bg-info bg-opacity-10 text-info border border-info border-opacity-25';
-                          else if (status === 'CheckedOut') badgeClass = 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25';
-                          else if (status === 'Cancelled') badgeClass = 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25';
+                          let style: { bg: string; color: string } = { bg: '#f1f5f9', color: '#475569' };
+
+                          if (status === 'Confirmed') style = { bg: '#d1fae5', color: '#065f46' };
+                          else if (status === 'Pending') style = { bg: '#fef3c7', color: '#92400e' };
+                          else if (status === 'CheckedIn') style = { bg: '#dbeafe', color: '#1e40af' };
+                          else if (status === 'CheckedOut') style = { bg: '#e2e8f0', color: '#334155' };
+                          else if (status === 'Cancelled') style = { bg: '#fee2e2', color: '#991b1b' };
 
                           return (
-                            <span className={`badge ${badgeClass} fw-medium px-2 py-1 rounded-pill`}>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                letterSpacing: '0.2px',
+                                textTransform: 'uppercase',
+                                backgroundColor: style.bg,
+                                color: style.color,
+                                lineHeight: '1.4'
+                              }}
+                            >
                               {status}
                             </span>
                           );
@@ -659,57 +695,85 @@ const LiveDashboard: React.FC = () => {
                       </td>
                       <td className="text-end">
                         <div className="admin-action-buttons justify-content-end">
+                          {/* 👁 View Detail - Always Show */}
                           <button
                             className="admin-action-btn view"
                             onClick={() => handleViewDetails(booking)}
                             title="View Details"
+                            disabled={actionLoading[booking._id]}
                           >
                             <Eye size={16} />
                           </button>
 
-                          {booking.status === 'Pending' && (
-                            <button
-                              className="admin-action-btn text-success"
-                              onClick={() => handleStatusUpdate(booking._id, 'Confirmed')}
-                              disabled={actionLoading[booking._id]}
-                              title="Confirm Booking"
-                            >
-                              {actionLoading[booking._id] ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
-                            </button>
-                          )}
+                          {(() => {
+                            const now = new Date();
+                            const today = startOfDay(now);
+                            const checkInDate = startOfDay(parseISO(booking.bookingDates.checkInDate));
+                            const checkOutDate = startOfDay(parseISO(booking.bookingDates.checkOutDate));
+                            const isLoading = actionLoading[booking._id];
+                            const isCheckInDay = isSameDay(today, checkInDate) || isAfter(today, checkInDate);
+                            const isCheckOutDay = isSameDay(today, checkOutDate) || isAfter(today, checkOutDate);
 
-                          {['Pending', 'Confirmed'].includes(booking.status) && (
-                            <button
-                              className="admin-action-btn delete"
-                              onClick={() => handleStatusUpdate(booking._id, 'Cancelled')}
-                              disabled={actionLoading[booking._id]}
-                              title="Cancel Booking"
-                            >
-                              {actionLoading[booking._id] ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
-                            </button>
-                          )}
+                            return (
+                              <>
+                                {/* ✅ Confirm: Only for Pending */}
+                                {booking.status === 'Pending' && (
+                                  <button
+                                    className="admin-action-btn confirm"
+                                    onClick={() => handleStatusUpdate(booking._id, 'Confirmed')}
+                                    disabled={isLoading}
+                                    title="Confirm Booking"
+                                  >
+                                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle size={16} />}
+                                  </button>
+                                )}
 
-                          {booking.status === 'Confirmed' && (
-                            <button
-                              className="admin-action-btn text-info"
-                              onClick={() => handleStatusUpdate(booking._id, 'CheckedIn')}
-                              disabled={actionLoading[booking._id]}
-                              title="Check In"
-                            >
-                              {actionLoading[booking._id] ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
-                            </button>
-                          )}
+                                {/* ✔ Check-In: Only for Confirmed + Date reached */}
+                                {booking.status === 'Confirmed' && (
+                                  <button
+                                    className="admin-action-btn checkin"
+                                    onClick={() => handleStatusUpdate(booking._id, 'CheckedIn')}
+                                    disabled={!isCheckInDay || isLoading}
+                                    title={
+                                      isCheckInDay
+                                        ? "Check In"
+                                        : `Check-in allowed from ${format(checkInDate, 'MMM dd, yyyy')}`
+                                    }
+                                  >
+                                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <LogIn size={16} />}
+                                  </button>
+                                )}
 
-                          {booking.status === 'CheckedIn' && (
-                            <button
-                              className="admin-action-btn text-secondary"
-                              onClick={() => handleStatusUpdate(booking._id, 'CheckedOut')}
-                              disabled={actionLoading[booking._id]}
-                              title="Check Out"
-                            >
-                              {actionLoading[booking._id] ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
-                            </button>
-                          )}
+                                {/* 🚪 Check-Out: Only for Checked-In + Date reached */}
+                                {booking.status === 'CheckedIn' && (
+                                  <button
+                                    className="admin-action-btn checkout"
+                                    onClick={() => handleStatusUpdate(booking._id, 'CheckedOut')}
+                                    disabled={!isCheckOutDay || isLoading}
+                                    title={
+                                      isCheckOutDay
+                                        ? "Check Out"
+                                        : `Check-out allowed from ${format(checkOutDate, 'MMM dd, yyyy')}`
+                                    }
+                                  >
+                                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
+                                  </button>
+                                )}
+
+                                {/* ⛔ Cancel: For Pending or Confirmed */}
+                                {['Pending', 'Confirmed'].includes(booking.status) && (
+                                  <button
+                                    className="admin-action-btn delete"
+                                    onClick={() => handleStatusUpdate(booking._id, 'Cancelled')}
+                                    disabled={isLoading}
+                                    title="Cancel Booking"
+                                  >
+                                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <XCircle size={16} />}
+                                  </button>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                     </tr>
