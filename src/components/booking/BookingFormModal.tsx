@@ -245,8 +245,12 @@ const BookingFormModal: React.FC<BookingFormModalProps> = ({
                 <Form.Label>Phone <span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   type="tel"
+                  maxLength={10}
                   value={bookingForm.guestDetails.phone}
-                  onChange={(e) => onFormChange('guestDetails.phone', e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    onFormChange('guestDetails.phone', value);
+                  }}
                   isInvalid={!!errors['guestDetails.phone']}
                 />
                 <Form.Control.Feedback type="invalid">
