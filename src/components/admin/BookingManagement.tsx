@@ -18,7 +18,8 @@ import {
   ChevronRight,
   Search,
   Loader2,
-  PlusCircle
+  PlusCircle,
+  Key
 } from 'lucide-react';
 import DataLoader from '../common/DataLoader';
 import OfflineBookingModal from './OfflineBookingModal';
@@ -219,6 +220,28 @@ const BookingManagement: React.FC = () => {
 
       // Show error to user (you can replace this with a toast notification)
       alert(`Error: ${errorMessage}`);
+    } finally {
+      setActionLoading(prev => ({ ...prev, [bookingId]: false }));
+    }
+  };
+
+  const handleAutoAllocate = async (bookingId: string) => {
+    try {
+      setActionLoading(prev => ({ ...prev, [bookingId]: true }));
+      setError(null);
+
+      const response = await adminAPI.autoAllocate(bookingId);
+
+      if (response.success) {
+        // Success: the socket might already trigger a refresh, 
+        // but let's do it manually just in case
+        fetchBookings(true);
+      } else {
+        alert(response.message || 'Failed to allocate rooms');
+      }
+    } catch (err: any) {
+      console.error('Auto-allocation failed:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to allocate rooms');
     } finally {
       setActionLoading(prev => ({ ...prev, [bookingId]: false }));
     }
@@ -584,6 +607,27 @@ const BookingManagement: React.FC = () => {
                                   <Loader2 size={16} className="animate-spin" />
                                 ) : (
                                   <CheckCircle size={16} />
+                                )}
+                              </button>
+                            )}
+
+                            {/* 🔑 Allocate Button: Show for Confirmed with missing allocations */}
+                            {booking.status === 'Confirmed' && booking.rooms?.some(r => !r.roomNumber) && (
+                              <button
+                                className="admin-action-btn allocate"
+                                onClick={() => handleAutoAllocate(booking.id || booking._id)}
+                                disabled={isLoading}
+                                title="Auto-allocate rooms"
+                                style={{
+                                  color: '#059669',
+                                  backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                                  borderColor: 'rgba(5, 150, 105, 0.2)'
+                                }}
+                              >
+                                {isLoading ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <Key size={16} />
                                 )}
                               </button>
                             )}

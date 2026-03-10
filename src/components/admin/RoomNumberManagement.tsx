@@ -57,6 +57,7 @@ const RoomNumberManagement: React.FC = () => {
     const queryClient = useQueryClient();
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
     const [showBulkModal, setShowBulkModal] = useState(false);
+
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
 
@@ -159,6 +160,8 @@ const RoomNumberManagement: React.FC = () => {
     }, [socket, queryClient]);
 
     // Mutations
+
+
     const bulkCreateMutation = useMutation({
         mutationFn: async (data: any) => {
             return api.post('/room-numbers/bulk-create', data);
@@ -302,6 +305,8 @@ const RoomNumberManagement: React.FC = () => {
             </div>
         )
     }
+
+
 
     return (
         <div className="room-number-management">
@@ -528,7 +533,8 @@ const RoomNumberManagement: React.FC = () => {
                                             </div>
                                         )}
                                         {(displayStatus === 'Available' || displayStatus === 'Maintenance' || displayStatus === 'Out of Service') && (
-                                            <div className="mt-3">
+                                            <div className="mt-3 d-flex flex-column gap-2">
+
                                                 <Form.Select
                                                     size="sm"
                                                     value=""
@@ -605,20 +611,23 @@ const RoomNumberManagement: React.FC = () => {
                                                 <td>
                                                     <div className="d-flex align-items-center gap-2">
                                                         {(displayStatus === 'Available' || displayStatus === 'Maintenance' || displayStatus === 'Out of Service') && (
-                                                            <div style={{ width: '150px' }}>
-                                                                <Form.Select
-                                                                    size="sm"
-                                                                    value=""
-                                                                    onChange={(e) => handleStatusChange(room._id, e.target.value)}
-                                                                    className="admin-form-select-sm shadow-none border-secondary text-muted"
-                                                                    style={{ fontSize: '0.85rem' }}
-                                                                    disabled={updateStatusMutation.isPending}
-                                                                >
-                                                                    <option value="" disabled hidden>Status...</option>
-                                                                    <option value="Available">Available</option>
-                                                                    <option value="Maintenance">Maintenance</option>
-                                                                    <option value="Out of Service">Out of Service</option>
-                                                                </Form.Select>
+                                                            <div className="d-flex gap-2 align-items-center">
+
+                                                                <div style={{ width: '130px' }}>
+                                                                    <Form.Select
+                                                                        size="sm"
+                                                                        value=""
+                                                                        onChange={(e) => handleStatusChange(room._id, e.target.value)}
+                                                                        className="admin-form-select-sm shadow-none border-secondary text-muted"
+                                                                        style={{ fontSize: '0.85rem' }}
+                                                                        disabled={updateStatusMutation.isPending}
+                                                                    >
+                                                                        <option value="" disabled hidden>Status...</option>
+                                                                        <option value="Available">Available</option>
+                                                                        <option value="Maintenance">Maintenance</option>
+                                                                        <option value="Out of Service">Out of Service</option>
+                                                                    </Form.Select>
+                                                                </div>
                                                             </div>
                                                         )}
                                                         {displayStatus !== 'Allocated' && displayStatus !== 'Occupied' && (
@@ -740,8 +749,12 @@ const RoomNumberManagement: React.FC = () => {
                     </Modal.Footer>
                 </Form>
             </Modal>
+
+
         </div>
     );
 };
+
+
 
 export default RoomNumberManagement;

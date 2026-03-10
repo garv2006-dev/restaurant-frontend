@@ -594,6 +594,11 @@ export const adminAPI = {
     return response.data;
   },
 
+  autoAllocate: async (id: string): Promise<ApiResponse<Booking>> => {
+    const response: AxiosResponse<ApiResponse<Booking>> = await api.put(`/bookings/${id}/auto-allocate`);
+    return response.data;
+  },
+
   getAllUsers: async (filters?: any): Promise<ApiResponse<{ users: User[]; pagination: any }>> => {
     const response: AxiosResponse<ApiResponse<{ users: User[]; pagination: any }>> = await api.get('/users', {
       params: filters,

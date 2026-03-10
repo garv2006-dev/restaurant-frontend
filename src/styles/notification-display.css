@@ -12,41 +12,40 @@
 
 /* Toast Styling */
 .notification-toast {
-  min-width: 350px;
-  max-width: 400px;
-  margin-bottom: 0.75rem;
-  border: none;
-  border-radius: 0.75rem;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  background: #ffffff;
-  border-left: 5px solid #2563eb;
-  animation: slideInNotification 0.3s ease-out;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 380px;
+  max-width: 420px;
+  margin-bottom: 0.875rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-left: 6px solid #2563eb;
+  animation: slideInNotification 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .notification-toast.room_booking {
-  border-left-color: #2563eb;
-  background: #ffffff;
+  border-left-color: #3b82f6;
 }
 
 .notification-toast.promotion {
-  border-left-color: #d97706;
-  background: #ffffff;
+  border-left-color: #f59e0b;
 }
 
 .notification-toast.payment {
-  border-left-color: #059669;
-  background: #ffffff;
+  border-left-color: #10b981;
 }
 
 .notification-toast.system {
-  border-left-color: #4b5563;
-  background: #ffffff;
+  border-left-color: #6366f1;
 }
 
 /* Toast Header */
 .notification-toast-header {
-  padding: 1rem 1rem 0.5rem;
+  padding: 1.25rem 1.25rem 0.625rem;
   border-bottom: none;
   background: transparent;
   display: flex;
@@ -72,11 +71,23 @@
 
 .notification-title-section {
   display: flex;
-  flex-direction: row;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 0.5rem;
   flex: 1;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.125rem;
+}
+
+.notification-type-icon {
+  flex-shrink: 0;
+  opacity: 0.9;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
 }
 
 /* Promo Header Left Section */
@@ -115,9 +126,7 @@
   transition: left 0.5s ease;
 }
 
-.promo-code-header:hover::before {
-  left: 100%;
-}
+
 
 /* Copy Button in Header */
 .copy-button-header {
@@ -153,20 +162,11 @@
   transition: opacity 0.25s ease;
 }
 
-.copy-button-header:hover {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(251, 191, 36, 0.45), 0 4px 8px rgba(0, 0, 0, 0.15);
-}
 
-.copy-button-header:hover::before {
-  opacity: 1;
-}
 
-.copy-button-header:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3), 0 1px 2px rgba(0, 0, 0, 0.1);
-}
+
+
+
 
 .copy-button-header .copy-text {
   font-weight: 700;
@@ -227,10 +227,7 @@
   justify-content: center;
 }
 
-.notification-close:hover {
-  background: rgba(0, 0, 0, 0.1);
-  color: #495057;
-}
+
 
 /* Toast Body */
 .notification-toast-body {
@@ -284,15 +281,9 @@
 }
 
 /* Hover effect on body to indicate clickability */
-.notification-toast-body:hover {
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 0.5rem;
-}
 
-.notification-toast.collapsed .notification-toast-body:hover .notification-expand-hint {
-  opacity: 1;
-  text-decoration: underline;
-}
+
+
 
 /* Promo Code Styling */
 .promo-code-container {
@@ -316,12 +307,7 @@
   position: relative;
 }
 
-.promo-code-box:hover {
-  background: linear-gradient(135deg, #fff5cc 0%, #fff9e6 100%);
-  border-color: #ffb300;
-  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.25);
-  transform: translateY(-1px);
-}
+
 
 .promo-code-text {
   font-family: 'Courier New', monospace;
@@ -356,15 +342,9 @@
   order: 2;
 }
 
-.copy-button:hover {
-  background: #ffb300;
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
 
-.copy-button:active {
-  transform: scale(0.95);
-}
+
+
 
 .copy-icon {
   transition: all 0.2s ease;
@@ -609,28 +589,20 @@
     color: #a0aec0;
   }
 
-  .notification-close:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
-  }
+
 
   .notification-expand-hint {
     color: #63b3ed;
   }
 
-  .notification-toast-body:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
+
 
   .promo-code-box {
     background: linear-gradient(135deg, rgba(68, 64, 60, 0.5) 0%, rgba(78, 74, 70, 0.5) 100%);
     border-color: #ffc107;
   }
 
-  .promo-code-box:hover {
-    background: linear-gradient(135deg, rgba(78, 74, 70, 0.6) 0%, rgba(88, 84, 80, 0.6) 100%);
-    border-color: #ffb300;
-  }
+
 
   .promo-code-text {
     color: #ffd54f;
@@ -684,17 +656,9 @@
 }
 
 /* Hover effects */
-.notification-toast:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .notification-toast:hover {
-    transform: none;
-  }
-}
+
+@media (prefers-reduced-motion: reduce) {}
 
 /* Loading state for notifications */
 .notification-toast.loading {
