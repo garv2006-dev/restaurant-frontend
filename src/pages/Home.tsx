@@ -290,8 +290,7 @@ const Home: React.FC = () => {
                           </button>
                         ) : (
                           <Button
-                            variant="primary"
-                            className="w-100 btn-sm"
+                            className="btn-gold w-100 btn-sm"
                             onClick={() => {
                               if (!isAuthenticated) {
                                 navigate('/login', { state: { from: location } });

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaEye, FaEyeSlash, FaSignInAlt } from 'react-icons/fa';
+
 import { useAuth } from '../context/AuthContext';
 import { LoginCredentials } from '../types';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -22,7 +23,7 @@ const Login: React.FC = () => {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [socialError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const { login, loading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
@@ -104,6 +105,7 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setServerError(null);
 
     // Mark all fields as touched
     setTouched({
@@ -113,10 +115,15 @@ const Login: React.FC = () => {
 
     if (!validateForm()) return;
 
-    const success = await login(credentials);
-    if (success) {
-      // AuthContext handles the redirect based on user role
-      // Admin users go to /admin/dashboard, regular users go to /dashboard
+    try {
+      const success = await login(credentials);
+      if (!success) {
+        // The error is likely already toasted by AuthContext, 
+        // but we'll set a generic one here for the inline box.
+        setServerError('Invalid email or password. Please try again.');
+      }
+    } catch (err: any) {
+      setServerError(err.message || 'An unexpected error occurred. Please try again.');
     }
   };
 
@@ -132,10 +139,40 @@ const Login: React.FC = () => {
                   <p className="text-muted">Sign in to your account</p>
                 </div>
 
-                {socialError && (
-                  <Alert variant="danger" className="mb-3">
-                    {socialError}
-                  </Alert>
+                {serverError && (
+                  <div className="animate-fade-in" style={{
+                    backgroundColor: '#fff5f5',
+                    border: '1px solid #feb2b2',
+                    borderLeft: '4px solid #f56565',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    color: '#c53030',
+                    fontSize: '14px',
+                    position: 'relative'
+                  }}>
+                    {/* Icon removed */}
+                    <span style={{ fontWeight: 500 }}>{serverError}</span>
+                    <button
+                      onClick={() => setServerError(null)}
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        color: '#c53030',
+                        opacity: 0.6,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
                 )}
 
                 <div className="mb-3">
@@ -152,27 +189,37 @@ const Login: React.FC = () => {
                 <Form onSubmit={handleSubmit}>
                   {/* Email Field */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Email Address</Form.Label>
-                    <Form.Control
-                      type="email"
-                      name="email"
-                      value={credentials.email}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      onFocus={handleFocus}
-                      placeholder="Enter your email"
-                      isInvalid={touched.email && !!errors.email}
-                      autoComplete="email"
-                      className="py-2"
-                    />
-                    <Form.Control.Feedback type="invalid">
-                      {errors.email}
-                    </Form.Control.Feedback>
+                    <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#1a202c' }}>Email Address</Form.Label>
+                    <div className="position-relative">
+                      <Form.Control
+                        type="email"
+                        name="email"
+                        value={credentials.email}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        onFocus={handleFocus}
+                        placeholder="Enter your email"
+                        isInvalid={touched.email && !!errors.email}
+                        autoComplete="email"
+                        className="py-2.5 px-3"
+                        style={{
+                          borderRadius: '8px',
+                          border: touched.email && errors.email ? '1px solid #f56565' : '1px solid #e2e8f0',
+                          backgroundColor: '#fff'
+                        }}
+                      />
+                      {/* Triangle icon removed */}
+                    </div>
+                    {touched.email && errors.email && (
+                      <div className="text-danger mt-1" style={{ fontSize: '12px', fontWeight: 500 }}>
+                        {errors.email}
+                      </div>
+                    )}
                   </Form.Group>
 
                   {/* Password Field */}
-                  <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold">Password</Form.Label>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#1a202c' }}>Password</Form.Label>
                     <div className="position-relative">
                       <Form.Control
                         type={showPassword ? 'text' : 'password'}
@@ -184,21 +231,31 @@ const Login: React.FC = () => {
                         placeholder="Enter your password"
                         isInvalid={touched.password && !!errors.password}
                         autoComplete="current-password"
-                        className="py-2"
+                        className="py-2.5 px-3"
+                        style={{
+                          borderRadius: '8px',
+                          border: touched.password && errors.password ? '1px solid #f56565' : '1px solid #e2e8f0',
+                          backgroundColor: '#fff'
+                        }}
                       />
-                      <Button
-                        variant="link"
-                        size="sm"
-                        className="position-absolute end-0 top-50 translate-middle-y border-0 text-muted"
-                        onClick={() => setShowPassword(!showPassword)}
-                        style={{ transform: 'translateY(-50%) translateX(-10px)' }}
-                      >
-                        {showPassword ? <IconWrapper icon={FaEyeSlash} /> : <IconWrapper icon={FaEye} />}
-                      </Button>
+                      <div className="position-absolute end-0 top-50 translate-middle-y d-flex align-items-center" style={{ paddingRight: '12px' }}>
+                        {/* Triangle icon removed */}
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="p-0 border-0 text-muted"
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{ boxShadow: 'none' }}
+                        >
+                          {showPassword ? <IconWrapper icon={FaEyeSlash} /> : <IconWrapper icon={FaEye} />}
+                        </Button>
+                      </div>
                     </div>
-                    <Form.Control.Feedback type="invalid" className={touched.password && errors.password ? 'd-block' : ''}>
-                      {errors.password}
-                    </Form.Control.Feedback>
+                    {touched.password && errors.password && (
+                      <div className="text-danger mt-1" style={{ fontSize: '12px', fontWeight: 500 }}>
+                        {errors.password}
+                      </div>
+                    )}
                   </Form.Group>
 
                   {/* Remember Me & Forgot Password */}

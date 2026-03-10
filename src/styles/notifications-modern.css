@@ -58,20 +58,14 @@
     background: transparent;
 }
 
-.notifications-actions .btn-outline-primary:hover {
-    background: #4f46e5;
-    color: white;
-}
+
 
 .notifications-actions .btn-outline-danger {
     color: #ef4444;
     border-color: #ef4444;
 }
 
-.notifications-actions .btn-outline-danger:hover {
-    background: #ef4444;
-    color: white;
-}
+
 
 /* Tabs Navigation - Pill Style */
 .notifications-tabs {
@@ -95,10 +89,7 @@
     border: none;
 }
 
-.notifications-tabs .nav-link:hover {
-    color: #111827;
-    background-color: #f3f4f6;
-}
+
 
 .notifications-tabs .nav-link.active {
     background-color: #9a99b2;
@@ -137,11 +128,7 @@
     position: relative;
 }
 
-.notification-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    border-color: #d1d5db;
-}
+
 
 .notification-card.unread {
     background: white;
@@ -225,10 +212,7 @@
     line-height: 0;
 }
 
-.notification-delete:hover {
-    color: #ef4444;
-    background-color: rgba(239, 68, 68, 0.1);
-}
+
 
 /* Messages */
 .notification-message {
@@ -272,11 +256,7 @@
     /* Fixed height for consistency */
 }
 
-.notification-copy-btn:hover {
-    background-color: #e5e7eb;
-    color: #111827;
-    border-color: #d1d5db;
-}
+
 
 .notification-copy-btn .code-display {
     font-family: 'Monaco', 'Consolas', monospace;
@@ -472,20 +452,14 @@
     border-color: #818cf8;
 }
 
-[data-bs-theme="dark"] .notifications-actions .btn-outline-primary:hover {
-    background: #818cf8;
-    color: #1f2937;
-}
+
 
 [data-bs-theme="dark"] .notifications-actions .btn-outline-danger {
     color: #f87171;
     border-color: #f87171;
 }
 
-[data-bs-theme="dark"] .notifications-actions .btn-outline-danger:hover {
-    background: #f87171;
-    color: #1f2937;
-}
+
 
 /* Tabs Navigation - Dark Mode */
 [data-bs-theme="dark"] .notifications-tabs {
@@ -497,10 +471,7 @@
     color: #9ca3af;
 }
 
-[data-bs-theme="dark"] .notifications-tabs .nav-link:hover {
-    color: #f9fafb;
-    background-color: #374151;
-}
+
 
 [data-bs-theme="dark"] .notifications-tabs .nav-link.active {
     background-color: #818cf8;
@@ -514,10 +485,7 @@
     border-color: #374151;
 }
 
-[data-bs-theme="dark"] .notification-card:hover {
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-    border-color: #4b5563;
-}
+
 
 [data-bs-theme="dark"] .notification-card.unread {
     background: #1f2937;
@@ -547,10 +515,7 @@
     color: #6b7280;
 }
 
-[data-bs-theme="dark"] .notification-delete:hover {
-    color: #f87171;
-    background-color: rgba(248, 113, 113, 0.15);
-}
+
 
 /* Copy Button Section - Dark Mode */
 [data-bs-theme="dark"] .notification-footer {
@@ -563,11 +528,7 @@
     color: #d1d5db;
 }
 
-[data-bs-theme="dark"] .notification-copy-btn:hover {
-    background-color: #4b5563;
-    color: #f9fafb;
-    border-color: #6b7280;
-}
+
 
 [data-bs-theme="dark"] .notification-copy-btn .code-display {
     background: #4b5563;
@@ -616,10 +577,7 @@
         color: #d1d5db;
     }
 
-    [data-bs-theme="dark"] .notifications-dropdown .dropdown-item:hover {
-        background-color: #374151;
-        color: #f9fafb;
-    }
+
 
     [data-bs-theme="dark"] .notifications-dropdown .dropdown-item:active,
     [data-bs-theme="dark"] .notifications-dropdown .dropdown-item.active {

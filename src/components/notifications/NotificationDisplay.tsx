@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Toast, ToastContainer, Badge } from 'react-bootstrap';
-import { X, Copy, Check } from 'lucide-react';
+import { X, Copy, Check, Calendar, Star, ShoppingBag, Clock } from 'lucide-react';
 import { notificationSoundService } from '../../services/NotificationSoundService';
 import { toast } from 'react-toastify';
 import '../../styles/notification-display.css';
@@ -38,6 +38,20 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
       }
       return newSet;
     });
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'room_booking':
+        return <Calendar size={18} className="notification-type-icon text-primary" />;
+      case 'promotion':
+        return <Star size={18} className="notification-type-icon text-warning" />;
+      case 'payment':
+        return <ShoppingBag size={18} className="notification-type-icon text-success" />;
+      case 'system':
+      default:
+        return <Clock size={18} className="notification-type-icon text-secondary" />;
+    }
   };
 
   // Extract promo code from notification message
@@ -216,9 +230,12 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
                 <>
                   <div className="notification-header-content promotion-header">
                     <div className="notification-title-section">
-                      <strong className="notification-title">
-                        {notification.title}
-                      </strong>
+                      <div className="title-with-icon">
+                        {getNotificationIcon(notification.type)}
+                        <strong className="notification-title">
+                          {notification.title}
+                        </strong>
+                      </div>
                       <div className="promo-header-left">
                         <span className="promo-code-header">
                           {extractPromoCode(notification.message)}
@@ -270,9 +287,12 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
                 <>
                   <div className="notification-header-content">
                     <div className="notification-title-section">
-                      <strong className="notification-title">
-                        {notification.title}
-                      </strong>
+                      <div className="title-with-icon">
+                        {getNotificationIcon(notification.type)}
+                        <strong className="notification-title">
+                          {notification.title}
+                        </strong>
+                      </div>
                       <Badge
                         bg={getNotificationVariant(notification.type)}
                         className="notification-type-badge"
