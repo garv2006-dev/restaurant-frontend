@@ -178,6 +178,7 @@ interface Step1Props {
     loading: boolean;
     booking: BookingState;
     subtotal: number;
+    gstPercentage: number;
     onDateChange: (field: 'checkInDate' | 'checkOutDate', value: string) => void;
     onSelectRoom: (room: Room, qty: number) => void;
     onContinue: () => void;
@@ -186,7 +187,7 @@ interface Step1Props {
 }
 
 const BookingStep1: React.FC<Step1Props> = ({
-    rooms, loading, booking, subtotal,
+    rooms, loading, booking, subtotal, gstPercentage,
     onDateChange, onSelectRoom, onContinue, error, onClearError
 }) => {
     const { user } = useAuth();
@@ -352,6 +353,7 @@ const BookingStep1: React.FC<Step1Props> = ({
                 <BookingSummary
                     booking={booking}
                     subtotal={subtotal}
+                    gstPercentage={gstPercentage}
                     onContinue={onContinue}
                     onUpdateRoomQty={onSelectRoom}
                 />

@@ -6,6 +6,7 @@ import type { Room } from '../../types';
 interface BookingSummaryProps {
     booking: BookingState;
     subtotal: number;
+    gstPercentage: number;
     onContinue: () => void;
     onUpdateRoomQty: (room: Room, qty: number) => void;
 }
@@ -13,6 +14,7 @@ interface BookingSummaryProps {
 const BookingSummary: React.FC<BookingSummaryProps> = ({
     booking,
     subtotal,
+    gstPercentage,
     onContinue,
     onUpdateRoomQty,
 }) => {
@@ -37,6 +39,9 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         const newQty = Math.max(0, item.count - 1);
         onUpdateRoomQty(item.room, newQty);
     };
+
+    const taxAmount = subtotal * (gstPercentage / 100);
+    const totalAmount = subtotal + taxAmount;
 
     return (
         <div className="booking-summary-card">
@@ -107,16 +112,16 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                             </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                            <span style={{ fontSize: '14px', color: 'var(--booking-text-muted)' }}>Tax :</span>
+                            <span style={{ fontSize: '14px', color: 'var(--booking-text-muted)' }}>Tax ({gstPercentage}%) :</span>
                             <span style={{ fontSize: '15px', color: 'var(--booking-navy)' }}>
-                                Rs {(subtotal * 0.18).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                Rs {taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid var(--booking-border)' }}>
                             <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--booking-navy)' }}>Total</span>
                             <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--booking-navy)' }}>
-                                Rs {(subtotal * 1.18).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                Rs {totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                         </div>
                     </div>
