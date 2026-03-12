@@ -141,6 +141,7 @@ export interface Booking {
     refundReason?: string;
   };
   specialRequests?: string;
+  isPartiallyCancelled?: boolean;
   // roomNumber and roomNumberInfo are now part of the rooms array
   createdAt: string;
   updatedAt: string;
