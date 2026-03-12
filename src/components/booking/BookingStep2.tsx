@@ -3,13 +3,15 @@ import type { BookingState } from '../../pages/Booking';
 import { ArrowLeft, ChevronRight, User, Mail, Phone, Users } from 'lucide-react';
 
 // ── Mini summary panel ────────────────────────────────────────────────────────
-const MiniSummary: React.FC<{ booking: BookingState; subtotal: number; finalAmount: number; appliedDiscount: any }> = ({ booking, subtotal, finalAmount, appliedDiscount }) => {
+const MiniSummary: React.FC<{ booking: BookingState; subtotal: number; finalAmount: number; appliedDiscount: any; gstPercentage: number }> = ({ booking, subtotal, finalAmount, appliedDiscount, gstPercentage }) => {
     const { selectedRooms, checkInDate, checkOutDate, nights, guests } = booking;
     if (selectedRooms.length === 0) return null;
     const fmt = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
     // Get the name of the first selected room for the header title (consistency)
     const primaryRoomName = selectedRooms.length > 0 ? selectedRooms[0].room.name : 'Booking Summary';
+
+    const taxAmount = subtotal * (gstPercentage / 100);
 
     return (
         <div className="booking-summary-card">
@@ -48,6 +50,17 @@ const MiniSummary: React.FC<{ booking: BookingState; subtotal: number; finalAmou
                     );
                 })}
 
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--booking-border)' }}>
+                    <div className="summary-row" style={{ border: 'none', padding: '4px 0' }}>
+                        <span className="summary-row-label" style={{ fontSize: '13px' }}>Subtotal</span>
+                        <span className="summary-row-value" style={{ fontSize: '13px' }}>₹{subtotal.toLocaleString()}</span>
+                    </div>
+                    <div className="summary-row" style={{ border: 'none', padding: '4px 0' }}>
+                        <span className="summary-row-label" style={{ fontSize: '13px' }}>Tax ({gstPercentage}%)</span>
+                        <span className="summary-row-value" style={{ fontSize: '13px' }}>₹{taxAmount.toLocaleString()}</span>
+                    </div>
+                </div>
+
                 <div className="summary-total-section">
                     <span className="summary-total-label">Total Amount</span>
                     <span className="summary-total-amount">₹{finalAmount.toLocaleString()}</span>
@@ -69,6 +82,7 @@ interface Step2Props {
     subtotal: number;
     finalAmount: number;
     appliedDiscount: any;
+    gstPercentage: number;
     onGuestChange: (field: 'name' | 'email' | 'phone', value: string) => void;
     onGuestsChange: (field: 'adults' | 'children', value: number) => void;
     onBack: () => void;
@@ -78,7 +92,7 @@ interface Step2Props {
 }
 
 const BookingStep2: React.FC<Step2Props> = ({
-    booking, subtotal, finalAmount, appliedDiscount,
+    booking, subtotal, finalAmount, appliedDiscount, gstPercentage,
     onGuestChange, onGuestsChange, onBack, onContinue, error, onClearError
 }) => {
     // Sum capacity across all selected rooms/quantities
@@ -223,7 +237,7 @@ const BookingStep2: React.FC<Step2Props> = ({
 
             {/* Right – Mini summary */}
             <div className="booking-sidebar booking-sidebar-sticky">
-                <MiniSummary booking={booking} subtotal={subtotal} finalAmount={finalAmount} appliedDiscount={appliedDiscount} />
+                <MiniSummary booking={booking} subtotal={subtotal} finalAmount={finalAmount} appliedDiscount={appliedDiscount} gstPercentage={gstPercentage} />
             </div>
         </div>
     );

@@ -660,6 +660,11 @@ export const adminAPI = {
     return response.data;
   },
 
+  getPublicSettings: async (): Promise<ApiResponse<{ gstPercentage: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ gstPercentage: number }>> = await api.get('/admin/settings/public');
+    return response.data;
+  },
+
   updateSettings: async (settings: { gstPercentage: number }): Promise<ApiResponse<any>> => {
     const response: AxiosResponse<ApiResponse<any>> = await api.put('/admin/settings', settings);
     return response.data;

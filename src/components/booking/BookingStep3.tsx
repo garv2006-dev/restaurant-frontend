@@ -22,13 +22,16 @@ const FullSummary: React.FC<{
     subtotal: number;
     finalAmount: number;
     appliedDiscount: any;
-}> = ({ booking, subtotal, finalAmount, appliedDiscount }) => {
+    gstPercentage: number;
+}> = ({ booking, subtotal, finalAmount, appliedDiscount, gstPercentage }) => {
     const { selectedRooms, checkInDate, checkOutDate, nights, guests, guestDetails } = booking;
     if (selectedRooms.length === 0) return null;
 
     const firstRoom = selectedRooms[0].room;
     const fmt = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
     const imgSrc = getImageUrl(firstRoom);
+
+    const taxAmount = subtotal * (gstPercentage / 100);
 
     return (
         <div className="booking-summary-card">
@@ -76,6 +79,23 @@ const FullSummary: React.FC<{
                         );
                     })}
 
+                    <div style={{ borderTop: '1px solid var(--booking-border)', paddingTop: '16px', marginTop: '16px' }}>
+                        <div className="summary-row" style={{ border: 'none', padding: '4px 0' }}>
+                            <span className="summary-row-label" style={{ fontSize: '14px' }}>Subtotal</span>
+                            <span className="summary-row-value" style={{ fontSize: '14px' }}>₹{subtotal.toLocaleString()}</span>
+                        </div>
+                        <div className="summary-row" style={{ border: 'none', padding: '4px 0' }}>
+                            <span className="summary-row-label" style={{ fontSize: '14px' }}>Tax ({gstPercentage}%)</span>
+                            <span className="summary-row-value" style={{ fontSize: '14px' }}>₹{taxAmount.toLocaleString()}</span>
+                        </div>
+                        {appliedDiscount && (
+                            <div className="summary-row" style={{ border: 'none', padding: '4px 0', color: '#10b981' }}>
+                                <span className="summary-row-label" style={{ color: '#10b981', fontSize: '14px' }}>Discount ({appliedDiscount.code})</span>
+                                <span className="summary-row-value" style={{ fontSize: '14px' }}>-₹{appliedDiscount.discountAmount.toLocaleString()}</span>
+                            </div>
+                        )}
+                    </div>
+
                     <div className="summary-total-section">
                         <span className="summary-total-label">Payable Amount</span>
                         <span className="summary-total-amount">₹{finalAmount.toLocaleString()}</span>
@@ -84,7 +104,7 @@ const FullSummary: React.FC<{
                     {appliedDiscount && (
                         <div className="booking-alert success" style={{ background: '#ecfdf5', padding: '12px', borderRadius: '8px', border: '1px solid #10b981', color: '#065f46', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px', justifyContent: 'center' }}>
                             <CheckCircle size={14} />
-                            <span>Savings: ₹{appliedDiscount.discountAmount.toLocaleString()} ({appliedDiscount.code})</span>
+                            <span>Total Savings: ₹{appliedDiscount.savings?.toLocaleString() || appliedDiscount.discountAmount?.toLocaleString()}</span>
                         </div>
                     )}
                 </div>
@@ -106,7 +126,7 @@ const DiscountWidget: React.FC<{ subtotal: number; onApplied: (d: any) => void; 
         try {
             const res = await bookingsAPI.validateDiscount(code.toUpperCase(), subtotal);
             if (res.success && res.data) {
-                onApplied(res.data.discount);
+                onApplied(res.data);
                 setCode('');
             } else {
                 setError(res.message || 'Invalid discount code');
@@ -127,8 +147,8 @@ const DiscountWidget: React.FC<{ subtotal: number; onApplied: (d: any) => void; 
                 <div className="booking-alert success" style={{ marginBottom: 0 }}>
                     <CheckCircle size={20} />
                     <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700 }}>{appliedDiscount.code} APPLIED!</div>
-                        <div style={{ fontSize: '12px', opacity: 0.8 }}>Saved ₹{appliedDiscount.discountAmount.toLocaleString()}</div>
+                        <div style={{ fontWeight: 700 }}>{appliedDiscount.discount?.code || appliedDiscount.code} APPLIED!</div>
+                        <div style={{ fontSize: '12px', opacity: 0.8 }}>Saved ₹{(appliedDiscount.savings || appliedDiscount.discountAmount).toLocaleString()}</div>
                     </div>
                     <button
                         onClick={() => onApplied(null)}
@@ -173,6 +193,7 @@ interface Step3Props {
     subtotal: number;
     finalAmount: number;
     appliedDiscount: any;
+    gstPercentage: number;
     processing: boolean;
     onPaymentMethodChange: (m: string) => void;
     onDiscountApplied: (d: any) => void;
@@ -181,7 +202,7 @@ interface Step3Props {
 }
 
 const BookingStep3: React.FC<Step3Props> = ({
-    booking, subtotal, finalAmount, appliedDiscount, processing,
+    booking, subtotal, finalAmount, appliedDiscount, gstPercentage, processing,
     onPaymentMethodChange, onDiscountApplied, onBack, onPayNow,
 }) => {
     const [selectedLabel, setSelectedLabel] = useState('Online Payment');
@@ -246,7 +267,7 @@ const BookingStep3: React.FC<Step3Props> = ({
                         {processing ? (
                             <>Processing… <div className="booking-spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /></>
                         ) : (
-                            <><Lock size={18} /> Pay ₹{finalAmount.toLocaleString()} Securely</>
+                            <><Lock size={18} /> Pay ₹{Math.round(finalAmount).toLocaleString()} Securely</>
                         )}
                     </button>
                 </div>
@@ -254,7 +275,7 @@ const BookingStep3: React.FC<Step3Props> = ({
 
             {/* Right – Full summary */}
             <div className="booking-sidebar booking-sidebar-sticky">
-                <FullSummary booking={booking} subtotal={subtotal} finalAmount={finalAmount} appliedDiscount={appliedDiscount} />
+                <FullSummary booking={booking} subtotal={subtotal} finalAmount={finalAmount} appliedDiscount={appliedDiscount} gstPercentage={gstPercentage} />
             </div>
         </div>
     );
