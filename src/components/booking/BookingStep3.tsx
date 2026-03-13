@@ -16,19 +16,21 @@ const PAYMENT_METHODS = [
     { methodId: 'Cash', label: 'Pay at Hotel', desc: 'Cash on arrival', icon: <Wallet size={20} /> },
 ];
 
-// ── Booking summary (full) ───────────────────────────────────────────────────
+// ── Full Summary Sub-component ──────────────────────────────────────────────
 const FullSummary: React.FC<{
     booking: BookingState;
     subtotal: number;
     finalAmount: number;
     appliedDiscount: any;
-}> = ({ booking, subtotal, finalAmount, appliedDiscount }) => {
+    gstPercentage: number;
+}> = ({ booking, subtotal, finalAmount, appliedDiscount, gstPercentage }) => {
     const { selectedRooms, checkInDate, checkOutDate, nights, guests, guestDetails } = booking;
     if (selectedRooms.length === 0) return null;
 
     const firstRoom = selectedRooms[0].room;
     const fmt = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
     const imgSrc = getImageUrl(firstRoom);
+    const taxRate = gstPercentage / 100;
 
     return (
         <div className="booking-summary-card">
@@ -76,13 +78,38 @@ const FullSummary: React.FC<{
                         );
                     })}
 
-                    <div className="summary-total-section">
-                        <span className="summary-total-label">Payable Amount</span>
-                        <span className="summary-total-amount">₹{finalAmount.toLocaleString()}</span>
+                    <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--booking-border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--booking-text-muted)' }}>Room rate :</span>
+                            <span style={{ fontSize: '14px', color: 'var(--booking-navy)', fontWeight: 600 }}>
+                                ₹{subtotal.toLocaleString()}
+                            </span>
+                        </div>
+
+                        {appliedDiscount && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                <span style={{ fontSize: '13px', color: '#059669' }}>Discount ({appliedDiscount.code}) :</span>
+                                <span style={{ fontSize: '14px', color: '#059669', fontWeight: 600 }}>
+                                    -₹{appliedDiscount.discountAmount.toLocaleString()}
+                                </span>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '13px', color: 'var(--booking-text-muted)' }}>Tax ({gstPercentage}%) :</span>
+                            <span style={{ fontSize: '14px', color: 'var(--booking-navy)', fontWeight: 600 }}>
+                                ₹{( (subtotal - (appliedDiscount?.discountAmount || 0)) * taxRate ).toLocaleString()}
+                            </span>
+                        </div>
+
+                        <div className="summary-total-section" style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--booking-border)' }}>
+                            <span className="summary-total-label">Payable Amount</span>
+                            <span className="summary-total-amount">₹{finalAmount.toLocaleString()}</span>
+                        </div>
                     </div>
 
                     {appliedDiscount && (
-                        <div className="booking-alert success" style={{ background: '#ecfdf5', padding: '12px', borderRadius: '8px', border: '1px solid #10b981', color: '#065f46', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px', justifyContent: 'center' }}>
+                        <div className="booking-alert success" style={{ padding: '12px', borderRadius: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px', justifyContent: 'center' }}>
                             <CheckCircle size={14} />
                             <span>Savings: ₹{appliedDiscount.discountAmount.toLocaleString()} ({appliedDiscount.code})</span>
                         </div>
@@ -112,8 +139,9 @@ const DiscountWidget: React.FC<{ subtotal: number; onApplied: (d: any) => void; 
                 setError(res.message || 'Invalid discount code');
                 onApplied(null);
             }
-        } catch {
-            setError('Failed to validate discount code');
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || err?.message || 'Failed to validate discount code';
+            setError(msg);
         } finally { setLoading(false); }
     };
 
@@ -174,6 +202,7 @@ interface Step3Props {
     finalAmount: number;
     appliedDiscount: any;
     processing: boolean;
+    gstPercentage: number;
     onPaymentMethodChange: (m: string) => void;
     onDiscountApplied: (d: any) => void;
     onBack: () => void;
@@ -181,7 +210,7 @@ interface Step3Props {
 }
 
 const BookingStep3: React.FC<Step3Props> = ({
-    booking, subtotal, finalAmount, appliedDiscount, processing,
+    booking, subtotal, finalAmount, appliedDiscount, processing, gstPercentage,
     onPaymentMethodChange, onDiscountApplied, onBack, onPayNow,
 }) => {
     const [selectedLabel, setSelectedLabel] = useState('Online Payment');
@@ -254,7 +283,13 @@ const BookingStep3: React.FC<Step3Props> = ({
 
             {/* Right – Full summary */}
             <div className="booking-sidebar booking-sidebar-sticky">
-                <FullSummary booking={booking} subtotal={subtotal} finalAmount={finalAmount} appliedDiscount={appliedDiscount} />
+                <FullSummary 
+                    booking={booking} 
+                    subtotal={subtotal} 
+                    finalAmount={finalAmount} 
+                    appliedDiscount={appliedDiscount} 
+                    gstPercentage={gstPercentage}
+                />
             </div>
         </div>
     );

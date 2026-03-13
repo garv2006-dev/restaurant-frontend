@@ -687,6 +687,14 @@ export const adminAPI = {
   },
 };
 
+// Public Settings API
+export const publicSettingsAPI = {
+  getSettings: async (): Promise<ApiResponse<{ gstPercentage: number }>> => {
+    const response: AxiosResponse<ApiResponse<{ gstPercentage: number }>> = await api.get('/public-settings');
+    return response.data;
+  }
+};
+
 // Contact API
 export const contactAPI = {
   sendMessage: async (messageData: { name: string; email: string; subject: string; message: string }): Promise<ApiResponse> => {

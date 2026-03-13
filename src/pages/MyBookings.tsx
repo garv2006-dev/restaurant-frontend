@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Button, Modal, Form, Spinner, Alert, Table } from 'react-bootstrap';
+import { Button, Modal, Form, Spinner, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { bookingsAPI, reviewsAPI } from '../services/api';
 import { Booking } from '../types';
 import { useNotifications } from '../context/NotificationContext';
 import { useSocket } from '../contexts/SocketContext';
+import '../styles/my-bookings-theme.css';
 
 const MyBookings: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -165,121 +166,136 @@ const MyBookings: React.FC = () => {
   }
 
   return (
-    <div className="container-fluid px-4 py-5" style={{ fontFamily: "'Jost', sans-serif" }}>
-      <h2 className="mb-4" style={{ fontWeight: 700, color: '#1a1a1a' }}>My Bookings</h2>
+    <div className="booking-page-container">
+      <div>
+        <h1 className="booking-title">My Bookings</h1>
+        <p className="booking-subtitle">Manage your current and past hotel reservations.</p>
+      </div>
 
       {error && <Alert variant="danger" className="mb-4" dismissible onClose={() => setError(null)}>{error}</Alert>}
 
-      {bookings.length === 0 ? (
-        <div className="text-center py-5 border rounded bg-white">
-          <h3>No bookings found</h3>
-          <p className="text-muted mb-4">You haven't made any reservations yet.</p>
-          <Link to="/booking" className="btn btn-primary px-4">Book Your Stay</Link>
-        </div>
-      ) : (
-        <div className="table-responsive bg-white">
-          <Table bordered hover className="align-middle mb-0" style={{ fontSize: '14px' }}>
-            <thead className="bg-light">
-              <tr>
-                <th className="py-3 px-3">#</th>
-                <th className="py-3 px-3" style={{ minWidth: '300px' }}>Rooms</th>
-                <th className="py-3 px-3">Check-in</th>
-                <th className="py-3 px-3">Check-out</th>
-                <th className="py-3 px-3">Guests</th>
-                <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3">Original Amount</th>
-                <th className="py-3 px-3">Discount</th>
-                <th className="py-3 px-3">GST</th>
-                <th className="py-3 px-3">Final Paid</th>
-                <th className="py-3 px-3 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bookings.map((booking, index) => {
-                const typeCounts: { [key: string]: { active: number, cancelled: number } } = {};
-                booking.rooms.forEach(r => {
-                  const typeName = (r.roomType as any)?.name || 'Room';
-                  if (!typeCounts[typeName]) {
-                    typeCounts[typeName] = { active: 0, cancelled: 0 };
-                  }
-                  if (r.status === 'Cancelled') {
-                    typeCounts[typeName].cancelled++;
-                  } else {
-                    typeCounts[typeName].active++;
-                  }
-                });
-
-                const roomDisplay = Object.entries(typeCounts).map(([typeName, counts]) => {
-                  const totalForType = counts.active + counts.cancelled;
-                  let str = `${totalForType} ${typeName}${totalForType > 1 ? (typeName.endsWith('s') ? "'" : 's') : ''}`;
-                  if (counts.cancelled > 0) {
-                    str += ` (${counts.cancelled} Cancelled)`;
-                  }
-                  return str;
-                }).join(', ');
-
-                const subtotal = booking.pricing.roomPrice || 0;
-                const discount = booking.pricing.discount?.amount || 0;
-                const gst = booking.pricing.taxes?.gst || 0;
-                const total = booking.pricing.totalAmount || 0;
-
-                return (
-                  <tr key={booking._id}>
-                    <td className="px-3">{index + 1}</td>
-                    <td className="px-3" style={{ maxWidth: '400px' }}>{roomDisplay}</td>
-                    <td className="px-3">{formatDate(booking.bookingDates.checkInDate)}</td>
-                    <td className="px-3">{formatDate(booking.bookingDates.checkOutDate)}</td>
-                    <td className="px-3">
-                      {booking.guestDetails.totalAdults + booking.guestDetails.totalChildren}
-                      <br />
-                      <span className="text-muted" style={{ fontSize: '12px' }}>Guests</span>
-                    </td>
-                    <td className="px-3">
-                      <span style={{ fontWeight: 500 }}>{booking.status}</span>
-                    </td>
-                    <td className="px-3">₹{subtotal.toFixed(2)}</td>
-                    <td className="px-3">{discount > 0 ? `₹${discount.toFixed(2)}` : '-'}</td>
-                    <td className="px-3">₹{gst.toFixed(2)}</td>
-                    <td className="px-3">
-                      <strong style={{ fontSize: '15px' }}>₹{total.toFixed(2)}</strong>
-                    </td>
-                    <td className="px-3 text-center">
-                      {(booking.status === 'Pending' || booking.status === 'Confirmed') && (
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '4px' }}
-                          onClick={() => handleCancelClick(booking)}
-                          disabled={cancelLoading === booking._id}
-                        >
-                          {cancelLoading === booking._id ? '...' : 'Cancel'}
-                        </Button>
-                      )}
-
-                      {booking.status === 'CheckedOut' && reviewStatuses[booking._id]?.canReview && (
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          style={{ fontSize: '12px', padding: '4px 12px', borderRadius: '4px' }}
-                          onClick={() => navigate('/reviews')}
-                        >
-                          Review
-                        </Button>
-                      )}
-
-                      {booking.status === 'CheckedOut' && reviewStatuses[booking._id]?.reason === 'ALREADY_REVIEWED' && (
-                        <span className="text-success small fw-bold">Reviewed</span>
-                      )}
-
-                      {booking.status === 'Cancelled' && <span className="text-muted">-</span>}
-                    </td>
+      <div className="booking-table-card">
+        {bookings.length === 0 ? (
+          <div className="text-center py-5">
+            <h3 className="text-muted">No bookings found</h3>
+            <p className="mb-4">You haven't made any reservations yet.</p>
+            <Link to="/booking" className="btn btn-primary px-4">Book Your Stay</Link>
+          </div>
+        ) : (
+          <>
+            <div className="booking-table-responsive">
+              <table className="booking-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Room Details</th>
+                    <th>Stay Dates</th>
+                    <th>Guests</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                    <th>Discount</th>
+                    <th>GST</th>
+                    <th>Total Paid</th>
+                    <th>Actions</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </Table>
-        </div>
-      )}
+                </thead>
+                <tbody>
+                  {bookings.map((booking, index) => {
+                    const typeCounts: { [key: string]: { active: number, cancelled: number } } = {};
+                    booking.rooms.forEach(r => {
+                      const typeName = (r.roomType as any)?.name || 'Room';
+                      if (!typeCounts[typeName]) {
+                        typeCounts[typeName] = { active: 0, cancelled: 0 };
+                      }
+                      if (r.status === 'Cancelled') {
+                        typeCounts[typeName].cancelled++;
+                      } else {
+                        typeCounts[typeName].active++;
+                      }
+                    });
+
+                    const roomEntries = Object.entries(typeCounts);
+
+                    const subtotal = booking.pricing.roomPrice || 0;
+                    const discount = booking.pricing.discount?.amount || 0;
+                    const gst = booking.pricing.taxes?.gst || 0;
+                    const total = booking.pricing.totalAmount || 0;
+
+                    const statusFormatted = booking.status.replace(/([A-Z])/g, '-$1').toLowerCase();
+                    const statusLabel = booking.status.replace(/([A-Z])/g, ' $1').trim();
+
+                    return (
+                      <tr key={booking._id}>
+                        <td data-label="#">{index + 1}</td>
+                        <td className="room-details-cell" data-label="Room Details">
+                          {roomEntries.map(([typeName, counts], i) => (
+                            <div key={i} className="mb-1">
+                              <span className="room-name-primary">
+                                {counts.active + counts.cancelled} {typeName}
+                              </span>
+                              {counts.cancelled > 0 && (
+                                <span className="room-cancelled-info">({counts.cancelled} Cancelled)</span>
+                              )}
+                            </div>
+                          ))}
+                        </td>
+                        <td className="stay-dates-cell" data-label="Stay Dates">
+                          <span className="date-text">{formatDate(booking.bookingDates.checkInDate)}</span>
+                          <span className="date-to-separator">TO</span>
+                          <span className="date-text">{formatDate(booking.bookingDates.checkOutDate)}</span>
+                        </td>
+                        <td data-label="Guests">
+                          <span className="fw-medium">{booking.guestDetails.totalAdults + booking.guestDetails.totalChildren}</span>
+                          <span className="ms-1 text-muted">Guests</span>
+                        </td>
+                        <td data-label="Status">
+                          <span className={`status-pill status-${statusFormatted}`}>
+                            {statusLabel}
+                          </span>
+                        </td>
+                        <td className="amount-text" data-label="Amount">₹{subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="amount-text" style={{ color: discount > 0 ? '#10b981' : 'inherit' }} data-label="Discount">
+                          {discount > 0 ? `- ₹${discount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
+                        </td>
+                        <td className="amount-text" data-label="GST">₹{gst.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="total-paid-text" data-label="Total Paid">₹{total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className="actions-cell" data-label="Actions">
+                          {(booking.status === 'Pending' || booking.status === 'Confirmed') && (
+                            <button
+                              className="action-btn-pill btn-cancel-pill"
+                              onClick={() => handleCancelClick(booking)}
+                              disabled={cancelLoading === booking._id}
+                            >
+                              {cancelLoading === booking._id ? '...' : 'CANCEL'}
+                            </button>
+                          )}
+
+                          {booking.status === 'CheckedOut' && reviewStatuses[booking._id]?.canReview && (
+                            <button
+                              className="action-btn-pill btn-review-pill"
+                              onClick={() => navigate('/reviews')}
+                            >
+                              REVIEW
+                            </button>
+                          )}
+
+                          {booking.status === 'CheckedOut' && reviewStatuses[booking._id]?.reason === 'ALREADY_REVIEWED' && (
+                            <span className="text-success small fw-bold">Reviewed</span>
+                          )}
+
+                          {(booking.status === 'Cancelled' || booking.status === 'CheckedIn' || (booking.status === 'CheckedOut' && !reviewStatuses[booking._id]?.canReview)) && (
+                            <span className="text-muted small">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
 
 
       {/* Cancel Modal */}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { bookingsAPI, roomsAPI, paymentsAPI } from '../services/api';
+import { bookingsAPI, roomsAPI, paymentsAPI, publicSettingsAPI } from '../services/api';
 import type { Room } from '../types';
 import { toast } from 'react-toastify';
 import '../styles/booking-flow.css';
@@ -56,6 +56,7 @@ const Booking: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
+  const [gstPercentage, setGstPercentage] = useState(18);
 
   const [booking, setBooking] = useState<BookingState>(() => ({
     ...INITIAL_STATE,
@@ -73,9 +74,30 @@ const Booking: React.FC = () => {
   const subtotal = booking.selectedRooms.reduce((sum, item) => {
     return sum + (item.room.price.basePrice * booking.nights * item.count);
   }, 0);
-  const finalAmount = appliedDiscount ? appliedDiscount.finalAmount : subtotal;
 
-  // ── Fetch rooms ────────────────────────────────────────────────────────────
+  // Calculate discount and net
+  const discountAmount = appliedDiscount ? appliedDiscount.discountAmount : 0;
+  const netAmount = Math.max(0, subtotal - discountAmount);
+  
+  // Calculate Tax (Dynamic) and Total
+  const taxAmount = netAmount * (gstPercentage / 100);
+  const finalAmount = netAmount + taxAmount;
+
+  // ── Fetch rooms & Settings ───────────────────────────────────────────────────
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const res = await publicSettingsAPI.getSettings();
+        if (res.success && res.data) {
+          setGstPercentage(res.data.gstPercentage);
+        }
+      } catch (err) {
+        console.error('Failed to fetch tax settings:', err);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   useEffect(() => {
     const fetchRooms = async () => {
       try {
@@ -306,6 +328,7 @@ const Booking: React.FC = () => {
             loading={loading}
             booking={booking}
             subtotal={subtotal}
+            gstPercentage={gstPercentage}
             onDateChange={handleDateChange}
             onSelectRoom={handleSelectRoom}
             onContinue={goToStep2}
@@ -319,6 +342,7 @@ const Booking: React.FC = () => {
             subtotal={subtotal}
             finalAmount={finalAmount}
             appliedDiscount={appliedDiscount}
+            gstPercentage={gstPercentage}
             onGuestChange={(field: 'name' | 'email' | 'phone', val: string) => setBooking(prev => ({ ...prev, guestDetails: { ...prev.guestDetails, [field]: val } }))}
             onGuestsChange={(field: 'adults' | 'children', val: number) => setBooking(prev => ({ ...prev, guests: { ...prev.guests, [field]: val } }))}
             onBack={() => { setStep(1); setStepError(null); }}
@@ -334,6 +358,7 @@ const Booking: React.FC = () => {
             finalAmount={finalAmount}
             appliedDiscount={appliedDiscount}
             processing={processing}
+            gstPercentage={gstPercentage}
             onPaymentMethodChange={(m: string) => setBooking(prev => ({ ...prev, paymentMethod: m }))}
             onDiscountApplied={setAppliedDiscount}
             onBack={() => setStep(2)}
