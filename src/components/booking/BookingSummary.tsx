@@ -107,30 +107,28 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                     <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--booking-border)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                             <span style={{ fontSize: '14px', color: 'var(--booking-text-muted)' }}>Room rate :</span>
-                            <span style={{ fontSize: '15px', color: 'var(--booking-navy)' }}>
-                                Rs {subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span style={{ fontSize: '15px', color: 'var(--booking-navy)', fontWeight: 600 }}>
+                                ₹{subtotal.toLocaleString()}
                             </span>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                             <span style={{ fontSize: '14px', color: 'var(--booking-text-muted)' }}>Tax ({gstPercentage}%) :</span>
-                            <span style={{ fontSize: '15px', color: 'var(--booking-navy)' }}>
-                                Rs {taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <span style={{ fontSize: '15px', color: 'var(--booking-navy)', fontWeight: 600 }}>
+                                ₹{taxAmount.toLocaleString()}
                             </span>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid var(--booking-border)' }}>
                             <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--booking-navy)' }}>Total</span>
                             <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--booking-navy)' }}>
-                                Rs {totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                ₹{totalAmount.toLocaleString()}
                             </span>
                         </div>
-                    </div>
+                    </div >
                 )}
-            </div>
-
+            </div >
             {ready ? (
-                <div style={{ padding: '24px', borderTop: '1px solid var(--booking-border)', display: 'flex', flexDirection: 'column', gap: '24px', background: 'white' }}>
-
+                <div style={{ padding: '24px', borderTop: '1px solid var(--booking-border)', display: 'flex', flexDirection: 'column', gap: '24px', background: 'var(--booking-card-bg, white)' }}>
                     <button
                         className="btn-booking-continue"
                         onClick={onContinue}
@@ -139,7 +137,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                     </button>
                 </div>
             ) : (
-                <div className="lux-card-body" style={{ background: 'white' }}>
+                <div className="lux-card-body" style={{ background: 'var(--booking-card-bg, white)' }}>
                     <button
                         className="btn-booking-continue"
                         onClick={onContinue}
@@ -149,7 +147,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                     </button>
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 

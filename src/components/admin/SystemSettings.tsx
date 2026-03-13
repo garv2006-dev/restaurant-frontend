@@ -155,7 +155,6 @@ const SystemSettings: React.FC = () => {
                                         {standardGstRates.map(rate => (
                                             <option key={rate} value={rate}>{rate}% GST</option>
                                         ))}
-                                        <option value="custom">Custom Rate...</option>
                                     </select>
 
                                     {isCustomGst && (

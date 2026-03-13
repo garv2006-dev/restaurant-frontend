@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { BookingState } from '../../pages/Booking';
 import { bookingsAPI } from '../../services/api';
 import { ArrowLeft, Lock, CreditCard, Wallet, Tag, CheckCircle, AlertTriangle } from 'lucide-react';
@@ -16,7 +16,7 @@ const PAYMENT_METHODS = [
     { methodId: 'Cash', label: 'Pay at Hotel', desc: 'Cash on arrival', icon: <Wallet size={20} /> },
 ];
 
-// ── Booking summary (full) ───────────────────────────────────────────────────
+// ── Full Summary Sub-component ──────────────────────────────────────────────
 const FullSummary: React.FC<{
     booking: BookingState;
     subtotal: number;
@@ -102,7 +102,7 @@ const FullSummary: React.FC<{
                     </div>
 
                     {appliedDiscount && (
-                        <div className="booking-alert success" style={{ background: '#ecfdf5', padding: '12px', borderRadius: '8px', border: '1px solid #10b981', color: '#065f46', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px', justifyContent: 'center' }}>
+                        <div className="booking-alert success" style={{ padding: '12px', borderRadius: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '24px', justifyContent: 'center' }}>
                             <CheckCircle size={14} />
                             <span>Total Savings: ₹{appliedDiscount.savings?.toLocaleString() || appliedDiscount.discountAmount?.toLocaleString()}</span>
                         </div>
@@ -132,8 +132,9 @@ const DiscountWidget: React.FC<{ subtotal: number; onApplied: (d: any) => void; 
                 setError(res.message || 'Invalid discount code');
                 onApplied(null);
             }
-        } catch {
-            setError('Failed to validate discount code');
+        } catch (err: any) {
+            const msg = err?.response?.data?.message || err?.message || 'Failed to validate discount code';
+            setError(msg);
         } finally { setLoading(false); }
     };
 
@@ -202,7 +203,7 @@ interface Step3Props {
 }
 
 const BookingStep3: React.FC<Step3Props> = ({
-    booking, subtotal, finalAmount, appliedDiscount, gstPercentage, processing,
+    booking, subtotal, finalAmount, appliedDiscount, processing, gstPercentage,
     onPaymentMethodChange, onDiscountApplied, onBack, onPayNow,
 }) => {
     const [selectedLabel, setSelectedLabel] = useState('Online Payment');

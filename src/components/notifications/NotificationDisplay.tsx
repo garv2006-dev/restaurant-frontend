@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Toast, ToastContainer, Badge } from 'react-bootstrap';
+import { Toast, ToastContainer } from 'react-bootstrap';
 import { X, Copy, Check, Calendar, Star, ShoppingBag, Clock } from 'lucide-react';
 import { notificationSoundService } from '../../services/NotificationSoundService';
 import { toast } from 'react-toastify';
@@ -147,35 +147,6 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
 
 
 
-  const getNotificationVariant = (type: string) => {
-    switch (type) {
-      case 'room_booking':
-        return 'primary';
-      case 'promotion':
-        return 'warning';
-      case 'payment':
-        return 'success';
-      case 'system':
-        return 'info';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'room_booking':
-        return 'Booking';
-      case 'promotion':
-        return 'Promotion';
-      case 'payment':
-        return 'Payment';
-      case 'system':
-        return 'System';
-      default:
-        return 'Notification';
-    }
-  };
 
   const formatTimestamp = (timestamp: Date) => {
     const now = new Date();
@@ -226,99 +197,55 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
             className={`notification-toast ${notification.type} ${isExpanded ? 'expanded' : 'collapsed'}`}
           >
             <Toast.Header className="notification-toast-header" closeButton={false}>
-              {notification.type === 'promotion' && extractPromoCode(notification.message) ? (
-                <>
-                  <div className="notification-header-content promotion-header">
-                    <div className="notification-title-section">
-                      <div className="title-with-icon">
-                        {getNotificationIcon(notification.type)}
-                        <strong className="notification-title">
-                          {notification.title}
-                        </strong>
-                      </div>
-                      <div className="promo-header-left">
-                        <span className="promo-code-header">
-                          {extractPromoCode(notification.message)}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      className="copy-button-header"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCopyPromoCode(
-                          extractPromoCode(notification.message)!,
-                          notification.id
-                        );
-                      }}
-                      title="Copy promo code"
-                    >
-                      {copiedCodes.has(notification.id) ? (
-                        <>
-                          <Check size={16} className="copy-icon copied" />
-                          <span className="copy-text">Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={16} className="copy-icon" />
-                          <span className="copy-text">Copy</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                  <div className="notification-meta">
-                    <small className="notification-time">
-                      {formatTimestamp(notification.timestamp)}
-                    </small>
-                    <button
-                      type="button"
-                      className="btn-close notification-close"
-                      aria-label="Close"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeNotification(notification.id);
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="notification-header-content">
-                    <div className="notification-title-section">
-                      <div className="title-with-icon">
-                        {getNotificationIcon(notification.type)}
-                        <strong className="notification-title">
-                          {notification.title}
-                        </strong>
-                      </div>
-                      <Badge
-                        bg={getNotificationVariant(notification.type)}
-                        className="notification-type-badge"
-                      >
-                        {getTypeLabel(notification.type)}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="notification-meta">
-                    <small className="notification-time">
-                      {formatTimestamp(notification.timestamp)}
-                    </small>
-                    <button
-                      type="button"
-                      className="btn-close notification-close"
-                      aria-label="Close"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeNotification(notification.id);
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </>
-              )}
+              <div className="notification-header-content">
+                <div className="title-with-icon">
+                  {getNotificationIcon(notification.type)}
+                  <strong className="notification-title">
+                    {notification.title}
+                  </strong>
+                  
+                  {notification.type === 'promotion' && extractPromoCode(notification.message) && (
+                    <span className="promo-code-header">
+                      {extractPromoCode(notification.message)}
+                    </span>
+                  )}
+                </div>
+
+                {notification.type === 'promotion' && extractPromoCode(notification.message) && (
+                  <button
+                    className="copy-button-header"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyPromoCode(
+                        extractPromoCode(notification.message)!,
+                        notification.id
+                      );
+                    }}
+                  >
+                    {copiedCodes.has(notification.id) ? (
+                      <><Check size={14} /> <span>COPIED</span></>
+                    ) : (
+                      <><Copy size={14} /> <span>COPY</span></>
+                    )}
+                  </button>
+                )}
+              </div>
+              
+              <div className="notification-meta">
+                <small className="notification-time">
+                  {formatTimestamp(notification.timestamp)}
+                </small>
+                <button
+                  type="button"
+                  className="notification-close"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeNotification(notification.id);
+                  }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
             </Toast.Header>
             <Toast.Body
               className="notification-toast-body"
@@ -328,7 +255,8 @@ const NotificationDisplay: React.FC<NotificationDisplayProps> = ({
               <div>
                 <p className={`notification-message ${isExpanded ? 'expanded' : 'collapsed'}`}>
                   {notification.type === 'promotion' && extractPromoCode(notification.message)
-                    ? notification.message.split(/(?:Use code:|Code:)/i)[0].trim()
+                    ? (notification.message.split(/(?:Use code:|Code:)/i)[0].trim() || 
+                       notification.message.replace(new RegExp(`(?:Use code:|Code:)\\s*${extractPromoCode(notification.message)}`, 'i'), '').trim())
                     : notification.message}
                 </p>
                 {!isExpanded && notification.message.length > 60 && (

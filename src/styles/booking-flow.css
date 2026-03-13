@@ -21,12 +21,15 @@
 }
 
 [data-bs-theme="dark"] {
-    --booking-cream: #121212;
-    --booking-cream-dark: #1a1a1a;
-    --booking-border: rgba(255, 255, 255, 0.1);
-    --booking-text-main: #f3f4f6;
-    --booking-text-muted: #9ca3af;
-    --booking-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --booking-cream: #0f172a;
+    --booking-cream-dark: #1e293b;
+    --booking-border: #334155;
+    --booking-text-main: #f8fafc;
+    --booking-text-muted: #94a3b8;
+    --booking-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    --booking-navy: #f8fafc;
+    --booking-card-bg: #1e293b;
+    --booking-input-bg: #1e293b;
 }
 
 .booking-flow-page {
@@ -34,6 +37,39 @@
     background-color: var(--booking-cream);
     min-height: calc(100vh - 100px);
     color: var(--booking-text-main);
+}
+
+/* Base dark mode overrides for shared components */
+[data-bs-theme="dark"] .lux-card { background: var(--booking-card-bg); }
+[data-bs-theme="dark"] .lux-form-input { background: var(--booking-input-bg); color: var(--booking-text-main); border-color: var(--booking-border); }
+[data-bs-theme="dark"] .booking-date-bar { background: var(--booking-card-bg); border-color: var(--booking-border); }
+[data-bs-theme="dark"] .booking-date-input { color: var(--booking-text-main); }
+[data-bs-theme="dark"] .date-bar-nights-circle { background: #1e293b; border-color: var(--booking-gold); color: var(--booking-gold); }
+[data-bs-theme="dark"] .room-card-lux { background: var(--booking-card-bg); border-color: var(--booking-border); }
+[data-bs-theme="dark"] .amenity-chip { background: #334155; color: #f8fafc; }
+[data-bs-theme="dark"] .room-price-amount { color: var(--booking-gold); }
+[data-bs-theme="dark"] .payment-method-card { background: #1e293b; border-color: var(--booking-border); }
+[data-bs-theme="dark"] .payment-method-name { color: #f8fafc; }
+[data-bs-theme="dark"] .payment-method-icon { background: #334155; color: var(--booking-gold); }
+[data-bs-theme="dark"] .gcount-btn { background: #334155; border-color: var(--booking-gold); color: #f8fafc; }
+[data-bs-theme="dark"] .gcount-val { color: #f8fafc; }
+[data-bs-theme="dark"] .booking-summary-card { background: var(--booking-card-bg); border-color: var(--booking-border); }
+[data-bs-theme="dark"] .summary-row-value { color: #f8fafc; }
+[data-bs-theme="dark"] .summary-total-section { background: #334155; border-top-color: var(--booking-border); }
+[data-bs-theme="dark"] .summary-total-label, [data-bs-theme="dark"] .summary-total-amount { color: var(--booking-gold); }
+[data-bs-theme="dark"] .promo-card-lux { background: #1e293b; border-color: var(--booking-gold); }
+[data-bs-theme="dark"] .lux-form-label { color: var(--booking-gold); }
+
+/* Alert overrides in dark mode */
+[data-bs-theme="dark"] .booking-alert.info { background: rgba(14, 165, 233, 0.1); color: #38bdf8; border-color: rgba(14, 165, 233, 0.2); }
+[data-bs-theme="dark"] .booking-alert.success { background: rgba(16, 185, 129, 0.1); color: #34d399; border-color: rgba(16, 185, 129, 0.2); }
+[data-bs-theme="dark"] .booking-alert.warning { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border-color: rgba(245, 158, 11, 0.2); }
+
+/* Ensure headers stay dark or use deep slate in dark mode for white text visibility */
+[data-bs-theme="dark"] .booking-summary-header,
+[data-bs-theme="dark"] .lux-card-header {
+    background: #0f172a !important;
+    border-bottom: 1px solid var(--booking-border);
 }
 
 .booking-content-area {
@@ -74,7 +110,7 @@
 }
 
 [data-bs-theme="dark"] .lux-card {
-    background: #1e1e1e;
+    background: var(--booking-card-bg);
 }
 
 .lux-card-header {
@@ -101,7 +137,7 @@
 }
 
 [data-bs-theme="dark"] .booking-date-bar {
-    background: #1e1e1e;
+    background: var(--booking-card-bg);
 }
 
 .booking-date-field {

@@ -218,21 +218,10 @@ const BookingStep1: React.FC<Step1Props> = ({
                 <p className="booking-section-subtitle">Select multiple room types if needed for your stay</p>
 
                 {error && (
-                    <div className="animate-fade-in" style={{
-                        backgroundColor: '#fff5f5',
-                        border: '1px solid #feb2b2',
+                    <div className="animate-fade-in booking-alert warning" style={{
                         borderLeft: '4px solid #f56565',
-                        borderRadius: '12px',
-                        padding: '12px 16px',
-                        marginBottom: '24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        color: '#c53030',
-                        fontSize: '14px',
                         position: 'relative'
                     }}>
-                        {/* Icon removed */}
                         <span style={{ fontWeight: 600 }}>{error}</span>
                         {onClearError && (
                             <button
@@ -244,7 +233,7 @@ const BookingStep1: React.FC<Step1Props> = ({
                                     transform: 'translateY(-50%)',
                                     background: 'none',
                                     border: 'none',
-                                    color: '#c53030',
+                                    color: 'inherit',
                                     fontSize: '18px',
                                     cursor: 'pointer',
                                     opacity: 0.5
@@ -290,23 +279,17 @@ const BookingStep1: React.FC<Step1Props> = ({
                 </div>
 
                 {dateError && (
-                    <div className="booking-error-alert" style={{ marginBottom: '24px', padding: '16px', background: '#fff5f5', borderRadius: '12px', color: '#e53e3e', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid #fed7d7' }}>
+                    <div className="booking-error-alert booking-alert warning" style={{ borderLeft: '4px solid #f56565' }}>
                         {/* Icon removed */} {dateError}
                     </div>
                 )}
 
                 {isAdmin && (
-                    <div style={{
-                        backgroundColor: '#FEF9E7',
-                        border: '1px solid #F9E79F',
+                    <div className="booking-alert warning" style={{
                         borderLeft: '4px solid #F1C40F',
-                        borderRadius: '4px',
-                        padding: '16px 20px',
-                        marginBottom: '24px',
                         display: 'flex',
                         alignItems: 'flex-start',
                         gap: '16px',
-                        color: '#7D6608'
                     }}>
                         <ShieldAlert size={20} style={{ marginTop: '2px', flexShrink: 0 }} />
                         <div>
@@ -323,7 +306,7 @@ const BookingStep1: React.FC<Step1Props> = ({
                         <p style={{ color: 'var(--booking-text-muted)', fontWeight: 600 }}>Curating our finest rooms for you…</p>
                     </div>
                 ) : rooms.length === 0 ? (
-                    <div className="no-rooms-state" style={{ textAlign: 'center', padding: '60px 20px', background: 'white', borderRadius: '24px', border: '1px dashed var(--booking-border)' }}>
+                    <div className="no-rooms-state" style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--booking-card-bg, white)', borderRadius: '24px', border: '1px dashed var(--booking-border)' }}>
                         <div style={{ fontSize: '48px', marginBottom: '16px' }}>🏨</div>
                         <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--booking-navy)' }}>No Rooms Available</h3>
                         <p style={{ color: 'var(--booking-text-muted)' }}>Please check back later or try different dates.</p>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI, paymentsAPI, adminAPI } from '../services/api';
@@ -57,7 +57,7 @@ const Booking: React.FC = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [gstPercentage, setGstPercentage] = useState(0);
+  const [gstPercentage, setGstPercentage] = useState(18);
   const { socket } = useSocket();
 
   const [booking, setBooking] = useState<BookingState>(() => ({
@@ -76,25 +76,15 @@ const Booking: React.FC = () => {
     return sum + (item.room.price.basePrice * booking.nights * item.count);
   }, 0);
 
-  const discountAmount = useMemo(() => {
-    if (!appliedDiscount) return 0;
-    // Handle both raw discount object and validation result
-    const d = appliedDiscount.discount || appliedDiscount;
-    if (d.type === 'percentage') {
-      let disc = (subtotal * d.value) / 100;
-      if (d.maxDiscount && disc > d.maxDiscount) disc = d.maxDiscount;
-      return disc;
-    } else if (d.type === 'fixed') {
-      return Math.min(d.value, subtotal);
-    }
-    return 0;
-  }, [appliedDiscount, subtotal]);
+  // Calculate discount and net
+  const discountAmount = appliedDiscount ? appliedDiscount.discountAmount : 0;
+  const netAmount = Math.max(0, subtotal - discountAmount);
 
-  const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount);
-  const taxAmount = subtotalAfterDiscount * (gstPercentage / 100);
-  const finalAmount = subtotalAfterDiscount + taxAmount;
+  // Calculate Tax (Dynamic) and Total
+  const taxAmount = netAmount * (gstPercentage / 100);
+  const finalAmount = netAmount + taxAmount;
 
-  // ── Fetch rooms & settings ────────────────────────────────────────────────
+  // ── Fetch rooms & Settings ───────────────────────────────────────────────────
   useEffect(() => {
     const loadData = async () => {
       try {

@@ -1,439 +1,212 @@
-/* Notification Display Component Styles */
+/* Notification Display Component Styles - Premium Polish */
 
 .notification-display-container {
   position: fixed;
-  z-index: 9999;
+  z-index: 10000; /* Ensure it's above almost everything */
   pointer-events: none;
+  padding: 20px;
 }
 
 .notification-display-container .toast {
   pointer-events: auto;
 }
 
-/* Toast Styling */
+/* Base Toast Styling with Deep Glassmorphism */
 .notification-toast {
   min-width: 380px;
   max-width: 420px;
-  margin-bottom: 0.875rem;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  margin-bottom: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 1.25rem;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-left: 6px solid #2563eb;
-  animation: slideInNotification 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-left: 5px solid #2563eb;
+  animation: notificationEntrance 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
   overflow: hidden;
 }
 
-.notification-toast.room_booking {
-  border-left-color: #3b82f6;
+.notification-toast:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 
+    0 25px 30px -5px rgba(0, 0, 0, 0.12),
+    0 15px 15px -5px rgba(0, 0, 0, 0.06);
 }
 
-.notification-toast.promotion {
-  border-left-color: #f59e0b;
+/* Type-Specific Accents using HSL for vibrancy */
+.notification-toast.room_booking { border-left-color: #3b82f6; } /* Royal Blue */
+.notification-toast.promotion { 
+  border-left-color: #f59e0b; 
+  background: rgba(255, 251, 235, 0.9); /* Warm cream for promotions */
+}
+.notification-toast.payment { border-left-color: #10b981; } /* Emerald */
+.notification-toast.system { border-left-color: #8b5cf6; } /* Violet */
+
+/* Entrance Animation */
+@keyframes notificationEntrance {
+  0% { transform: translateX(120%) scale(0.9); opacity: 0; }
+  100% { transform: translateX(0) scale(1); opacity: 1; }
 }
 
-.notification-toast.payment {
-  border-left-color: #10b981;
-}
-
-.notification-toast.system {
-  border-left-color: #6366f1;
-}
-
-/* Toast Header */
+/* Header Area */
 .notification-toast-header {
-  padding: 1.25rem 1.25rem 0.625rem;
+  padding: 1.25rem 1.25rem 0.5rem;
   border-bottom: none;
   background: transparent;
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
+  justify-content: space-between;
 }
 
 .notification-header-content {
   display: flex;
-  align-items: flex-start;
-  gap: 0;
   flex: 1;
-}
-
-/* Promotion Header Layout */
-.notification-header-content.promotion-header {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex: 1;
-}
-
-.notification-title-section {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.5rem;
-  flex: 1;
 }
 
 .title-with-icon {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.125rem;
+  gap: 0.875rem;
 }
 
 .notification-type-icon {
-  flex-shrink: 0;
-  opacity: 0.9;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: transform 0.3s ease;
 }
 
-/* Promo Header Left Section */
-.promo-header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.875rem;
-  margin-top: 0.375rem;
-}
-
-.promo-code-header {
-  font-family: 'Courier New', monospace;
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: #d97706;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-  border: 2px solid #fbbf24;
-  border-radius: 0.5rem;
-  padding: 0.5rem 1rem;
-  user-select: all;
-  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  position: relative;
-  overflow: hidden;
-}
-
-.promo-code-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  transition: left 0.5s ease;
-}
-
-
-
-/* Copy Button in Header */
-.copy-button-header {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.875rem;
-  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.35), 0 2px 4px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-  white-space: nowrap;
-  position: relative;
-  overflow: hidden;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.copy-button-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-
-
-
-
-
-
-.copy-button-header .copy-text {
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  font-size: 0.8125rem;
-}
-
-.copy-button-header .copy-icon {
-  transition: all 0.25s ease;
-}
-
-.copy-button-header .copy-icon.copied {
-  color: #10b981;
-  animation: copySuccess 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5));
+.notification-toast:hover .notification-type-icon {
+  transform: scale(1.1) rotate(-5deg);
 }
 
 .notification-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #212529;
-  line-height: 1.3;
-  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.2;
 }
 
-.notification-type-badge {
-  align-self: flex-start;
-  font-size: 0.7rem;
-  padding: 0.25rem 0.5rem;
+/* Promotion Specific - Header */
+.promotion-header .promo-code-header {
+  margin-left: 0.75rem;
+  font-family: 'JetBrains Mono', 'Monaco', monospace;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 0.25rem 0.625rem;
   border-radius: 0.375rem;
-  font-weight: 500;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  letter-spacing: 0.05em;
 }
 
+/* Copy Button Polish */
+.copy-button-header {
+  margin-left: 1rem;
+  border: none;
+  background: #1e293b;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-button-header:hover {
+  background: #334155;
+  transform: translateY(-1px);
+}
+
+.copy-button-header:active {
+  transform: translateY(0);
+}
+
+/* Meta Data (Time and Close) */
 .notification-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
-  margin-left: 0.5rem;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .notification-time {
   font-size: 0.75rem;
-  color: #6c757d;
-  white-space: nowrap;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .notification-close {
-  background: none;
+  background: rgba(0, 0, 0, 0.05);
   border: none;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-  color: #6c757d;
-  transition: all 0.2s ease;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #64748b;
+  transition: all 0.2s ease;
+  padding: 0;
 }
 
+.notification-close:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  transform: rotate(90deg);
+}
 
-
-/* Toast Body */
+/* Body Content */
 .notification-toast-body {
-  padding: 0 1rem 1rem;
-  background: transparent;
-  transition: all 0.3s ease;
-}
-
-.notification-toast.collapsed .notification-toast-body {
-  padding-bottom: 0.75rem;
+  padding: 0.5rem 1.25rem 1.25rem;
 }
 
 .notification-message {
-  font-size: 0.875rem;
-  color: #495057;
-  line-height: 1.4;
+  font-size: 0.9375rem;
+  color: #475569;
+  line-height: 1.5;
   margin: 0;
-  transition: all 0.3s ease;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
 }
 
-/* Collapsed state - single line with ellipsis */
-.notification-message.collapsed {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: normal;
-  max-width: 100%;
-}
-
-/* Expanded state - show full message */
-.notification-message.expanded {
-  display: block;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-
-/* Expand hint */
-.notification-expand-hint {
-  display: block;
-  font-size: 0.75rem;
-  color: #007bff;
-  margin-top: 0.25rem;
-  font-style: italic;
-  opacity: 0.8;
-}
-
-/* Hover effect on body to indicate clickability */
-
-
-
-
-/* Promo Code Styling */
+/* Promo Box (Expanded State) */
 .promo-code-container {
-  margin-top: 0.75rem;
-  padding-top: 0.5rem;
-  border-top: 1px dashed rgba(255, 193, 7, 0.3);
+  margin-top: 1rem;
 }
 
 .promo-code-box {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%);
-  border: 2px dashed #ffc107;
-  border-radius: 0.5rem;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px dashed #f59e0b;
+  border-radius: 0.75rem;
   padding: 0.75rem 1rem;
-  gap: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.15);
-  position: relative;
-}
-
-
-
-.promo-code-text {
-  font-family: 'Courier New', monospace;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #ff8f00;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  flex: 1;
-  user-select: all;
-  padding-right: 1rem;
-  border-right: 1px solid rgba(255, 193, 7, 0.3);
-  margin-right: 0.5rem;
-  order: 1;
-}
-
-.copy-button {
-  background: #ffc107;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: #fff;
-  min-width: 40px;
-  min-height: 40px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  flex-shrink: 0;
-  order: 2;
-}
-
-
-
-
-
-.copy-icon {
-  transition: all 0.2s ease;
-}
-
-.copy-icon.copied {
-  color: #28a745;
-  animation: copySuccess 0.3s ease;
-}
-
-@keyframes copySuccess {
-  0% {
-    transform: scale(1) rotate(0deg);
-  }
-
-  25% {
-    transform: scale(1.3) rotate(-5deg);
-  }
-
-  50% {
-    transform: scale(1.15) rotate(5deg);
-  }
-
-  75% {
-    transform: scale(1.25) rotate(-3deg);
-  }
-
-  100% {
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-/* Animations */
-@keyframes slideInNotification {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slideOutNotification {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-.notification-toast.hide {
-  animation: slideOutNotification 0.3s ease-in forwards;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .notification-toast {
-    min-width: 280px;
-    max-width: 320px;
-    margin-bottom: 0.5rem;
+    min-width: 320px;
+    max-width: 360px;
+    margin-bottom: 0.75rem;
   }
 
   .notification-toast-header {
-    padding: 0.75rem 0.75rem 0.375rem;
+    padding: 1rem 1rem 0.4rem;
   }
 
   .notification-toast-body {
-    padding: 0 0.75rem 0.75rem;
-  }
-
-  .notification-toast.collapsed .notification-toast-body {
-    padding-bottom: 0.5rem;
-  }
-
-  .notification-header-content {
-    gap: 0.5rem;
-  }
-
-  .notification-header-content.promotion-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.875rem;
+    padding: 0.4rem 1rem 1rem;
   }
 
   .notification-title {
@@ -441,280 +214,67 @@
   }
 
   .notification-message {
-    font-size: 0.8rem;
-  }
-
-  .notification-message.collapsed {
-    font-size: 0.8rem;
-    max-width: 220px;
-  }
-
-  .notification-type-badge {
-    font-size: 0.65rem;
-    padding: 0.2rem 0.4rem;
-  }
-
-  .notification-expand-hint {
-    font-size: 0.7rem;
-  }
-
-  .promo-header-left {
-    gap: 0.625rem;
-    flex-wrap: wrap;
+    font-size: 0.875rem;
   }
 
   .promo-code-header {
-    font-size: 0.9rem;
-    letter-spacing: 2px;
-    padding: 0.45rem 0.75rem;
+    font-size: 0.75rem !important;
+    padding: 0.2rem 0.5rem !important;
   }
 
   .copy-button-header {
-    padding: 0.5rem 1rem;
-    font-size: 0.8125rem;
-    gap: 0.4rem;
-    width: 100%;
-    justify-content: center;
-  }
-
-  .promo-code-box {
-    padding: 0.6rem 0.75rem;
-    gap: 0.75rem;
-  }
-
-  .promo-code-text {
-    font-size: 0.95rem;
-    letter-spacing: 1.5px;
-    padding-right: 0.75rem;
-  }
-
-  .copy-button {
-    min-width: 36px;
-    min-height: 36px;
-    padding: 0.4rem;
-  }
-}
-
-/* Small screens */
-@media (max-width: 576px) {
-  .notification-toast {
-    min-width: 260px;
-    max-width: 300px;
-    margin-left: 0.5rem;
-    margin-right: 0.5rem;
-  }
-
-  .notification-message.collapsed {
-    max-width: 200px;
-  }
-
-  .notification-display-container[class*="top-"] {
-    top: 1rem !important;
-  }
-
-  .notification-display-container[class*="bottom-"] {
-    bottom: 1rem !important;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.7rem;
   }
 }
 
 /* Position adjustments */
-.notification-display-container.position-top-start {
-  top: 1.5rem;
-  left: 1.5rem;
-}
-
-.notification-display-container.position-top-center {
-  top: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.notification-display-container.position-top-end {
-  top: 1.5rem;
+.notification-display-container {
   right: 1.5rem;
+  top: 1.5rem;
 }
 
-.notification-display-container.position-bottom-start {
-  bottom: 1.5rem;
-  left: 1.5rem;
-}
-
-.notification-display-container.position-bottom-center {
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.notification-display-container.position-bottom-end {
-  bottom: 1.5rem;
-  right: 1.5rem;
-}
+.notification-display-container.position-top-start { top: 1.5rem; left: 1.5rem; right: auto; }
+.notification-display-container.position-top-center { top: 1.5rem; left: 50%; transform: translateX(-50%); right: auto; }
+.notification-display-container.position-top-end { top: 1.5rem; right: 1.5rem; }
+.notification-display-container.position-bottom-start { bottom: 1.5rem; left: 1.5rem; right: auto; top: auto; }
+.notification-display-container.position-bottom-center { bottom: 1.5rem; left: 50%; transform: translateX(-50%); right: auto; top: auto; }
+.notification-display-container.position-bottom-end { bottom: 1.5rem; right: 1.5rem; top: auto; }
 
 /* Dark theme support */
 @media (prefers-color-scheme: dark) {
   .notification-toast {
-    background: rgba(45, 55, 72, 0.95);
-    color: #e2e8f0;
-  }
-
-  .notification-toast.room_booking {
-    background: #1f2937;
+    background: rgba(30, 41, 59, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
   }
 
   .notification-toast.promotion {
-    background: #1f2937;
+    background: rgba(45, 30, 15, 0.85);
   }
 
-  .notification-toast.payment {
-    background: #1f2937;
+  .notification-title { color: #f8fafc; }
+  .notification-message { color: #cbd5e1; }
+  .notification-time { color: #94a3b8; }
+  .notification-close { background: rgba(255, 255, 255, 0.05); color: #94a3b8; }
+  
+  .promotion-header .promo-code-header {
+    background: #451a03;
+    color: #fbbf24;
+    border-color: rgba(251, 191, 36, 0.2);
   }
-
-  .notification-toast.system {
-    background: #1f2937;
-  }
-
-  .notification-title {
-    color: #f3f4f6;
-  }
-
-  .notification-message {
-    color: #cbd5e0;
-  }
-
-  .notification-time {
-    color: #a0aec0;
-  }
-
-  .notification-close {
-    color: #a0aec0;
-  }
-
-
-
-  .notification-expand-hint {
-    color: #63b3ed;
-  }
-
-
-
-  .promo-code-box {
-    background: linear-gradient(135deg, rgba(68, 64, 60, 0.5) 0%, rgba(78, 74, 70, 0.5) 100%);
-    border-color: #ffc107;
-  }
-
-
-
-  .promo-code-text {
-    color: #ffd54f;
-  }
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-  .notification-toast {
-    border-width: 2px;
-    border-style: solid;
-  }
-
-  .notification-toast.room_booking {
-    border-color: #007bff;
-  }
-
-  .notification-toast.promotion {
-    border-color: #ffc107;
-  }
-
-  .notification-toast.payment {
-    border-color: #28a745;
-  }
-
-  .notification-toast.system {
-    border-color: #17a2b8;
-  }
-}
-
-/* Reduced motion */
-@media (prefers-reduced-motion: reduce) {
-  .notification-toast {
-    animation: none;
-  }
-
-  .notification-toast.hide {
-    animation: none;
-    opacity: 0;
-  }
-
-  .notification-close {
-    transition: none;
-  }
-}
-
-/* Focus styles for accessibility */
-.notification-close:focus {
-  outline: 2px solid #007bff;
-  outline-offset: 2px;
-}
-
-/* Hover effects */
-
-
-@media (prefers-reduced-motion: reduce) {}
-
-/* Loading state for notifications */
-.notification-toast.loading {
-  opacity: 0.8;
-}
-
-.notification-toast.loading::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #007bff, transparent);
-  animation: loadingBar 1.5s infinite;
-}
-
-@keyframes loadingBar {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-/* Notification count indicator */
-.notification-count-indicator {
-  position: absolute;
-  top: -0.5rem;
-  right: -0.5rem;
-  background: #dc3545;
-  color: white;
-  border-radius: 50%;
-  width: 1.25rem;
-  height: 1.25rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 600;
-  border: 2px solid white;
 }
 
 /* Stacking notifications */
-.notification-display-container .toast+.toast {
+.notification-display-container .toast + .toast {
   margin-top: 0.5rem;
 }
 
-/* Maximum height for notification container */
+/* Scrollbar hiding */
 .notification-display-container {
-  max-height: 80vh;
+  max-height: 90vh;
   overflow-y: auto;
   scrollbar-width: none;
-  -ms-overflow-style: none;
 }
 
 .notification-display-container::-webkit-scrollbar {

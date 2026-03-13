@@ -305,7 +305,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     const alreadyExistsInState = notificationsRef.current.some(n => n.id === newNotification.id);
 
     if (alreadyExistsInState) {
-      console.log('⚠️ Notification already in state (checked via ref), skipping:', newNotification.id);
+      console.log('Notification already in state (checked via ref), skipping:', newNotification.id);
       return;
     }
 
@@ -313,7 +313,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setNotifications(prev => {
       const exists = prev.some(n => n.id === newNotification.id);
       if (exists) {
-        console.log('⚠️ Notification already in state, skipping add:', newNotification.id);
+        console.log('Notification already in state, skipping add:', newNotification.id);
         return prev;
       }
       return [newNotification, ...prev];
@@ -331,15 +331,15 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
         setTimeout(() => {
           requestAnimationFrame(() => {
             notificationSoundService.playNotificationSound(socketNotif.type)
-              .then(() => console.log('✅ Sound played successfully'))
+              .then(() => console.log('Sound played successfully'))
               .catch((error) => {
-                console.error('❌ Error playing notification sound:', error);
+                console.error('Error playing notification sound:', error);
                 console.error('Sound service state:', notificationSoundService.getAudioState());
               });
           });
         }, 100); // Small delay to ensure audio context is ready
       }
-      console.log('✅ New REAL-TIME notification processed:', newNotification.id);
+      console.log(' New REAL-TIME notification processed:', newNotification.id);
 
       // CONFIGURATION: Dispatch event to trigger Toast notification in NotificationDisplay
       // This is required because NotificationDisplay listens to window events, not context state
@@ -357,7 +357,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       window.dispatchEvent(event);
 
     } else {
-      console.log('⏰ Old/reconnect notification received (no sound):', newNotification.id);
+      console.log('Old/reconnect notification received (no sound):', newNotification.id);
     }
   }, [connectionTimestamp]);
 
@@ -377,12 +377,12 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
 
       // If permission was granted but audio not initialized, initialize it
       if (permissionState === 'granted' && !isReady) {
-        console.log('🎵 Initializing audio on user interaction (permission already granted)');
+        console.log('Initializing audio on user interaction (permission already granted)');
         try {
           await notificationSoundService.initializeOnUserInteraction();
-          console.log('✅ Audio initialized successfully on click');
+          console.log('Audio initialized successfully on click');
         } catch (error) {
-          console.error('❌ Failed to initialize audio on click:', error);
+          console.error('Failed to initialize audio on click:', error);
         }
       }
     };
@@ -417,17 +417,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       return;
     }
 
-    console.log('✅ Setting up socket notification listeners for user:', user.id);
-    console.log('📅 Socket connection timestamp:', new Date(connectionTimestamp).toISOString());
+    console.log('Setting up socket notification listeners for user:', user.id);
+    console.log('Socket connection timestamp:', new Date(connectionTimestamp).toISOString());
 
     // Join user-specific room for notifications (backup join in case SocketContext didn't)
     const userId = user.id || (user as any)._id;
     socket.emit('join-user-room', userId);
-    console.log('🔄 Joining user room from NotificationContext:', userId);
+    console.log('Joining user room from NotificationContext:', userId);
 
     // Listen for real-time notifications
     const handleNotification = (data: any) => {
-      console.log('📬 Socket notification received:', data);
+      console.log('Socket notification received:', data);
       handleNewNotification(data);
     };
 
