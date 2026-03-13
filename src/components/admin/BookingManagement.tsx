@@ -284,7 +284,30 @@ const BookingManagement: React.FC = () => {
 
 
 
-  const getStatusBadge = (status: 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled' | 'NoShow' | 'PartiallyCancelled') => {
+  const getStatusBadge = (status: Booking['status'], isPartiallyCancelled?: boolean) => {
+    // Priority to Partial Cancel flag for label
+    if (isPartiallyCancelled || status === 'PartiallyCancelled') {
+      return (
+        <span
+          style={{
+            display: 'inline-block',
+            padding: '5px 12px',
+            borderRadius: '6px',
+            fontSize: '11.5px',
+            fontWeight: 600,
+            letterSpacing: '0.3px',
+            textTransform: 'uppercase' as const,
+            backgroundColor: '#ffedd5',
+            color: '#9a3412',
+            lineHeight: '1.4',
+            whiteSpace: 'nowrap' as const
+          }}
+        >
+          Partial Cancel
+        </span>
+      );
+    }
+
     const statusStyles: { [key: string]: { bg: string; color: string; label: string } } = {
       'Pending': { bg: '#fef3c7', color: '#92400e', label: 'Pending' },
       'Confirmed': { bg: '#d1fae5', color: '#065f46', label: 'Confirmed' },
@@ -447,12 +470,13 @@ const BookingManagement: React.FC = () => {
 
                     if (booking.rooms && booking.rooms.length > 0) {
                       const roomTypes = new Set<string>();
-                      booking.rooms.forEach(r => {
+                      const activeRooms = booking.rooms.filter(r => r.status !== 'Cancelled');
+                      activeRooms.forEach(r => {
                         const type = typeof r.roomType === 'object' && r.roomType !== null ? (r.roomType as any).name || '' : 'Room';
                         roomTypes.add(type);
                         roomNumbersDisplay.push(r.roomNumberInfo ? r.roomNumberInfo.number : r.roomNumber);
                       });
-                      roomLabel = Array.from(roomTypes).join(', ') + ` (${booking.rooms.length})`;
+                      roomLabel = Array.from(roomTypes).join(', ') + (activeRooms.length > 0 ? ` (${activeRooms.length})` : '');
                     } else if ((booking as any).room) {
                       const room = typeof (booking as any).room === 'object' && (booking as any).room !== null ? (booking as any).room : null;
                       roomLabel = room ? `${room.name || ''}`.trim() : '-';
@@ -467,7 +491,7 @@ const BookingManagement: React.FC = () => {
 
                     // 1. Confirm: Only for Pending
                     const isCheckInDateReached = isSameDay(today, checkInDate) || isAfter(today, checkInDate);
-                    const canCheckIn = booking.status === 'Confirmed' && isCheckInDateReached;
+                    const canCheckIn = (booking.status === 'Confirmed' || booking.status === 'PartiallyCancelled') && isCheckInDateReached;
 
                     const isCheckOutDateReached = isSameDay(today, checkOutDate) || isAfter(today, checkOutDate);
                     const canCheckOut = booking.status === 'CheckedIn' && isCheckOutDateReached;
@@ -582,7 +606,7 @@ const BookingManagement: React.FC = () => {
                             }
                           })()}
                         </td>
-                        <td>{getStatusBadge(booking.status)}</td>
+                        <td>{getStatusBadge(booking.status, booking.isPartiallyCancelled)}</td>
                         <td className="text-end">
                           <div className="admin-action-buttons justify-content-end">
                             {/* 👁 View Detail - Always Show */}
@@ -595,8 +619,8 @@ const BookingManagement: React.FC = () => {
                               <Eye size={16} />
                             </button>
 
-                            {/* ✅ Confirm Button: Show only for Pending */}
-                            {booking.status === 'Pending' && (
+                            {/* ✅ Confirm Button: Show if Pending or for older PartiallyCancelled records */}
+                            {(booking.status === 'Pending' || (booking.status === 'PartiallyCancelled' && !booking.isPartiallyCancelled)) && (
                               <button
                                 className="admin-action-btn confirm"
                                 onClick={() => handleStatusUpdate(booking.id || booking._id, 'Confirmed')}
@@ -672,7 +696,7 @@ const BookingManagement: React.FC = () => {
                               </button>
                             )}
 
-                            {/* ⛔ Cancel Button: Show only for Pending or Confirmed */}
+                            {/* ⛔ Cancel Button: Show for Pending or Confirmed */}
                             {['Pending', 'Confirmed'].includes(booking.status) && (
                               <button
                                 className="admin-action-btn delete"

@@ -5,8 +5,8 @@
     --booking-gold-light: #d4b572;
     --booking-gold-dark: #ab8838;
     --booking-brown: #2c1810;
-    --booking-cream: #fdfaf4;
-    --booking-cream-dark: #f5f0e6;
+    --booking-cream: #ffffff;
+    --booking-cream-dark: #fcfcfc;
     --booking-text-main: #1a233b;
     --booking-text-muted: #6b7280;
     --booking-border: #e5e7eb;
@@ -864,11 +864,17 @@
 
     .booking-date-bar {
         border-radius: 12px;
+        margin-left: 0;
+        margin-right: 0;
+        width: 100%;
     }
 
     .booking-rooms-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-template-columns: 1fr;
         gap: 24px;
+        max-width: 500px;
+        margin-left: auto;
+        margin-right: auto;
     }
 }
 
@@ -889,9 +895,11 @@
     /* Date Bar Mobile Row Layout */
     .booking-date-bar {
         flex-direction: row;
-        border-radius: 16px;
-        padding: 8px 0;
+        border-radius: 12px;
+        padding: 4px 0;
         min-height: 80px;
+        margin-bottom: 20px;
+        width: 100%;
     }
 
     .booking-date-field {
@@ -909,8 +917,9 @@
 
     .booking-date-input {
         text-align: center;
-        font-size: 14px;
+        font-size: 13px;
         width: 100%;
+        font-weight: 800;
     }
 
     .date-bar-divider {
@@ -924,9 +933,10 @@
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
-        width: 40px;
-        height: 40px;
-        font-size: 10px;
+        width: 36px;
+        height: 36px;
+        font-size: 9px;
+        border-width: 1.5px;
     }
 
     /* Room Cards Mobile */
@@ -972,6 +982,15 @@
 
     .summary-total-amount {
         font-size: 24px;
+    }
+
+    .booking-summary-hotel {
+        font-size: 9px;
+        letter-spacing: 2px;
+    }
+
+    .booking-summary-title {
+        font-size: 18px;
     }
 
     /* Payment Methods Card Mobile */
@@ -1030,7 +1049,19 @@
     .btn-pay-now {
         width: 100%;
         min-width: unset;
-        padding: 18px;
-        font-size: 13px;
+        padding: 16px;
+        font-size: 12px;
+    }
+
+    .booking-date-bar {
+        min-height: 80px;
+    }
+
+    .booking-date-input {
+        font-size: 12px;
+    }
+
+    .booking-date-label {
+        font-size: 8px;
     }
 }

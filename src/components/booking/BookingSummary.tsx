@@ -40,7 +40,8 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
         onUpdateRoomQty(item.room, newQty);
     };
 
-    const taxRate = gstPercentage / 100;
+    const taxAmount = subtotal * (gstPercentage / 100);
+    const totalAmount = subtotal + taxAmount;
 
     return (
         <div className="booking-summary-card">
@@ -113,23 +114,21 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                             <span style={{ fontSize: '14px', color: 'var(--booking-text-muted)' }}>Tax ({gstPercentage}%) :</span>
                             <span style={{ fontSize: '15px', color: 'var(--booking-navy)', fontWeight: 600 }}>
-                                ₹{(subtotal * taxRate).toLocaleString()}
+                                ₹{taxAmount.toLocaleString()}
                             </span>
                         </div>
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '16px', borderTop: '1px solid var(--booking-border)' }}>
                             <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--booking-navy)' }}>Total</span>
                             <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--booking-navy)' }}>
-                                ₹{(subtotal * (1 + taxRate)).toLocaleString()}
+                                ₹{totalAmount.toLocaleString()}
                             </span>
                         </div>
-                    </div>
+                    </div >
                 )}
-            </div>
-
+            </div >
             {ready ? (
                 <div style={{ padding: '24px', borderTop: '1px solid var(--booking-border)', display: 'flex', flexDirection: 'column', gap: '24px', background: 'var(--booking-card-bg, white)' }}>
-
                     <button
                         className="btn-booking-continue"
                         onClick={onContinue}
@@ -148,7 +147,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                     </button>
                 </div>
             )}
-        </div>
+        </div >
     );
 };
 

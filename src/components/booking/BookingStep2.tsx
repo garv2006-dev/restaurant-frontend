@@ -16,7 +16,7 @@ const MiniSummary: React.FC<{
 
     // Get the name of the first selected room for the header title (consistency)
     const primaryRoomName = selectedRooms.length > 0 ? selectedRooms[0].room.name : 'Booking Summary';
-    const taxRate = gstPercentage / 100;
+    const taxAmount = subtotal * (gstPercentage / 100);
 
     return (
         <div className="booking-summary-card">
@@ -75,7 +75,7 @@ const MiniSummary: React.FC<{
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                         <span style={{ fontSize: '13px', color: 'var(--booking-text-muted)' }}>Tax ({gstPercentage}%) :</span>
                         <span style={{ fontSize: '14px', color: 'var(--booking-navy)', fontWeight: 600 }}>
-                            ₹{( (subtotal - (appliedDiscount?.discountAmount || 0)) * taxRate ).toLocaleString()}
+                            ₹{taxAmount.toLocaleString()}
                         </span>
                     </div>
 

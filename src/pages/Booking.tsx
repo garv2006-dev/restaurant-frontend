@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { bookingsAPI, roomsAPI, paymentsAPI, publicSettingsAPI } from '../services/api';
+import { bookingsAPI, roomsAPI, paymentsAPI, adminAPI } from '../services/api';
 import type { Room } from '../types';
 import { toast } from 'react-toastify';
+import { useSocket } from '../contexts/SocketContext';
 import '../styles/booking-flow.css';
 
 
@@ -57,6 +58,7 @@ const Booking: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [gstPercentage, setGstPercentage] = useState(18);
+  const { socket } = useSocket();
 
   const [booking, setBooking] = useState<BookingState>(() => ({
     ...INITIAL_STATE,
@@ -70,7 +72,6 @@ const Booking: React.FC = () => {
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [stepError, setStepError] = useState<string | null>(null);
 
-  // Derived totals
   const subtotal = booking.selectedRooms.reduce((sum, item) => {
     return sum + (item.room.price.basePrice * booking.nights * item.count);
   }, 0);
@@ -78,46 +79,59 @@ const Booking: React.FC = () => {
   // Calculate discount and net
   const discountAmount = appliedDiscount ? appliedDiscount.discountAmount : 0;
   const netAmount = Math.max(0, subtotal - discountAmount);
-  
+
   // Calculate Tax (Dynamic) and Total
   const taxAmount = netAmount * (gstPercentage / 100);
   const finalAmount = netAmount + taxAmount;
 
   // ── Fetch rooms & Settings ───────────────────────────────────────────────────
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await publicSettingsAPI.getSettings();
-        if (res.success && res.data) {
-          setGstPercentage(res.data.gstPercentage);
-        }
-      } catch (err) {
-        console.error('Failed to fetch tax settings:', err);
-      }
-    };
-    fetchSettings();
-  }, []);
-
-  useEffect(() => {
-    const fetchRooms = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const response = await roomsAPI.getAllRooms({ status: 'Available' });
-        const list: Room[] = response?.success && response?.data ? response.data.rooms : [];
+        // Load rooms
+        const roomsRes = await roomsAPI.getAllRooms({ status: 'Available' });
+        const list: Room[] = roomsRes?.success && roomsRes?.data ? roomsRes.data.rooms : [];
         setRooms(Array.isArray(list) ? list : []);
+
+        // Load tax settings
+        try {
+          const settingsRes = await adminAPI.getPublicSettings();
+          if (settingsRes.success && settingsRes.data?.gstPercentage !== undefined) {
+            setGstPercentage(settingsRes.data.gstPercentage);
+          } else {
+            setGstPercentage(18); // fallback
+          }
+        } catch (settingsErr) {
+          console.warn('Failed to load dynamic tax settings, defaulting to 18%', settingsErr);
+          setGstPercentage(18);
+        }
+
         if (preselectedRoomId) {
           const found = list.find((r: Room) => (r.id || r._id) === preselectedRoomId);
           if (found) setBooking(prev => ({ ...prev, selectedRooms: [{ room: found, count: 1 }] }));
         }
       } catch {
-        toast.error('Failed to load rooms. Please try again.');
+        toast.error('Failed to load data. Please try again.');
         setRooms([]);
       } finally {
         setLoading(false);
       }
     };
-    fetchRooms();
+    loadData();
   }, [preselectedRoomId]);
+
+  // ── Real-time tax updates ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!socket) return;
+    const handleSettingsChange = (newSettings?: any) => {
+      if (newSettings && newSettings.gstPercentage !== undefined) {
+        setGstPercentage(newSettings.gstPercentage);
+      }
+    };
+    socket.on('settings-change', handleSettingsChange);
+    return () => { socket.off('settings-change', handleSettingsChange); };
+  }, [socket]);
 
   // ── Auto-fill guest details when user changes ─────────────────────────────
   useEffect(() => {
@@ -298,7 +312,7 @@ const Booking: React.FC = () => {
         },
         paymentMethod: booking.paymentMethod,
         paymentDetails: { method: booking.paymentMethod, ...paymentData },
-        ...(appliedDiscount && { discountCode: appliedDiscount.code }),
+        ...(appliedDiscount && { discountCode: (appliedDiscount.discount?.code || appliedDiscount.code) }),
       };
 
       const res = await bookingsAPI.createBooking(payload);
@@ -357,8 +371,8 @@ const Booking: React.FC = () => {
             subtotal={subtotal}
             finalAmount={finalAmount}
             appliedDiscount={appliedDiscount}
-            processing={processing}
             gstPercentage={gstPercentage}
+            processing={processing}
             onPaymentMethodChange={(m: string) => setBooking(prev => ({ ...prev, paymentMethod: m }))}
             onDiscountApplied={setAppliedDiscount}
             onBack={() => setStep(2)}
