@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import type { BookingState } from '../../pages/Booking';
 import { bookingsAPI } from '../../services/api';
 import { ArrowLeft, Lock, CreditCard, Wallet, Tag, CheckCircle, AlertTriangle } from 'lucide-react';
