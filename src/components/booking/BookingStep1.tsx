@@ -4,7 +4,7 @@ import type { BookingState } from '../../pages/Booking';
 import { roomsAPI } from '../../services/api';
 import {
     Wifi, Wind, Tv, Coffee, Car, Star, Users,
-    Calendar, Check, ShieldAlert
+    Calendar, Check, ShieldAlert, Bed, Maximize, Layers
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BookingSummary from './BookingSummary';
@@ -126,6 +126,9 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, booking, isSelected, onSelect
 
                 <div className="room-amenities-row">
                     <span className="amenity-chip"><Users size={13} /> {room.capacity.adults}A{room.capacity.children > 0 ? ` ${room.capacity.children}C` : ''}</span>
+                    <span className="amenity-chip"><Bed size={13} /> {room.bedType}</span>
+                    <span className="amenity-chip"><Maximize size={13} /> {room.area} sq.ft</span>
+                    <span className="amenity-chip"><Layers size={13} /> Floor {room.floor}</span>
                     {features.map(([key]) => (
                         <span key={key} className="amenity-chip">
                             {FEATURE_ICONS[key] || <Star size={13} />}

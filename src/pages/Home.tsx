@@ -254,17 +254,24 @@ const Home: React.FC = () => {
                     <Card.Body className="d-flex flex-column">
                       <div className="d-flex justify-content-between align-items-start mb-2 flex-wrap">
                         <Card.Title className="mb-1 flex-grow-1 pe-2">{room.name}</Card.Title>
-                        <div className="text-end">
-                          <div className="d-flex align-items-center justify-content-end mb-1">
-                            <div className="rating-stars me-1">
-                              {renderStars(room.averageRating)}
+                        {room.totalReviews > 0 && (
+                          <div className="text-end">
+                            <div className="d-flex align-items-center justify-content-end mb-1">
+                              <div className="rating-stars me-1">
+                                {renderStars(room.averageRating)}
+                              </div>
+                              <span className="small text-muted">
+                                {room.averageRating} ({room.totalReviews})
+                              </span>
                             </div>
-                            <span className="small text-muted">
-                              {room.averageRating} ({room.totalReviews})
-                            </span>
+                            <div className="small text-muted">{room.type}</div>
                           </div>
-                          <div className="small text-muted">{room.type}</div>
-                        </div>
+                        )}
+                        {room.totalReviews === 0 && (
+                          <div className="text-end">
+                            <div className="small text-muted">{room.type}</div>
+                          </div>
+                        )}
                       </div>
 
                       <Card.Text className="text-muted flex-grow-1 mb-3">

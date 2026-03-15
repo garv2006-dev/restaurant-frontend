@@ -11,7 +11,8 @@ import {
   Dropdown,
   ButtonGroup
 } from 'react-bootstrap';
-import { Plus, Edit2, Trash2, RefreshCw, ExternalLink, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, RefreshCw, ExternalLink, Upload, BedDouble } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import ImageUploadModal from './ImageUploadModal';
@@ -22,6 +23,7 @@ import { useSocket } from '../../contexts/SocketContext';
 interface Room {
   _id: string;
   name: string;
+  slug: string;
   type: 'Standard' | 'Deluxe' | 'Suite';
   description: string;
   capacity: {
@@ -64,12 +66,14 @@ const RoomManagement: React.FC = () => {
   const [success, setSuccess] = useState<string>('');
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [roomForImageUpload, setRoomForImageUpload] = useState<Room | null>(null);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   const [formData, setFormData] = useState<{
     name: string;
+    slug: string;
     type: 'Standard' | 'Deluxe' | 'Suite';
     description: string;
-    capacity: { adults: number; children: number };
+    capacity: { adults: number | string; children: number | string };
     price: { basePrice: number | string };
     features: {
       airConditioning: boolean;
@@ -81,11 +85,12 @@ const RoomManagement: React.FC = () => {
     status: 'Available' | 'Occupied' | 'Maintenance' | 'Out of Order';
     isActive: boolean;
     bedType: 'Single' | 'Double' | 'Queen' | 'King' | 'Twin';
-    area: number;
-    floor: number;
-    totalRooms: number;
+    area: number | string;
+    floor: number | string;
+    totalRooms: number | string;
   }>({
     name: '',
+    slug: '',
     type: 'Standard',
     description: '',
     capacity: { adults: 2, children: 1 },
@@ -132,24 +137,32 @@ const RoomManagement: React.FC = () => {
         if (!value.trim()) error = 'Room Name is required';
         else if (value.trim().length < 3) error = 'Name must be at least 3 characters';
         break;
+      case 'slug':
+        if (!value.trim()) error = 'Slug is required';
+        else if (!/^[a-z0-9-]+$/.test(value)) error = 'Slug must only contain lowercase letters, numbers, and hyphens';
+        break;
       case 'basePrice':
         if (value === '' || value === null || value === undefined) error = 'Base Price is required';
         else if (Number(value) <= 0) error = 'Base Price must be greater than 0';
         break;
       case 'area':
-        if (!value || Number(value) <= 0) error = 'Area must be greater than 0';
+        if (value === '' || value === null || value === undefined) error = 'Area is required';
+        else if (Number(value) <= 0) error = 'Area must be greater than 0';
         break;
       case 'floor':
-        if (!value || Number(value) < 0) error = 'Floor must be a valid number';
+        if (value === '' || value === null || value === undefined) error = 'Floor is required';
+        else if (Number(value) < 0) error = 'Floor must be a valid number';
         break;
       case 'totalRooms':
-        if (!value || Number(value) < 1) error = 'Total Rooms must be at least 1';
+        if (value === '' || value === null || value === undefined) error = 'Total Rooms is required';
+        else if (Number(value) < 1) error = 'Total Rooms must be at least 1';
         break;
       case 'adults':
-        if (!value || Number(value) < 1) error = 'At least 1 adult is required';
+        if (value === '' || value === null || value === undefined) error = 'Adults is required';
+        else if (Number(value) < 1) error = 'At least 1 adult is required';
         break;
       case 'description':
-        if (!value.trim()) error = 'Description is required';
+        if (!value || !value.trim()) error = 'Description is required';
         break;
     }
     return error;
@@ -165,6 +178,8 @@ const RoomManagement: React.FC = () => {
     setTouched(prev => ({ ...prev, [name]: false }));
     setFormErrors(prev => ({ ...prev, [name]: '' }));
   };
+
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
 
   // Fetch Rooms Query
   const { data: rooms = [], isLoading, isError, error: queryError, refetch } = useQuery({
@@ -192,7 +207,8 @@ const RoomManagement: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      setSuccess(editingRoom ? 'Room updated successfully!' : 'Room added successfully!');
+      setSuccess('');
+      toast.success(editingRoom ? 'Room updated successfully!' : 'Room added successfully!');
       handleCloseModal();
       setSelectedImages([]);
       setImagePreview([]);
@@ -201,9 +217,9 @@ const RoomManagement: React.FC = () => {
       console.error('Error saving room:', err);
       let errorMessage = 'Failed to save room';
       if (err.response) {
-        if (err.response.status === 400) errorMessage = 'Invalid data. Please check your inputs.';
+        if (err.response.data?.message) errorMessage = err.response.data.message;
+        else if (err.response.status === 400) errorMessage = 'Invalid data. Please check your inputs.';
         else if (err.response.status === 413) errorMessage = 'File size is too large. Maximum size is 5MB per image.';
-        else if (err.response.data?.message) errorMessage = err.response.data.message;
       }
       setError(errorMessage);
     }
@@ -214,10 +230,11 @@ const RoomManagement: React.FC = () => {
     mutationFn: async (roomId: string) => {
       await api.delete(`/rooms/${roomId}`);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      setSuccess('Room deleted successfully!');
-      setSelectedRooms(prev => prev.filter(id => !deleteRoomMutation.variables));
+      setSuccess('');
+      toast.success('Room deleted successfully!');
+      setSelectedRooms(prev => prev.filter(id => id !== variables));
     },
     onError: (err: any) => {
       console.error('Error deleting room:', err);
@@ -228,6 +245,7 @@ const RoomManagement: React.FC = () => {
         errorMessage = err.response.data.message;
       }
       setError(errorMessage);
+      toast.error(errorMessage);
     }
   });
 
@@ -251,11 +269,14 @@ const RoomManagement: React.FC = () => {
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      setSuccess(`${count} rooms deleted successfully!`);
+      setSuccess('');
+      toast.success(`${count} rooms deleted successfully!`);
       setSelectedRooms([]);
     },
     onError: (err: any) => {
-      setError(err.message || 'Failed to delete some rooms');
+      const errorMessage = err.message || 'Failed to delete some rooms';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   });
 
@@ -266,11 +287,14 @@ const RoomManagement: React.FC = () => {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      setSuccess(`${variables.ids.length} rooms status updated to ${variables.status}!`);
+      setSuccess('');
+      toast.success(`${variables.ids.length} rooms status updated to ${variables.status}!`);
       setSelectedRooms([]);
     },
     onError: () => {
-      setError('Failed to update some rooms status');
+      const errorMessage = 'Failed to update some rooms status';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   });
 
@@ -292,11 +316,11 @@ const RoomManagement: React.FC = () => {
     setShowImageUploadModal(false);
     setRoomForImageUpload(null);
   };
-
   const handleEditRoom = (room: Room) => {
     setEditingRoom(room);
     setFormData({
       name: room.name,
+      slug: room.slug || '',
       type: room.type,
       description: room.description,
       capacity: room.capacity,
@@ -313,6 +337,7 @@ const RoomManagement: React.FC = () => {
     setImagePreview([]);
     setFormErrors({});
     setTouched({});
+    setIsSlugManuallyEdited(true); // Don't auto-generate for existing rooms
     setShowModal(true);
   };
 
@@ -322,6 +347,7 @@ const RoomManagement: React.FC = () => {
     setEditingRoom(null);
     setFormData({
       name: '',
+      slug: '',
       type: 'Standard',
       description: '',
       capacity: { adults: 2, children: 1 },
@@ -344,6 +370,7 @@ const RoomManagement: React.FC = () => {
     setImagePreview([]);
     setFormErrors({});
     setTouched({});
+    setIsSlugManuallyEdited(false);
     setShowModal(true);
   };
 
@@ -372,61 +399,50 @@ const RoomManagement: React.FC = () => {
     const newTouched: Record<string, boolean> = {};
     let isValid = true;
 
-    // Validate top-level fields
-    const fieldsToValidate = ['name', 'description'];
-    fieldsToValidate.forEach(field => {
-      newTouched[field] = true;
-      const error = validateField(field, formData[field as keyof typeof formData]);
+    // List of all fields to validate including nested ones
+    const validationMap = [
+      { key: 'name', value: formData.name },
+      { key: 'slug', value: formData.slug },
+      { key: 'description', value: formData.description },
+      { key: 'basePrice', value: formData.price.basePrice },
+      { key: 'area', value: formData.area },
+      { key: 'floor', value: formData.floor },
+      { key: 'totalRooms', value: formData.totalRooms },
+      { key: 'adults', value: formData.capacity.adults }
+    ];
+
+    validationMap.forEach(({ key, value }) => {
+      newTouched[key] = true;
+      const error = validateField(key, value);
       if (error) {
-        errors[field] = error;
+        errors[key] = error;
         isValid = false;
       }
     });
 
-    // Validate nested fields manually since validateField is simple
-    newTouched['basePrice'] = true;
-    const priceError = validateField('basePrice', formData.price.basePrice);
-    if (priceError) {
-      errors['basePrice'] = priceError;
-      isValid = false;
-    }
-
-    newTouched['area'] = true;
-    if (!formData.area || formData.area <= 0) {
-      errors['area'] = 'Area must be greater than 0';
-      isValid = false;
-    }
-
-    newTouched['floor'] = true;
-    if (!formData.floor && formData.floor !== 0) {
-      errors['floor'] = 'Floor is required';
-      isValid = false;
-    }
-
-    newTouched['totalRooms'] = true;
-    if (!formData.totalRooms || formData.totalRooms < 1) {
-      errors['totalRooms'] = 'Total Rooms must be at least 1';
-      isValid = false;
-    }
-
-    newTouched['adults'] = true;
-    if (!formData.capacity.adults || formData.capacity.adults < 1) {
-      errors['adults'] = 'At least 1 adult is required';
-      isValid = false;
+    // Image validation (only for new rooms)
+    let imageError = false;
+    if (!editingRoom && selectedImages.length === 0) {
+      setError('At least one room image is required');
+      imageError = true;
     }
 
     setFormErrors(errors);
     setTouched(newTouched);
 
-    if (!isValid) {
+    if (!isValid || imageError) {
       return;
     }
 
+    const finalSlug = formData.slug.replace(/^-|-$/g, '');
+    const dataToSave = { ...formData, slug: finalSlug };
+
     if (editingRoom) {
-      saveRoomMutation.mutate({ ...formData });
+      saveRoomMutation.mutate(dataToSave);
     } else {
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
+      formDataToSend.append('slug', finalSlug);
       formDataToSend.append('type', formData.type);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('bedType', formData.bedType);
@@ -596,18 +612,21 @@ const RoomManagement: React.FC = () => {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                     />
                   </th>
-                  <th style={{ width: '30%' }}>Room Name</th>
-                  <th style={{ width: '12%' }}>Type</th>
-                  <th style={{ width: '15%' }}>Capacity</th>
-                  <th style={{ width: '12%' }}>Price</th>
-                  <th style={{ width: '12%' }}>Status</th>
-                  <th className="text-end" style={{ width: '14%' }}>Actions</th>
+                  <th style={{ width: '30%' }}>Room</th>
+                  <th style={{ width: '10%' }}>Type</th>
+                  <th style={{ width: '10%' }}>Bed</th>
+                  <th style={{ width: '10%' }}>Area</th>
+                  <th style={{ width: '8%' }}>Floor</th>
+                  <th style={{ width: '10%' }}>Capacity</th>
+                  <th style={{ width: '10%' }}>Price</th>
+                  <th style={{ width: '10%' }}>Status</th>
+                  <th className="text-end" style={{ width: '10%' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {rooms.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center py-5">
+                    <td colSpan={10} className="text-center py-5">
                       <div className="text-muted mb-3">No rooms found in the system.</div>
                       <button className="admin-btn admin-btn-primary" onClick={handleAddRoom}>
                         <Plus size={16} className="me-1" /> Add Your First Room
@@ -625,16 +644,58 @@ const RoomManagement: React.FC = () => {
                         />
                       </td>
                       <td>
-                        <div className="fw-semibold text-dark">{room.name}</div>
-                        <div className="small text-muted text-truncate" style={{ maxWidth: '350px' }}>{room.description}</div>
+                        <div className="d-flex align-items-center">
+                          <div
+                            className="me-3 rounded border overflow-hidden bg-light d-flex align-items-center justify-content-center"
+                            style={{ width: '45px', height: '45px', minWidth: '45px' }}
+                          >
+                            {(() => {
+                              const rawUrl = room.images?.find((img: any) => img.isPrimary)?.url || room.images?.[0]?.url;
+                              let imageUrl = null;
+                              
+                              if (rawUrl && !imgErrors[room._id]) {
+                                if (rawUrl.startsWith('/') && !rawUrl.startsWith('//')) {
+                                  const baseUrl = (process.env.REACT_APP_API_URL || 'http://localhost:5000/api').replace('/api', '');
+                                  imageUrl = `${baseUrl}${rawUrl}`;
+                                } else {
+                                  imageUrl = rawUrl;
+                                }
+                              }
+
+                              return imageUrl ? (
+                                <img
+                                  src={imageUrl}
+                                  alt={room.name}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={() => setImgErrors(prev => ({ ...prev, [room._id]: true }))}
+                                />
+                              ) : (
+                                <BedDouble size={20} className="text-muted opacity-50" />
+                              );
+                            })()}
+                          </div>
+                          <div>
+                            <div className="fw-semibold text-dark">{room.name}</div>
+                            <div className="small text-muted text-truncate" style={{ maxWidth: '250px' }}>{room.description}</div>
+                          </div>
+                        </div>
                       </td>
                       <td>
                         <span className="badge bg-light text-dark border fw-normal">{room.type}</span>
                       </td>
                       <td>
+                        <span className="small text-dark fw-medium">{room.bedType}</span>
+                      </td>
+                      <td>
+                        <span className="small text-muted">{room.area} sqft</span>
+                      </td>
+                      <td>
+                        <span className="badge bg-light text-dark border fw-normal">F{room.floor}</span>
+                      </td>
+                      <td>
                         <div className="small text-dark">
-                          <span className="fw-medium">{room.capacity.adults}</span> Adults
-                          {room.capacity.children > 0 && <span>, <span className="fw-medium">{room.capacity.children}</span> Kids</span>}
+                          <span className="fw-medium">{room.capacity.adults}</span>A
+                          {room.capacity.children > 0 && <span>, <span className="fw-medium">{room.capacity.children}</span>C</span>}
                         </div>
                       </td>
                       <td>
@@ -685,7 +746,7 @@ const RoomManagement: React.FC = () => {
         <Modal.Header closeButton>
           <Modal.Title>{editingRoom ? 'Edit Room' : 'Add New Room'}</Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit} noValidate>
           <Modal.Body>
             {error && <Alert variant="danger">{error}</Alert>}
             <Row>
@@ -697,16 +758,54 @@ const RoomManagement: React.FC = () => {
                     value={formData.name}
                     onChange={(e) => {
                       const val = e.target.value;
-                      setFormData({ ...formData, name: val });
+                      const nextData = { ...formData, name: val };
+
+                      // Auto-sync slug if not manually edited
+                      if (!isSlugManuallyEdited) {
+                        const generatedSlug = val.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+                        nextData.slug = generatedSlug;
+                      }
+
+                      setFormData(nextData);
                       if (touched.name) setFormErrors(prev => ({ ...prev, name: validateField('name', val) }));
                     }}
-                    onBlur={() => handleBlur('name', formData.name)}
+                    onBlur={() => {
+                      const cleanedSlug = formData.slug.replace(/^-|-$/g, '');
+                      setFormData(prev => ({ ...prev, slug: cleanedSlug }));
+                      handleBlur('name', formData.name);
+                    }}
                     onFocus={() => handleFocus('name')}
                     isInvalid={touched.name && !!formErrors.name}
-                    required
                     placeholder="E.g., Deluxe Suite"
                   />
                   <Form.Control.Feedback type="invalid">{formErrors.name}</Form.Control.Feedback>
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Slug *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.slug}
+                    onChange={(e) => {
+                      const val = e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+                      setFormData({ ...formData, slug: val });
+                      setIsSlugManuallyEdited(true);
+                      if (touched.slug) setFormErrors(prev => ({ ...prev, slug: validateField('slug', val) }));
+                    }}
+                    onBlur={() => {
+                      const cleaned = formData.slug.replace(/^-|-$/g, '');
+                      setFormData(prev => ({ ...prev, slug: cleaned }));
+                      handleBlur('slug', cleaned);
+                    }}
+                    onFocus={() => handleFocus('slug')}
+                    isInvalid={touched.slug && !!formErrors.slug}
+                    placeholder="e.g. deluxe-suite"
+                  />
+                  <Form.Control.Feedback type="invalid">{formErrors.slug}</Form.Control.Feedback>
+                  <Form.Text className="text-muted">
+                    Custom URL friendly identifier. Usually auto-generated from name.
+                  </Form.Text>
                 </Form.Group>
               </Col>
             </Row>
@@ -718,7 +817,6 @@ const RoomManagement: React.FC = () => {
                   <Form.Select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                    required
                   >
                     <option value="Standard">Standard</option>
                     <option value="Deluxe">Deluxe</option>
@@ -732,7 +830,6 @@ const RoomManagement: React.FC = () => {
                   <Form.Select
                     value={formData.bedType}
                     onChange={(e) => setFormData({ ...formData, bedType: e.target.value as any })}
-                    required
                   >
                     <option value="Single">Single</option>
                     <option value="Double">Double</option>
@@ -750,9 +847,10 @@ const RoomManagement: React.FC = () => {
                   <Form.Label>Base Price (₹) *</Form.Label>
                   <Form.Control
                     type="number"
-                    min="0"
+                    min="1"
                     step="0.01"
                     value={formData.price.basePrice}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                     onChange={(e) => {
                       const val = e.target.value === '' ? '' : parseFloat(e.target.value);
                       setFormData({
@@ -765,7 +863,6 @@ const RoomManagement: React.FC = () => {
                     onFocus={() => handleFocus('basePrice')}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.basePrice && !!formErrors.basePrice}
-                    required
                   />
                   <Form.Control.Feedback type="invalid">{formErrors.basePrice}</Form.Control.Feedback>
                 </Form.Group>
@@ -775,18 +872,18 @@ const RoomManagement: React.FC = () => {
                   <Form.Label>Floor *</Form.Label>
                   <Form.Control
                     type="number"
-                    min="1"
+                    min="0"
                     value={formData.floor}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value) || 0;
-                      setFormData({ ...formData, floor: val });
+                      const val = e.target.value;
+                      setFormData({ ...formData, floor: val === '' ? '' : parseInt(val) });
                       if (touched.floor) setFormErrors(prev => ({ ...prev, floor: validateField('floor', val) }));
                     }}
                     onBlur={() => handleBlur('floor', formData.floor)}
                     onFocus={() => handleFocus('floor')}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.floor && !!formErrors.floor}
-                    required
                   />
                   <Form.Control.Feedback type="invalid">{formErrors.floor}</Form.Control.Feedback>
                 </Form.Group>
@@ -799,18 +896,18 @@ const RoomManagement: React.FC = () => {
                   <Form.Label>Area (sq.ft) *</Form.Label>
                   <Form.Control
                     type="number"
-                    min="0"
+                    min="1"
                     value={formData.area}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                     onChange={(e) => {
-                      const val = parseFloat(e.target.value) || 0;
-                      setFormData({ ...formData, area: val });
+                      const val = e.target.value;
+                      setFormData({ ...formData, area: val === '' ? '' : parseFloat(val) });
                       if (touched.area) setFormErrors(prev => ({ ...prev, area: validateField('area', val) }));
                     }}
                     onBlur={() => handleBlur('area', formData.area)}
                     onFocus={() => handleFocus('area')}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.area && !!formErrors.area}
-                    required
                   />
                   <Form.Control.Feedback type="invalid">{formErrors.area}</Form.Control.Feedback>
                 </Form.Group>
@@ -822,16 +919,16 @@ const RoomManagement: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.totalRooms}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value) || 1;
-                      setFormData({ ...formData, totalRooms: val });
+                      const val = e.target.value;
+                      setFormData({ ...formData, totalRooms: val === '' ? '' : parseInt(val) });
                       if (touched.totalRooms) setFormErrors(prev => ({ ...prev, totalRooms: validateField('totalRooms', val) }));
                     }}
                     onBlur={() => handleBlur('totalRooms', formData.totalRooms)}
                     onFocus={() => handleFocus('totalRooms')}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.totalRooms && !!formErrors.totalRooms}
-                    required
                   />
                   <Form.Control.Feedback type="invalid">{formErrors.totalRooms}</Form.Control.Feedback>
                   <Form.Text className="text-muted">
@@ -849,11 +946,12 @@ const RoomManagement: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.capacity.adults}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                     onChange={(e) => {
-                      const val = parseInt(e.target.value) || 1;
+                      const val = e.target.value;
                       setFormData({
                         ...formData,
-                        capacity: { ...formData.capacity, adults: val }
+                        capacity: { ...formData.capacity, adults: val === '' ? '' : parseInt(val) }
                       });
                       if (touched.adults) setFormErrors(prev => ({ ...prev, adults: validateField('adults', val) }));
                     }}
@@ -861,7 +959,6 @@ const RoomManagement: React.FC = () => {
                     onFocus={() => handleFocus('adults')}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     isInvalid={touched.adults && !!formErrors.adults}
-                    required
                   />
                   <Form.Control.Feedback type="invalid">{formErrors.adults}</Form.Control.Feedback>
                 </Form.Group>
@@ -873,10 +970,14 @@ const RoomManagement: React.FC = () => {
                     type="number"
                     min="0"
                     value={formData.capacity.children}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      capacity: { ...formData.capacity, children: parseInt(e.target.value) || 0 }
-                    })}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({
+                        ...formData,
+                        capacity: { ...formData.capacity, children: val === '' ? '' : parseInt(val) }
+                      })
+                    }}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                   />
                 </Form.Group>
@@ -897,7 +998,6 @@ const RoomManagement: React.FC = () => {
                 onBlur={() => handleBlur('description', formData.description)}
                 onFocus={() => handleFocus('description')}
                 isInvalid={touched.description && !!formErrors.description}
-                required
                 placeholder="Describe the room's features and amenities..."
               />
               <Form.Control.Feedback type="invalid">{formErrors.description}</Form.Control.Feedback>

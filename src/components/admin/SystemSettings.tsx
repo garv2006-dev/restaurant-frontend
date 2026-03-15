@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Spinner } from 'react-bootstrap';
-import { Save, Settings, CheckCircle, XCircle } from 'lucide-react';
+import { Save, Settings, CheckCircle } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { useSocket } from '../../contexts/SocketContext';
+import { toast } from 'react-toastify';
 
 
 const standardGstRates = [0, 5, 12, 18, 28];
@@ -19,8 +20,6 @@ const SystemSettings: React.FC = () => {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
 
     const fetchSettings = useCallback(async (silent: boolean = false) => {
         try {
@@ -40,7 +39,7 @@ const SystemSettings: React.FC = () => {
                 }
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to fetch settings');
+             console.error('Failed to fetch settings:', err);
         } finally {
             setLoading(false);
         }
@@ -78,16 +77,14 @@ const SystemSettings: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
-        setError('');
-        setSuccess('');
-
         try {
             const response = await adminAPI.updateSettings(settings);
             if (response.success) {
-                setSuccess('Settings updated successfully');
+                toast.success('Settings updated successfully');
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to update settings');
+            const errorMessage = err.response?.data?.message || 'Failed to update settings';
+            toast.error(errorMessage);
         } finally {
             setSaving(false);
         }
@@ -110,18 +107,8 @@ const SystemSettings: React.FC = () => {
                 </div>
             </div>
 
-            {error && (
-                <div className="alert alert-danger d-flex align-items-center mb-4" role="alert">
-                    <XCircle size={18} className="me-2" />
-                    {error}
-                </div>
-            )}
-            {success && (
-                <div className="alert alert-success d-flex align-items-center mb-4" role="alert">
-                    <CheckCircle size={18} className="me-2" />
-                    {success}
-                </div>
-            )}
+            {/* Replaced local Alerts with react-toastify notifications */}
+
 
             <div className="row">
                 <div className="col-lg-6">
@@ -168,6 +155,7 @@ const SystemSettings: React.FC = () => {
                                                     max="100"
                                                     step="0.01"
                                                     value={customValue}
+                                                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                                                     onChange={(e) => {
                                                         const val = e.target.value;
                                                         setCustomValue(val);

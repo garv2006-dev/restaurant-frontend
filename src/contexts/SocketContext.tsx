@@ -49,13 +49,22 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     console.log('Initializing Socket.io connection...');
     isInitialized.current = true;
 
+    // RESILIENCE FIX: Derive server URL if not provided
+    // In many live projects, the backend is on the same domain or we can derive it from API_URL
+    const serverUrl = process.env.REACT_APP_SERVER_URL ||
+      (process.env.NODE_ENV === 'production'
+        ? window.location.origin
+        : 'http://localhost:5000');
+
+    console.log('🔌 Connecting to socket server:', serverUrl);
+
     // Create socket with both polling and websocket support
-    socketInstance = io(process.env.REACT_APP_SERVER_URL || 'http://localhost:5000', {
-      transports: ['polling', 'websocket'], // Try polling first, upgrade to websocket
-      reconnectionAttempts: 10,
+    socketInstance = io(serverUrl, {
+      transports: ['websocket', 'polling'], // Prioritize websocket, fallback to polling if needed
+      reconnectionAttempts: 20, // Increased for better stability
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 20000,
+      reconnectionDelayMax: 10000, // Increased delay max
+      timeout: 30000, // Increased timeout
       autoConnect: true,
       forceNew: false, // Reuse existing connection
     });

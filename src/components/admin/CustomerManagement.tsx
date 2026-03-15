@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Modal, Form, Spinner } from 'react-bootstrap';
-import { Search, UserPlus, Trash2, User, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
+import { Search, Trash2, User, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { User as UserType } from '../../types';
 import { toast } from 'react-toastify';
@@ -19,7 +19,6 @@ interface Customer extends UserType {
 const CustomerManagement: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -56,7 +55,6 @@ const CustomerManagement: React.FC = () => {
   const fetchCustomers = useCallback(async (silent: boolean = false) => {
     try {
       if (!silent) setLoading(true);
-      setError('');
 
       // Fetch all customers for client-side pagination
       const response = await adminAPI.getCustomers({
@@ -81,12 +79,12 @@ const CustomerManagement: React.FC = () => {
         // Reset to first page when data changes (e.g. search)
         setCurrentPage(1);
       } else {
-        setError(response?.message || 'No customer data available');
+        toast.error(response?.message || 'No customer data available');
         setCustomers([]);
       }
     } catch (error: any) {
       console.error('Error fetching customers:', error);
-      setError(error.response?.data?.message || 'Failed to load customers. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to load customers. Please try again.');
       setCustomers([]);
     } finally {
       setLoading(false);
@@ -221,12 +219,10 @@ const CustomerManagement: React.FC = () => {
         toast.success('Customer added successfully!');
         resetAddForm();
       } else {
-        setError(response.message || 'Failed to add customer');
         toast.error(response.message || 'Failed to add customer');
       }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || 'Failed to add customer';
-      setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setAddLoading(false);
@@ -243,7 +239,6 @@ const CustomerManagement: React.FC = () => {
 
     try {
       setDeleteLoading(true);
-      setError(''); // Clear any previous errors
 
       // Use id first, then _id as fallback (MongoDB uses _id)
       const customerId = customerToDelete.id || customerToDelete._id;
@@ -261,13 +256,11 @@ const CustomerManagement: React.FC = () => {
         await fetchCustomers(); // Refresh customer list
       } else {
         const errorMessage = response?.message || 'Failed to delete customer';
-        setError(errorMessage);
         toast.error(errorMessage);
       }
     } catch (error: any) {
       console.error('Delete error:', error);
       const errorMessage = error.response?.data?.message || error.message || 'Failed to delete customer';
-      setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setDeleteLoading(false);
@@ -348,22 +341,19 @@ const CustomerManagement: React.FC = () => {
               </button>
             )}
           </div>
-          <button
+          {/* <button
             className="admin-btn admin-btn-primary"
             onClick={() => setShowAddModal(true)}
           >
             <UserPlus size={16} />
             Add Customer
-          </button>
+          </button> */}
         </div>
       </div>
 
       <div className="admin-card-body">
-        {error && (
-          <div className="admin-alert admin-alert-danger" role="alert">
-            {error}
-          </div>
-        )}
+        {/* Replaced local alerts with react-toastify notifications */}
+
 
         {loading ? (
           <div className="table-responsive">

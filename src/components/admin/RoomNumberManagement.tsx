@@ -51,6 +51,7 @@ interface RoomType {
     type: string;
     totalRooms: number;
     totalRoomNumbers: number;
+    floor?: number;
 }
 
 const RoomNumberManagement: React.FC = () => {
@@ -58,8 +59,6 @@ const RoomNumberManagement: React.FC = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
     const [showBulkModal, setShowBulkModal] = useState(false);
 
-    const [success, setSuccess] = useState('');
-    const [error, setError] = useState('');
 
     // Custom styles for the dropdown to ensure it stays clean
     const dropdownStyles = `
@@ -169,7 +168,7 @@ const RoomNumberManagement: React.FC = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['roomNumbers'] });
             queryClient.invalidateQueries({ queryKey: ['roomTypes'] });
-            setSuccess('Room numbers created successfully!');
+            toast.success('Room numbers created successfully!');
             setShowBulkModal(false);
             setBulkForm({
                 roomTypeId: '',
@@ -180,7 +179,8 @@ const RoomNumberManagement: React.FC = () => {
             });
         },
         onError: (err: any) => {
-            setError(err.response?.data?.message || 'Failed to create room numbers');
+            const errorMessage = err.response?.data?.message || 'Failed to create room numbers';
+            toast.error(errorMessage);
         }
     });
 
@@ -221,15 +221,13 @@ const RoomNumberManagement: React.FC = () => {
 
     const handleBulkCreate = (e: React.FormEvent) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
 
         if (bulkForm.startNumber && bulkForm.endNumber) {
             const start = parseInt(bulkForm.startNumber);
             const end = parseInt(bulkForm.endNumber);
 
             if (end < start) {
-                setError('End number must be greater than or equal to start number');
+                toast.error('End number must be greater than or equal to start number');
                 return;
             }
 
@@ -241,7 +239,7 @@ const RoomNumberManagement: React.FC = () => {
                 const limit = roomType.totalRooms || 0;
 
                 if (currentCount + count > limit) {
-                    setError(`Cannot add ${count} rooms. Room Type "${roomType.name}" allows ${limit} rooms in total, and already has ${currentCount}. You can only add ${limit - currentCount} more.`);
+                    toast.error(`Cannot add ${count} rooms. Room Type "${roomType.name}" allows ${limit} rooms in total, and already has ${currentCount}. You can only add ${limit - currentCount} more.`);
                     return;
                 }
             }
@@ -337,8 +335,8 @@ const RoomNumberManagement: React.FC = () => {
                 </div>
             </div>
 
-            {error && <Alert variant="danger" dismissible onClose={() => setError('')}>{error}</Alert>}
-            {success && <Alert variant="success" dismissible onClose={() => setSuccess('')}>{success}</Alert>}
+            {/* Replaced local Alerts with react-toastify notifications */}
+
 
             {/* Filters */}
             <div className="admin-card mb-4">
@@ -673,7 +671,15 @@ const RoomNumberManagement: React.FC = () => {
                                     <Form.Select
                                         required
                                         value={bulkForm.roomTypeId}
-                                        onChange={(e) => setBulkForm({ ...bulkForm, roomTypeId: e.target.value })}
+                                        onChange={(e) => {
+                                            const typeId = e.target.value;
+                                            const selectedType = roomTypes.find((t: RoomType) => t._id === typeId);
+                                            setBulkForm({
+                                                ...bulkForm,
+                                                roomTypeId: typeId,
+                                                floor: (selectedType && selectedType.floor !== undefined) ? selectedType.floor.toString() : bulkForm.floor
+                                            });
+                                        }}
                                     >
                                         <option value="">Select Room Type</option>
                                         {roomTypes.map((type: RoomType) => (
@@ -693,6 +699,7 @@ const RoomNumberManagement: React.FC = () => {
                                         placeholder="e.g., 101"
                                         value={bulkForm.startNumber}
                                         onChange={(e) => setBulkForm({ ...bulkForm, startNumber: e.target.value })}
+                                        onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                                         onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     />
                                 </Form.Group>
@@ -706,6 +713,7 @@ const RoomNumberManagement: React.FC = () => {
                                         placeholder="e.g., 110"
                                         value={bulkForm.endNumber}
                                         onChange={(e) => setBulkForm({ ...bulkForm, endNumber: e.target.value })}
+                                        onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                                         onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     />
                                 </Form.Group>
@@ -719,6 +727,7 @@ const RoomNumberManagement: React.FC = () => {
                                         placeholder="e.g., 1"
                                         value={bulkForm.floor}
                                         onChange={(e) => setBulkForm({ ...bulkForm, floor: e.target.value })}
+                                        onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                                         onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                     />
                                 </Form.Group>

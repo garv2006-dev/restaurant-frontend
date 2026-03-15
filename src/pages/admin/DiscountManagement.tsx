@@ -46,10 +46,13 @@ interface DiscountFormData {
   value: number | '';
   name: string;
   description: string;
-  minimumOrderAmount: number;
-  maxDiscount: number | undefined;
+  minimumOrderAmount: number | '';
+  maxDiscount: number | '';
   applicableFor: 'all' | 'food' | 'rooms' | 'events';
-  usageLimit: UsageLimit;
+  usageLimit: {
+    total: number | '';
+    perUser: number | '';
+  };
   validFrom: string;
   validUntil: string;
   isActive: boolean;
@@ -83,10 +86,10 @@ const DiscountManagement: React.FC = () => {
     value: '',
     name: '',
     description: '',
-    minimumOrderAmount: 0,
-    maxDiscount: undefined,
+    minimumOrderAmount: '',
+    maxDiscount: '',
     applicableFor: 'all',
-    usageLimit: { total: null, perUser: 1 },
+    usageLimit: { total: '', perUser: 1 },
     validFrom: new Date().toISOString().split('T')[0],
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     isActive: true,
@@ -124,30 +127,35 @@ const DiscountManagement: React.FC = () => {
     }
 
     // Min Order Amount
-    if (data.minimumOrderAmount < 0 || isNaN(data.minimumOrderAmount)) {
+    if (data.minimumOrderAmount !== '' && (Number(data.minimumOrderAmount) < 0 || isNaN(Number(data.minimumOrderAmount)))) {
       errors.minimumOrderAmount = 'Minimum order amount cannot be negative.';
     }
 
     // Max Discount (only for percentage)
-    if (data.type === 'percentage' && data.maxDiscount !== undefined) {
-      if (data.maxDiscount <= 0) {
+    if (data.type === 'percentage' && data.maxDiscount !== '') {
+      if (Number(data.maxDiscount) <= 0) {
         errors.maxDiscount = 'Max discount must be greater than 0.';
       }
     }
 
     // Usage Limit — Total
-    if (data.usageLimit.total !== null) {
-      if (isNaN(data.usageLimit.total) || data.usageLimit.total < 1) {
+    if (data.usageLimit.total !== '') {
+      const totalNum = Number(data.usageLimit.total);
+      if (isNaN(totalNum) || totalNum < 1) {
         errors.usageLimitTotal = 'Total usage limit must be at least 1, or leave blank for unlimited.';
       }
     }
 
     // Usage Limit — Per User
-    if (isNaN(data.usageLimit.perUser) || data.usageLimit.perUser < 1) {
+    const perUserNum = data.usageLimit.perUser === '' ? NaN : Number(data.usageLimit.perUser);
+    if (isNaN(perUserNum) || perUserNum < 1) {
       errors.usageLimitPerUser = 'Per user limit must be at least 1.';
     }
-    if (data.usageLimit.total !== null && data.usageLimit.perUser > data.usageLimit.total) {
-      errors.usageLimitPerUser = 'Per user limit cannot exceed the total usage limit.';
+
+    if (data.usageLimit.total !== '' && data.usageLimit.perUser !== '') {
+      if (Number(data.usageLimit.perUser) > Number(data.usageLimit.total)) {
+        errors.usageLimitPerUser = 'Per user limit cannot exceed the total usage limit.';
+      }
     }
 
     // Dates
@@ -207,10 +215,13 @@ const DiscountManagement: React.FC = () => {
       value: discount.value ?? '',
       name: discount.name || '',
       description: discount.description || '',
-      minimumOrderAmount: discount.minimumOrderAmount || 0,
-      maxDiscount: discount.maxDiscount,
+      minimumOrderAmount: discount.minimumOrderAmount ?? '',
+      maxDiscount: discount.maxDiscount ?? '',
       applicableFor: (discount.applicableFor as any) || 'all',
-      usageLimit: discount.usageLimit || { total: null, perUser: 1 },
+      usageLimit: {
+        total: discount.usageLimit?.total ?? '',
+        perUser: discount.usageLimit?.perUser ?? 1
+      },
       validFrom: discount.validFrom ? new Date(discount.validFrom).toISOString().split('T')[0] : '',
       validUntil: discount.validUntil ? new Date(discount.validUntil).toISOString().split('T')[0] : '',
       isActive: discount.isActive,
@@ -273,10 +284,10 @@ const DiscountManagement: React.FC = () => {
       value: '',
       name: '',
       description: '',
-      minimumOrderAmount: 0,
-      maxDiscount: undefined,
+      minimumOrderAmount: '',
+      maxDiscount: '',
       applicableFor: 'all',
-      usageLimit: { total: null, perUser: 1 },
+      usageLimit: { total: '', perUser: 1 },
       validFrom: new Date().toISOString().split('T')[0],
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       isActive: true,
@@ -304,8 +315,17 @@ const DiscountManagement: React.FC = () => {
       return;
     }
     setFormErrors({});
-    // Ensure value is always sent as a number to the API
-    const payload = { ...formData, value: Number(formData.value) };
+    // Ensure values are sent as numbers or null to the API
+    const payload = {
+      ...formData,
+      value: formData.value === '' ? 0 : Number(formData.value),
+      minimumOrderAmount: formData.minimumOrderAmount === '' ? 0 : Number(formData.minimumOrderAmount),
+      maxDiscount: formData.maxDiscount === '' ? undefined : Number(formData.maxDiscount),
+      usageLimit: {
+        total: formData.usageLimit.total === '' ? null : Number(formData.usageLimit.total),
+        perUser: formData.usageLimit.perUser === '' ? 1 : Number(formData.usageLimit.perUser)
+      }
+    };
     try {
       if (editingDiscount) {
         const response = await adminAPI.updateDiscount(editingDiscount._id, payload);
@@ -486,7 +506,7 @@ const DiscountManagement: React.FC = () => {
         <Modal.Header closeButton>
           <Modal.Title>{editingDiscount ? 'Edit' : 'Create'} Discount</Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit} noValidate>
           <Modal.Body className="p-4">
             <div className="row g-3 mb-3">
               <div className="col-md-8">
@@ -500,7 +520,6 @@ const DiscountManagement: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                       placeholder="DISCOUNT10"
                       isInvalid={!!formErrors.code}
-                      required
                     />
                     <button className="btn btn-outline-secondary text-muted bg-light border-start-0" type="button" onClick={generateCode}>
                       <RotateCcw size={16} />
@@ -516,7 +535,6 @@ const DiscountManagement: React.FC = () => {
                     className="admin-form-select"
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                    required
                   >
                     <option value="percentage">Percentage</option>
                     <option value="fixed">Fixed Amount</option>
@@ -534,7 +552,6 @@ const DiscountManagement: React.FC = () => {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
                     placeholder="e.g. Summer Sale"
                     isInvalid={!!formErrors.name}
                   />
@@ -555,10 +572,10 @@ const DiscountManagement: React.FC = () => {
                     min="1"
                     max={formData.type === 'percentage' ? '100' : undefined}
                     value={formData.value}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                     onChange={(e) => setFormData({ ...formData, value: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     disabled={formData.type === 'buy_one_get_one'}
-                    required={formData.type !== 'buy_one_get_one'}
                     placeholder={formData.type === 'percentage' ? 'e.g. 10' : 'e.g. 100'}
                     isInvalid={!!formErrors.value}
                   />
@@ -588,7 +605,8 @@ const DiscountManagement: React.FC = () => {
                     type="number"
                     min="0"
                     value={formData.minimumOrderAmount}
-                    onChange={(e) => setFormData({ ...formData, minimumOrderAmount: parseFloat(e.target.value) })}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
+                    onChange={(e) => setFormData({ ...formData, minimumOrderAmount: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     placeholder="e.g. 500"
                     isInvalid={!!formErrors.minimumOrderAmount}
@@ -604,7 +622,8 @@ const DiscountManagement: React.FC = () => {
                     type="number"
                     min="0"
                     value={formData.maxDiscount || ''}
-                    onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
+                    onChange={(e) => setFormData({ ...formData, maxDiscount: e.target.value === '' ? '' : parseFloat(e.target.value) })}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     disabled={formData.type === 'fixed' || formData.type === 'buy_one_get_one'}
                     placeholder="e.g. 200"
@@ -638,18 +657,17 @@ const DiscountManagement: React.FC = () => {
                     className="admin-form-control"
                     type="number"
                     min="1"
-                    value={formData.usageLimit.total === null ? '' : formData.usageLimit.total.toString()}
+                    value={formData.usageLimit.total}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                     onChange={(e) => setFormData({
                       ...formData,
                       usageLimit: {
                         ...formData.usageLimit,
-                        total: e.target.value === '' ? null : parseInt(e.target.value)
+                        total: e.target.value === '' ? '' : parseInt(e.target.value)
                       }
                     })}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                    placeholder="Leave blank for unlimited"
                     isInvalid={!!formErrors.usageLimitTotal}
-                    required
                   />
                   {formErrors.usageLimitTotal && <div className="invalid-feedback d-block">{formErrors.usageLimitTotal}</div>}
                 </Form.Group>
@@ -662,17 +680,17 @@ const DiscountManagement: React.FC = () => {
                     type="number"
                     min="1"
                     value={formData.usageLimit.perUser.toString()}
+                    onKeyDown={(e) => ['e', 'E', '+', '-'].includes(e.key) && e.preventDefault()}
                     onChange={(e) => setFormData({
                       ...formData,
                       usageLimit: {
                         ...formData.usageLimit,
-                        perUser: parseInt(e.target.value)
+                        perUser: e.target.value === '' ? '' : parseInt(e.target.value)
                       }
                     })}
                     onWheel={(e) => (e.target as HTMLInputElement).blur()}
                     placeholder="e.g. 1"
                     isInvalid={!!formErrors.usageLimitPerUser}
-                    required
                   />
                   {formErrors.usageLimitPerUser && <div className="invalid-feedback d-block">{formErrors.usageLimitPerUser}</div>}
                 </Form.Group>
@@ -689,7 +707,6 @@ const DiscountManagement: React.FC = () => {
                     value={formData.validFrom}
                     onChange={(e) => setFormData({ ...formData, validFrom: e.target.value })}
                     isInvalid={!!formErrors.validFrom}
-                    required
                   />
                   <Form.Control.Feedback type="invalid">{formErrors.validFrom}</Form.Control.Feedback>
                 </Form.Group>
@@ -703,7 +720,6 @@ const DiscountManagement: React.FC = () => {
                     value={formData.validUntil}
                     onChange={(e) => setFormData({ ...formData, validUntil: e.target.value })}
                     isInvalid={!!formErrors.validUntil}
-                    required
                   />
                   <Form.Control.Feedback type="invalid">{formErrors.validUntil}</Form.Control.Feedback>
                 </Form.Group>
