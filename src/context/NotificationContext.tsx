@@ -270,8 +270,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     // Increased to 60 seconds to handle network delays and server processing time
     // This ensures notifications aren't missed due to timing issues
     const isRealTimeNotification =
-      notificationAge < 60000 && // Created within last 60 seconds (increased from 30)
-      initialFetchComplete.current; // Initial fetch has completed
+      notificationAge < 60000; // Created within last 60 seconds (increased from 30)
 
     console.log('📊 Notification timing analysis:', {
       notificationId,

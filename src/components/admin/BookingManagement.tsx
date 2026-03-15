@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Badge, Modal } from 'react-bootstrap';
 import { adminAPI, roomsAPI } from '../../services/api';
 import { Booking, Room } from '../../types';
+import { toast } from 'react-toastify';
 import format from 'date-fns/format';
 import parseISO from 'date-fns/parseISO';
 import isSameDay from 'date-fns/isSameDay';
@@ -28,7 +29,6 @@ import { useSocket } from '../../contexts/SocketContext';
 const BookingManagement: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [pagination, setPagination] = useState({
@@ -55,7 +55,6 @@ const BookingManagement: React.FC = () => {
   const fetchBookings = useCallback(async (silent: boolean = false) => {
     try {
       if (!silent) setLoading(true);
-      setError(null);
 
       console.log('Fetching bookings with filters:', { status: filters.status, date: filters.date, search: debouncedSearchTerm }); // Debug log
 
@@ -85,7 +84,7 @@ const BookingManagement: React.FC = () => {
     } catch (err: any) {
       console.error('Error fetching bookings:', err); // Debug log
       const errorMessage = err?.response?.data?.message || err?.message || 'Failed to load bookings';
-      setError(errorMessage);
+      toast.error(errorMessage);
       setBookings([]);
     } finally {
       if (!silent) setLoading(false);
@@ -184,7 +183,6 @@ const BookingManagement: React.FC = () => {
 
     try {
       setActionLoading(prev => ({ ...prev, [bookingId]: true }));
-      setError(null); // Clear any previous errors
 
       console.log('Updating booking status:', { bookingId, status }); // Debug log
 
@@ -205,21 +203,15 @@ const BookingManagement: React.FC = () => {
           setSelectedBooking(prev => prev ? { ...prev, status } : null);
         }
 
-        // Show success message
-        console.log('Booking status updated successfully');
-
-        // Optional: Show a success toast instead of console.log
-        // toast.success(`Booking status updated to ${status}`);
+        // Show success toast
+        toast.success(`Booking status updated to ${status}`);
       } else {
         throw new Error(response.message || 'Failed to update booking status');
       }
     } catch (err: any) {
       console.error('Failed to update booking status:', err);
       const errorMessage = err?.response?.data?.message || err?.message || 'Failed to update booking status';
-      setError(errorMessage);
-
-      // Show error to user (you can replace this with a toast notification)
-      alert(`Error: ${errorMessage}`);
+      toast.error(errorMessage);
     } finally {
       setActionLoading(prev => ({ ...prev, [bookingId]: false }));
     }
@@ -228,7 +220,6 @@ const BookingManagement: React.FC = () => {
   const handleAutoAllocate = async (bookingId: string) => {
     try {
       setActionLoading(prev => ({ ...prev, [bookingId]: true }));
-      setError(null);
 
       const response = await adminAPI.autoAllocate(bookingId);
 
@@ -236,12 +227,13 @@ const BookingManagement: React.FC = () => {
         // Success: the socket might already trigger a refresh, 
         // but let's do it manually just in case
         fetchBookings(true);
+        toast.success('Rooms allocated successfully!');
       } else {
-        alert(response.message || 'Failed to allocate rooms');
+        toast.error(response.message || 'Failed to allocate rooms');
       }
     } catch (err: any) {
       console.error('Auto-allocation failed:', err);
-      alert(err?.response?.data?.message || err?.message || 'Failed to allocate rooms');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to allocate rooms');
     } finally {
       setActionLoading(prev => ({ ...prev, [bookingId]: false }));
     }
@@ -349,7 +341,7 @@ const BookingManagement: React.FC = () => {
       }
     } catch (err) {
       console.error("Failed to fetch rooms for offline booking", err);
-      setError("Failed to load room types. Please try again.");
+      toast.error("Failed to load room types. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -357,7 +349,7 @@ const BookingManagement: React.FC = () => {
 
   const handleOfflineSuccess = () => {
     fetchBookings(); // Refresh list
-    // show success toast or message
+    toast.success('Offline booking created successfully!');
   };
 
   return (
@@ -372,17 +364,8 @@ const BookingManagement: React.FC = () => {
           </div>
         </div>
         <div className="admin-card-body">
-          {error && (
-            <div className="alert alert-danger alert-dismissible fade show" role="alert">
-              <strong>Error:</strong> {error}
-              <button
-                type="button"
-                className="btn-close"
-                onClick={() => setError(null)}
-                aria-label="Close"
-              ></button>
-            </div>
-          )}
+          {/* Replaced local error Alert with toast notifications */}
+
           <div className="row g-3 mb-4 align-items-end">
             <div className="col-md-3">
               <label className="form-label small fw-semibold text-muted mb-1">Status</label>
