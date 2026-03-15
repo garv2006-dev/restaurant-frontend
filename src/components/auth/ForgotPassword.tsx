@@ -67,7 +67,7 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({
   return (
     <div className={styles['forgot-password']}>
       <h2>Forgot Password</h2>
-      <p style={{ textAlign: 'center', marginBottom: '20px', color: '#666' }}>
+      <p className="text-muted" style={{ textAlign: 'center', marginBottom: '20px' }}>
         Enter your email address and we'll send you a link to reset your password.
       </p>
       

@@ -189,7 +189,7 @@ const Login: React.FC = () => {
                 <Form onSubmit={handleSubmit}>
                   {/* Email Field */}
                   <Form.Group className="mb-3">
-                    <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#1a202c' }}>Email Address</Form.Label>
+                    <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Email Address</Form.Label>
                     <div className="position-relative">
                       <Form.Control
                         type="email"
@@ -204,8 +204,7 @@ const Login: React.FC = () => {
                         className="py-2.5 px-3"
                         style={{
                           borderRadius: '8px',
-                          border: touched.email && errors.email ? '1px solid #f56565' : '1px solid #e2e8f0',
-                          backgroundColor: '#fff'
+                          backgroundColor: 'transparent'
                         }}
                       />
                       {/* Triangle icon removed */}
@@ -219,7 +218,7 @@ const Login: React.FC = () => {
 
                   {/* Password Field */}
                   <Form.Group className="mb-4">
-                    <Form.Label className="fw-semibold" style={{ fontSize: '14px', color: '#1a202c' }}>Password</Form.Label>
+                    <Form.Label className="fw-semibold" style={{ fontSize: '14px' }}>Password</Form.Label>
                     <div className="position-relative">
                       <Form.Control
                         type={showPassword ? 'text' : 'password'}
@@ -234,8 +233,7 @@ const Login: React.FC = () => {
                         className="py-2.5 px-3"
                         style={{
                           borderRadius: '8px',
-                          border: touched.password && errors.password ? '1px solid #f56565' : '1px solid #e2e8f0',
-                          backgroundColor: '#fff'
+                          backgroundColor: 'transparent'
                         }}
                       />
                       <div className="position-absolute end-0 top-50 translate-middle-y d-flex align-items-center" style={{ paddingRight: '12px' }}>

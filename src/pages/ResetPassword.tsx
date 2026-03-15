@@ -196,7 +196,7 @@ const ResetPassword: React.FC = () => {
   }
 
   return (
-    <div className="min-vh-100 bg-light">
+    <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)', transition: 'background-color 0.3s ease' }}>
       <Container className="py-5">
         <Row className="justify-content-center">
           <Col md={6} lg={5} xl={4}>

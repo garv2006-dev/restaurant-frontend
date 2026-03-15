@@ -77,7 +77,7 @@ const ForgotPassword: React.FC = () => {
 
 
   return (
-    <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)' }}>
+    <div className="min-vh-100" style={{ backgroundColor: 'var(--bs-body-bg)', transition: 'background-color 0.3s ease' }}>
       <Container className="py-5">
         <Row className="justify-content-center align-items-center min-vh-100">
           <Col md={6} lg={5} xl={4}>
