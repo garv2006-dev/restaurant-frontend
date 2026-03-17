@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { User } from '../../types';
 
-const GOOGLE_CLIENT_ID = '897986200614-2lbsiml3p06gou0jis1ndlldrd3um8ib.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '946267850152-mtt3k55mp7rfd0hb1ut4pg4eepht2ppv.apps.googleusercontent.com';
 
 function GoogleLoginButton() {
     const { setAuthState } = useAuth()
