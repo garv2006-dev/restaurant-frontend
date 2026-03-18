@@ -111,8 +111,40 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
         if (name === 'phone') {
             value = value.replace(/[^0-9]/g, '').slice(0, 10);
         }
+
+        if (name === 'checkInDate') {
+            const checkIn = new Date(value);
+            const checkOut = formData.checkOutDate ? new Date(formData.checkOutDate) : null;
+            
+            // If check-out is before or same as check-in, set it to check-in + 1 day
+            if (checkOut && checkOut <= checkIn) {
+                const nextDay = new Date(checkIn);
+                nextDay.setDate(nextDay.getDate() + 1);
+                const nextDayStr = nextDay.toISOString().split('T')[0];
+                setFormData(prev => ({ ...prev, checkInDate: value, checkOutDate: nextDayStr }));
+                return;
+            }
+        }
+
+        if (name === 'checkOutDate' && formData.checkInDate) {
+            const checkIn = new Date(formData.checkInDate);
+            const checkOut = new Date(value);
+            if (checkOut <= checkIn) {
+                setError('Check-out date must be at least one day after Check-in.');
+            } else {
+                setError(null);
+            }
+        }
+
         setFormData(prev => ({ ...prev, [name]: name === 'adults' || name === 'children' ? Number(value) : value }));
     };
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const checkOutMinStr = formData.checkInDate ? (() => {
+        const d = new Date(formData.checkInDate);
+        d.setDate(d.getDate() + 1);
+        return d.toISOString().split('T')[0];
+    })() : todayStr;
 
     const toggleRoomNumber = (roomId: string) => {
         let newIds;
@@ -171,9 +203,20 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                 setError('Please select at least one room.');
                 return;
             }
-            // Validate adults against total capacity
+            // Validate total guests against total available capacity
+            const totalRequestedGuests = formData.adults + formData.children;
+            const totalCapacity = totalMaxAdults + totalMaxChildren;
+
             if (formData.adults > totalMaxAdults) {
-                setError(`${roomCount} room(s) allow a maximum of ${totalMaxAdults} adults total (${maxAdultsPerRoom} per room).`);
+                setError(`The ${roomCount} room(s) you selected allow a maximum of ${totalMaxAdults} adults (${maxAdultsPerRoom} per room).`);
+                return;
+            }
+            if (formData.children > totalMaxChildren) {
+                setError(`The ${roomCount} room(s) you selected allow a maximum of ${totalMaxChildren} children (${maxChildrenPerRoom} per room).`);
+                return;
+            }
+            if (totalRequestedGuests > totalCapacity) {
+                setError(`Total guests exceed the maximum capacity for ${roomCount} room(s). Max total: ${totalCapacity}.`);
                 return;
             }
         }
@@ -338,11 +381,25 @@ const OfflineBookingModal: React.FC<OfflineBookingModalProps> = ({ show, onHide,
                             {/* Dates */}
                             <div className="col-md-6">
                                 <label className="admin-form-label">Check-in Date <span className="text-danger">*</span></label>
-                                <input type="date" name="checkInDate" value={formData.checkInDate} onChange={handleChange} className="admin-form-control w-100" />
+                                <input 
+                                    type="date" 
+                                    name="checkInDate" 
+                                    min={todayStr} 
+                                    value={formData.checkInDate} 
+                                    onChange={handleChange} 
+                                    className="admin-form-control w-100" 
+                                />
                             </div>
                             <div className="col-md-6">
                                 <label className="admin-form-label">Check-out Date <span className="text-danger">*</span></label>
-                                <input type="date" name="checkOutDate" value={formData.checkOutDate} onChange={handleChange} className="admin-form-control w-100" />
+                                <input 
+                                    type="date" 
+                                    name="checkOutDate" 
+                                    min={checkOutMinStr} 
+                                    value={formData.checkOutDate} 
+                                    onChange={handleChange} 
+                                    className={`admin-form-control w-100 ${error && error.includes('Check-out') ? 'is-invalid' : ''}`} 
+                                />
                             </div>
 
                             {/* Room Number Selector */}
