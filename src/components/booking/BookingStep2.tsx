@@ -183,9 +183,12 @@ const BookingStep2: React.FC<Step2Props> = ({
                         </div>
 
                         {totalRooms > 0 && (
-                            <div className="booking-alert info">
-                                <Users size={18} />
-                                <span style={{ fontWeight: 600 }}>Max capacity: {maxAdults} adult{maxAdults > 1 ? 's' : ''} and {maxChildren} child{maxChildren !== 1 ? 'ren' : ''} for {totalRooms} room{totalRooms > 1 ? 's' : ''}</span>
+                            <div className="booking-alert info" style={{ background: 'rgba(200, 164, 86, 0.1)', border: '1px solid var(--booking-gold)', borderRadius: '12px', padding: '16px' }}>
+                                <Users size={20} style={{ color: 'var(--booking-gold-dark)' }} />
+                                <div style={{ fontSize: '14px', lineHeight: '1.4' }}>
+                                    <div style={{ fontWeight: 700, color: 'var(--booking-navy)' }}>Stay Capacity for {totalRooms} Room{totalRooms > 1 ? 's' : ''}</div>
+                                    <div style={{ color: 'var(--booking-text-muted)' }}>Up to {maxAdults} adults and {maxChildren} children allowed total.</div>
+                                </div>
                             </div>
                         )}
 
