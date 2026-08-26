@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { BookingState } from '../../pages/Booking';
 import { bookingsAPI } from '../../services/api';
 import { ArrowLeft, Lock, CreditCard, Wallet, Tag, CheckCircle, AlertTriangle } from 'lucide-react';
+import { formatDateDisplay, calculateNights } from '../../utils/bookingDateUtils';
 
 const getImageUrl = (room: any) => {
     if (!room.images?.length) return 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80';
@@ -24,11 +25,11 @@ const FullSummary: React.FC<{
     appliedDiscount: any;
     gstPercentage: number;
 }> = ({ booking, subtotal, finalAmount, appliedDiscount, gstPercentage }) => {
-    const { selectedRooms, checkInDate, checkOutDate, nights, guests, guestDetails } = booking;
+    const { selectedRooms, checkInDate, checkOutDate, guests, guestDetails } = booking;
     if (selectedRooms.length === 0) return null;
+    const nights = calculateNights(checkInDate, checkOutDate);
 
     const firstRoom = selectedRooms[0].room;
-    const fmt = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
     const imgSrc = getImageUrl(firstRoom);
 
     const taxAmount = subtotal * (gstPercentage / 100);
@@ -47,11 +48,11 @@ const FullSummary: React.FC<{
                 <div className="lux-card-body">
                     <div className="summary-row">
                         <span className="summary-row-label">Check-in</span>
-                        <span className="summary-row-value">{fmt(checkInDate)}</span>
+                        <span className="summary-row-value">{formatDateDisplay(checkInDate)}</span>
                     </div>
                     <div className="summary-row">
                         <span className="summary-row-label">Check-out</span>
-                        <span className="summary-row-value">{fmt(checkOutDate)}</span>
+                        <span className="summary-row-value">{formatDateDisplay(checkOutDate)}</span>
                     </div>
                     <div className="summary-row">
                         <span className="summary-row-label">Occupancy</span>

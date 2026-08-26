@@ -1,10 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { bookingsAPI, roomsAPI, paymentsAPI, adminAPI } from '../services/api';
 import type { Room } from '../types';
 import { toast } from 'react-toastify';
 import { useSocket } from '../contexts/SocketContext';
+import {
+  calculateNights,
+  getRoomId,
+  getTodayDateString,
+  getTomorrowDateString
+} from '../utils/bookingDateUtils';
 import '../styles/booking-flow.css';
 
 
@@ -30,13 +36,13 @@ export interface BookingState {
 }
 
 // Compute sensible default dates (today → tomorrow)
-const today = new Date().toISOString().split('T')[0];
-const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+const today = getTodayDateString();
+const tomorrow = getTomorrowDateString(today);
 
 const INITIAL_STATE: BookingState = {
   checkInDate: today,
   checkOutDate: tomorrow,
-  nights: 1,
+  nights: calculateNights(today, tomorrow),
   selectedRooms: [],
   guests: { adults: 1, children: 0 },
   guestDetails: { name: '', email: '', phone: '' },
@@ -72,8 +78,19 @@ const Booking: React.FC = () => {
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [stepError, setStepError] = useState<string | null>(null);
 
+  // Derived state calculations (Single Source of Truth)
+  const nights = calculateNights(booking.checkInDate, booking.checkOutDate);
+  const roomsCount = booking.selectedRooms.reduce((total, room) => total + (room.count || 1), 0);
+
+  // Requirement 9: Temporary debugging logs
+  console.log("checkIn:", booking.checkInDate);
+  console.log("checkOut:", booking.checkOutDate);
+  console.log("nights:", nights);
+  console.log("selectedRooms:", booking.selectedRooms);
+  console.log("roomsCount:", roomsCount);
+
   const subtotal = booking.selectedRooms.reduce((sum, item) => {
-    return sum + (item.room.price.basePrice * booking.nights * item.count);
+    return sum + (item.room.price.basePrice * nights * item.count);
   }, 0);
 
   // Calculate discount and net
@@ -108,7 +125,7 @@ const Booking: React.FC = () => {
         }
 
         if (preselectedRoomId) {
-          const found = list.find((r: Room) => (r.id || r._id) === preselectedRoomId);
+          const found = list.find((r: Room) => getRoomId(r) === preselectedRoomId);
           if (found) setBooking(prev => ({ ...prev, selectedRooms: [{ room: found, count: 1 }] }));
         }
       } catch {
@@ -147,63 +164,66 @@ const Booking: React.FC = () => {
     }
   }, [user]);
 
-  // ── Update nights when dates change ──────────────────────────────────────
-  const updateNights = useCallback((checkIn: string, checkOut: string) => {
-    if (checkIn && checkOut) {
-      const d1 = new Date(checkIn); d1.setHours(0, 0, 0, 0);
-      const d2 = new Date(checkOut); d2.setHours(0, 0, 0, 0);
-      const n = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / 86400000));
-      setBooking(prev => ({ ...prev, nights: n }));
-    }
-  }, []);
-
+  // Handle date change safely
   const handleDateChange = (field: 'checkInDate' | 'checkOutDate', value: string) => {
     setBooking(prev => {
-      const next = { ...prev, [field]: value };
-      updateNights(
-        field === 'checkInDate' ? value : prev.checkInDate,
-        field === 'checkOutDate' ? value : prev.checkOutDate
-      );
-      return next;
+      const nextIn = field === 'checkInDate' ? value : prev.checkInDate;
+      const nextOut = field === 'checkOutDate' ? value : prev.checkOutDate;
+      const calculatedN = calculateNights(nextIn, nextOut);
+
+      return {
+        ...prev,
+        [field]: value,
+        nights: calculatedN,
+      };
     });
   };
 
   // ── Step 1 → select room ──────────────────────────────────────────────────
   const handleSelectRoom = (room: Room, qty: number) => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: location } });
-      return;
-    }
-
     setBooking(prev => {
-      const roomId = room.id || room._id;
-      const exists = prev.selectedRooms.find(item => (item.room.id || item.room._id) === roomId);
+      const targetId = getRoomId(room);
+      const exists = prev.selectedRooms.find(item => getRoomId(item.room) === targetId);
 
-      if (qty === 0) {
+      if (qty <= 0) {
         // Remove room
-        return { ...prev, selectedRooms: prev.selectedRooms.filter(item => (item.room.id || item.room._id) !== roomId) };
+        return {
+          ...prev,
+          selectedRooms: prev.selectedRooms.filter(item => getRoomId(item.room) !== targetId)
+        };
       }
 
       if (exists) {
-        // Update qty
+        // Update count
         return {
           ...prev,
           selectedRooms: prev.selectedRooms.map(item =>
-            (item.room.id || item.room._id) === roomId ? { ...item, count: qty } : item
+            getRoomId(item.room) === targetId ? { ...item, count: qty } : item
           )
         };
       } else {
-        // Add room
-        return { ...prev, selectedRooms: [...prev.selectedRooms, { room, count: qty }] };
+        // Add new room entry
+        return {
+          ...prev,
+          selectedRooms: [...prev.selectedRooms, { room, count: qty }]
+        };
       }
     });
   };
 
   const goToStep2 = () => {
     setStepError(null);
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location } });
+      return;
+    }
     if (booking.selectedRooms.length === 0) { setStepError('Please select at least one room.'); return; }
     if (!booking.checkInDate) { setStepError('Please select check-in date.'); return; }
     if (!booking.checkOutDate) { setStepError('Please select check-out date.'); return; }
+    if (calculateNights(booking.checkInDate, booking.checkOutDate) < 1) {
+      setStepError('Check-out date must be after check-in date (minimum 1 night).');
+      return;
+    }
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };

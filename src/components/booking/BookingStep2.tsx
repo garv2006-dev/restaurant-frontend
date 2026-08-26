@@ -1,6 +1,7 @@
 import React from 'react';
 import type { BookingState } from '../../pages/Booking';
 import { ArrowLeft, ChevronRight, User, Mail, Phone, Users } from 'lucide-react';
+import { formatDateDisplay, calculateNights } from '../../utils/bookingDateUtils';
 
 // ── Mini summary panel ────────────────────────────────────────────────────────
 const MiniSummary: React.FC<{ 
@@ -10,9 +11,9 @@ const MiniSummary: React.FC<{
     appliedDiscount: any;
     gstPercentage: number;
 }> = ({ booking, subtotal, finalAmount, appliedDiscount, gstPercentage }) => {
-    const { selectedRooms, checkInDate, checkOutDate, nights, guests } = booking;
+    const { selectedRooms, checkInDate, checkOutDate, guests } = booking;
     if (selectedRooms.length === 0) return null;
-    const fmt = (d: string) => d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+    const nights = calculateNights(checkInDate, checkOutDate);
 
     // Get the name of the first selected room for the header title (consistency)
     const primaryRoomName = selectedRooms.length > 0 ? selectedRooms[0].room.name : 'Booking Summary';
@@ -28,11 +29,11 @@ const MiniSummary: React.FC<{
             <div className="booking-summary-body">
                 <div className="summary-row">
                     <span className="summary-row-label">Check-in</span>
-                    <span className="summary-row-value">{fmt(checkInDate)}</span>
+                    <span className="summary-row-value">{formatDateDisplay(checkInDate)}</span>
                 </div>
                 <div className="summary-row">
                     <span className="summary-row-label">Check-out</span>
-                    <span className="summary-row-value">{fmt(checkOutDate)}</span>
+                    <span className="summary-row-value">{formatDateDisplay(checkOutDate)}</span>
                 </div>
                 <div className="summary-row">
                     <span className="summary-row-label">Stay</span>

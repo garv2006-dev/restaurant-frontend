@@ -6,6 +6,7 @@ import { bookingsAPI, reviewsAPI } from '../services/api';
 import { Booking } from '../types';
 import { useNotifications } from '../context/NotificationContext';
 import { useSocket } from '../contexts/SocketContext';
+import { formatDateDisplay } from '../utils/bookingDateUtils';
 import '../styles/my-bookings-theme.css';
 
 const MyBookings: React.FC = () => {
@@ -24,11 +25,7 @@ const MyBookings: React.FC = () => {
   const { socket } = useSocket();
 
   const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}/${month}/${year}`;
+    return formatDateDisplay(dateStr);
   };
 
   const checkReviewStatuses = useCallback(async (bookingsList: Booking[]) => {

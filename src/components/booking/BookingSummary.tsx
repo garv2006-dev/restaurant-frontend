@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { BookingState } from '../../pages/Booking';
 import type { Room } from '../../types';
+import { formatDateDisplay, calculateNights } from '../../utils/bookingDateUtils';
 
 interface BookingSummaryProps {
     booking: BookingState;
@@ -18,26 +19,18 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
     onContinue,
     onUpdateRoomQty,
 }) => {
-    const { selectedRooms, checkInDate, checkOutDate, nights } = booking;
-    const ready = !!(selectedRooms.length > 0 && checkInDate && checkOutDate);
-
-    const fmt = (d: string) => {
-        if (!d) return '—';
-        const date = new Date(d);
-        const day = date.getDate().toString().padStart(2, '0');
-        const month = date.toLocaleString('default', { month: 'short' });
-        const year = date.getFullYear();
-        return `${day} ${month} ${year}`;
-    };
+    const { selectedRooms, checkInDate, checkOutDate } = booking;
+    const nights = calculateNights(checkInDate, checkOutDate);
+    const roomsCount = selectedRooms.reduce((acc, curr) => acc + (curr.count || 1), 0);
+    const ready = selectedRooms.length > 0 && !!checkInDate && !!checkOutDate && nights >= 1;
 
     const primaryRoomName = selectedRooms.length === 0 ? 'No rooms selected'
         : selectedRooms.length === 1 ? selectedRooms[0].room.name
-            : 'Multiple Rooms';
+            : `Multiple Rooms (${roomsCount})`;
 
-    // Room removing logic: Decrement by 1
+    // Room removal: set quantity to 0
     const handleRemove = (item: any) => {
-        const newQty = Math.max(0, item.count - 1);
-        onUpdateRoomQty(item.room, newQty);
+        onUpdateRoomQty(item.room, 0);
     };
 
     const taxAmount = subtotal * (gstPercentage / 100);
@@ -53,19 +46,19 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
             <div className="booking-summary-body" style={{ paddingBottom: '0' }}>
                 <div className="summary-row">
                     <span className="summary-row-label">Check-in</span>
-                    <span className="summary-row-value">{fmt(checkInDate)}</span>
+                    <span className="summary-row-value">{formatDateDisplay(checkInDate)}</span>
                 </div>
                 <div className="summary-row">
                     <span className="summary-row-label">Check-out</span>
-                    <span className="summary-row-value">{fmt(checkOutDate)}</span>
+                    <span className="summary-row-value">{formatDateDisplay(checkOutDate)}</span>
                 </div>
                 <div className="summary-row">
                     <span className="summary-row-label">Nights</span>
-                    <span className="summary-row-value">{nights || 0}</span>
+                    <span className="summary-row-value">{nights}</span>
                 </div>
                 <div className="summary-row">
                     <span className="summary-row-label">Rooms</span>
-                    <span className="summary-row-value">{selectedRooms.reduce((acc, curr) => acc + curr.count, 0)}</span>
+                    <span className="summary-row-value">{roomsCount}</span>
                 </div>
 
                 <div style={{ marginTop: '24px' }}>
@@ -124,9 +117,9 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                                 ₹{totalAmount.toLocaleString()}
                             </span>
                         </div>
-                    </div >
+                    </div>
                 )}
-            </div >
+            </div>
             {ready ? (
                 <div style={{ padding: '24px', borderTop: '1px solid var(--booking-border)', display: 'flex', flexDirection: 'column', gap: '24px', background: 'var(--booking-card-bg, white)' }}>
                     <button
@@ -147,7 +140,7 @@ const BookingSummary: React.FC<BookingSummaryProps> = ({
                     </button>
                 </div>
             )}
-        </div >
+        </div>
     );
 };
 

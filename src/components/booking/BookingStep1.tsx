@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BookingSummary from './BookingSummary';
+import { calculateNights, getRoomId, getTodayDateString } from '../../utils/bookingDateUtils';
 
 // ── Feature icon helper ────────────────────────────────────────────────────
 const FEATURE_ICONS: Record<string, React.ReactNode> = {
@@ -50,31 +51,43 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, booking, isSelected, onSelect
     const [fetching, setFetching] = useState(false);
     const [localQty, setLocalQty] = useState(1);
 
-    const hasDates = !!(booking.checkInDate && booking.checkOutDate);
+    const validStay = calculateNights(booking.checkInDate, booking.checkOutDate) >= 1;
+    const roomId = getRoomId(room);
 
     // Fetch available count when dates change
     useEffect(() => {
-        if (!hasDates) { setAvailable(null); return; }
-        const fetch = async () => {
+        if (!validStay || !roomId) { setAvailable(null); return; }
+        let isMounted = true;
+
+        const fetchAvailability = async () => {
             setFetching(true);
             try {
-                const res = await roomsAPI.getRoomNumbers(room._id || room.id, {
+                const res = await roomsAPI.getRoomNumbers(roomId, {
                     checkInDate: booking.checkInDate,
                     checkOutDate: booking.checkOutDate,
                     status: 'Available',
                 });
-                const cnt = res.success ? (res.data?.length ?? 0) : (room.availableCount ?? room.totalRoomNumbers ?? 5);
-                setAvailable(cnt);
+                if (isMounted) {
+                    const cnt = res.success && Array.isArray(res.data) ? res.data.length : (room.availableCount ?? room.totalRoomNumbers ?? 5);
+                    setAvailable(cnt);
+                }
             } catch {
-                setAvailable(room.availableCount ?? room.totalRoomNumbers ?? 5);
-            } finally { setFetching(false); }
+                if (isMounted) {
+                    setAvailable(room.availableCount ?? room.totalRoomNumbers ?? 5);
+                }
+            } finally {
+                if (isMounted) {
+                    setFetching(false);
+                }
+            }
         };
-        fetch();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [booking.checkInDate, booking.checkOutDate, room._id, room.id, hasDates, room.availableCount, room.totalRoomNumbers]);
+
+        fetchAvailability();
+        return () => { isMounted = false; };
+    }, [booking.checkInDate, booking.checkOutDate, roomId, validStay, room.availableCount, room.totalRoomNumbers]);
 
     const maxQty = available ?? (room.availableCount ?? room.totalRoomNumbers ?? 5);
-    const isUnavailable = room.status !== 'Available' || (hasDates && available === 0) || isAdmin;
+    const isUnavailable = room.status !== 'Available' || (validStay && available === 0) || isAdmin;
 
     // Real-time calculation of remaining available rooms
     const currentAvailable = available !== null ? Math.max(0, available - (isSelected ? selectedQty : 0)) : null;
@@ -97,7 +110,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, booking, isSelected, onSelect
         }
     };
 
-    const badgeText = fetching ? 'Checking…' : !hasDates ? 'Select dates' : currentAvailable === 0 ? 'Fully Booked' : currentAvailable !== null && currentAvailable <= 3 ? `Only ${currentAvailable} Left!` : currentAvailable !== null ? `${currentAvailable} Available` : '';
+    const badgeText = fetching ? 'Checking…' : !validStay ? 'Select valid dates' : currentAvailable === 0 ? 'Fully Booked' : currentAvailable !== null && currentAvailable <= 3 ? `Only ${currentAvailable} Left!` : currentAvailable !== null ? `${currentAvailable} Available` : '';
     const badgeCls = currentAvailable === 0 ? 'unavailable' : currentAvailable !== null && currentAvailable <= 3 ? 'limited' : 'available';
 
     const features = room.features
@@ -158,7 +171,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, booking, isSelected, onSelect
             </div>
 
             {/* Quantity selector — only show AFTER selection */}
-            {isSelected && hasDates && !isUnavailable && (
+            {isSelected && validStay && !isUnavailable && (
                 <div className="room-qty-area">
                     <div className="room-qty-title">ROOM QUANTITY</div>
                     <div className="room-qty-row">
@@ -195,13 +208,13 @@ const BookingStep1: React.FC<Step1Props> = ({
 }) => {
     const { user } = useAuth();
     const isAdmin = user?.role === 'admin';
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayDateString();
     const checkInRef = useRef<HTMLInputElement>(null);
     const checkOutRef = useRef<HTMLInputElement>(null);
 
-    const dateError = booking.checkInDate && booking.checkOutDate &&
-        new Date(booking.checkOutDate) <= new Date(booking.checkInDate)
-        ? 'Check-out must be after check-in' : '';
+    const nights = calculateNights(booking.checkInDate, booking.checkOutDate);
+    const dateError = booking.checkInDate && booking.checkOutDate && nights < 1
+        ? 'Check-out date must be after check-in date' : '';
 
     const handleFieldClick = (ref: React.RefObject<HTMLInputElement | null>) => {
         const el = ref.current as any;
@@ -261,9 +274,9 @@ const BookingStep1: React.FC<Step1Props> = ({
                     </div>
 
                     <div className="date-bar-divider">
-                        {booking.nights > 0 && booking.checkInDate && booking.checkOutDate && !dateError && (
+                        {nights > 0 && booking.checkInDate && booking.checkOutDate && !dateError && (
                             <div className="date-bar-nights-circle">
-                                <span>{booking.nights} N</span>
+                                <span>{nights} N</span>
                             </div>
                         )}
                     </div>
@@ -283,7 +296,7 @@ const BookingStep1: React.FC<Step1Props> = ({
 
                 {dateError && (
                     <div className="booking-error-alert booking-alert warning" style={{ borderLeft: '4px solid #f56565' }}>
-                        {/* Icon removed */} {dateError}
+                        {dateError}
                     </div>
                 )}
 
@@ -317,10 +330,11 @@ const BookingStep1: React.FC<Step1Props> = ({
                 ) : (
                     <div className="booking-rooms-grid">
                         {rooms.map(room => {
-                            const selectedItem = booking.selectedRooms.find(i => (i.room.id || i.room._id) === (room.id || room._id));
+                            const targetId = getRoomId(room);
+                            const selectedItem = booking.selectedRooms.find(i => getRoomId(i.room) === targetId);
                             return (
                                 <RoomCard
-                                    key={room.id || room._id}
+                                    key={targetId}
                                     room={room}
                                     booking={booking}
                                     isSelected={!!selectedItem}
@@ -349,3 +363,4 @@ const BookingStep1: React.FC<Step1Props> = ({
 };
 
 export default BookingStep1;
+
