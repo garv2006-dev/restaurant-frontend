@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<boolean>;
+  googleLogin: (idToken: string) => Promise<boolean>;
   register: (userData: RegisterData) => Promise<boolean>;
   logout: () => void;
   updatePassword: (currentPassword: string, newPassword: string) => Promise<boolean>;
@@ -17,6 +18,29 @@ interface AuthContextType extends AuthState {
   refreshUser: () => Promise<void>;
   setAuthState: React.Dispatch<React.SetStateAction<AuthState>>
 }
+
+export const isTokenExpired = (token: string | null | undefined): boolean => {
+  if (!token) return true;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return true;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonPayload);
+    if (!payload.exp) return false;
+    // Current time in seconds vs exp in seconds (5 sec buffer)
+    const currentTime = Math.floor(Date.now() / 1000);
+    return payload.exp <= currentTime + 5;
+  } catch (error) {
+    return true; // If parsing fails, treat as expired/invalid
+  }
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -42,6 +66,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }));
   }, []);
 
+  // Helper function for automatic logout when token expires
+  const handleAutoLogout = useCallback((reason = 'Your session has expired. Please sign in again.') => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userType');
+
+    updateAuthState({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      loading: false,
+    });
+
+    toast.error(reason, {
+      toastId: 'session-expired-toast',
+      position: "top-center",
+      autoClose: 4000,
+    });
+  }, [updateAuthState]);
+
   // Initialize auth state from localStorage on mount
   useEffect(() => {
     const initializeAuth = async () => {
@@ -50,30 +94,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const storedUser = localStorage.getItem('user');
         const userType = localStorage.getItem('userType') as 'admin' | 'user' | null;
 
-        if (token && storedUser) {
-          try {
-            const response = await authAPI.getMe();
-            if (response.success && response.user) {
-              const user = {
-                ...response.user,
-                role: response.user.role || (userType === 'admin' ? 'admin' : 'user')
-              };
+        if (token) {
+          // Client-side JWT expiration check
+          if (isTokenExpired(token)) {
+            console.warn('🔑 JWT token is expired');
+            handleAutoLogout('Your session has expired. Please sign in again.');
+            return;
+          }
 
-              updateAuthState({
-                user,
-                token,
-                isAuthenticated: true,
-                loading: false,
-              });
-              // Update stored user data
-              localStorage.setItem('user', JSON.stringify(user));
-              return;
-            }
-          } catch (error) {
-            // Token validation failed, but don't logout immediately
-            console.error('Auth initialization failed:', error);
-            // Try to use stored user data if API is temporarily unavailable
-            if (storedUser && token) {
+          if (storedUser) {
+            try {
+              const response = await authAPI.getMe();
+              if (response.success && response.user) {
+                const user = {
+                  ...response.user,
+                  role: response.user.role || (userType === 'admin' ? 'admin' : 'user')
+                };
+
+                updateAuthState({
+                  user,
+                  token,
+                  isAuthenticated: true,
+                  loading: false,
+                });
+                localStorage.setItem('user', JSON.stringify(user));
+                return;
+              }
+            } catch (error: any) {
+              console.error('Auth initialization failed:', error);
+              if (
+                error.response?.status === 401 ||
+                error.message?.toLowerCase().includes('token expired') ||
+                error.message?.toLowerCase().includes('jwt expired')
+              ) {
+                handleAutoLogout('Your session has expired. Please sign in again.');
+                return;
+              }
+
+              // Fallback for offline network failure (not 401)
               try {
                 const parsedUser = JSON.parse(storedUser);
                 updateAuthState({
@@ -84,53 +142,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 });
                 return;
               } catch (parseError) {
-                console.error('Failed to parse stored user data:', parseError);
+                handleAutoLogout('Your session has expired. Please sign in again.');
+                return;
               }
             }
           }
         }
 
-        // Only logout if no valid stored data exists
-        if (!token || !storedUser) {
-          updateAuthState({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-            loading: false,
-          });
-        } else {
-          // If we have stored data but API failed, keep user logged in
-          try {
-            const parsedUser = JSON.parse(storedUser);
-            updateAuthState({
-              user: parsedUser,
-              token,
-              isAuthenticated: true,
-              loading: false,
-            });
-          } catch (parseError) {
-            console.error('Failed to parse stored user data:', parseError);
-            updateAuthState({
-              user: null,
-              token: null,
-              isAuthenticated: false,
-              loading: false,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Unexpected error during auth initialization:', error);
         updateAuthState({
           user: null,
           token: null,
           isAuthenticated: false,
           loading: false,
         });
+      } catch (error) {
+        console.error('Unexpected error during auth initialization:', error);
+        handleAutoLogout('Your session has expired. Please sign in again.');
       }
     };
 
     initializeAuth();
-  }, [updateAuthState]);
+  }, [updateAuthState, handleAutoLogout]);
+
+  // Listen for global auth:expired custom events dispatched by Axios interceptor
+  useEffect(() => {
+    const onAuthExpired = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const message = customEvent.detail?.message || 'Your session has expired. Please sign in again.';
+      handleAutoLogout(message);
+    };
+
+    window.addEventListener('auth:expired', onAuthExpired);
+    return () => {
+      window.removeEventListener('auth:expired', onAuthExpired);
+    };
+  }, [handleAutoLogout]);
+
+  // Periodic token expiration check (every 30 seconds)
+  useEffect(() => {
+    if (!authState.isAuthenticated || !authState.token) return;
+
+    const interval = setInterval(() => {
+      if (authState.token && isTokenExpired(authState.token)) {
+        console.warn('🔑 Token expired during active session');
+        handleAutoLogout('Your session has expired. Please sign in again.');
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [authState.isAuthenticated, authState.token, handleAutoLogout]);
 
   const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
     try {
@@ -175,6 +235,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error: any) {
       console.error('Login error:', error);
+
+      updateAuthState({ loading: false });
+      return false;
+    }
+  }, [updateAuthState]);
+
+  const googleLogin = useCallback(async (idToken: string): Promise<boolean> => {
+    try {
+      updateAuthState({ loading: true });
+
+      const response = await authAPI.googleLogin(idToken);
+
+      if (response.success && response.user && response.token) {
+        const { user, token } = response;
+        const userRole = user.role || 'user';
+        const effectiveUserType: 'admin' | 'user' = userRole === 'admin' ? 'admin' : 'user';
+
+        // Store in localStorage
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify({ ...user, role: userRole }));
+        localStorage.setItem('userType', effectiveUserType);
+
+        // Update state
+        updateAuthState({
+          user: { ...user, role: userRole },
+          token,
+          isAuthenticated: true,
+          loading: false,
+        });
+
+        // Show success toast
+        toast.success(`Welcome back, ${user.name || 'User'}!`, {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+
+        return true;
+      } else {
+        throw new Error(response.message || 'Google login failed');
+      }
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Google login failed';
+      toast.error(errorMessage);
 
       updateAuthState({ loading: false });
       return false;
@@ -445,6 +553,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated: authState.isAuthenticated,
     loading: authState.loading,
     login,
+    googleLogin,
     register,
     logout,
     updatePassword,
@@ -462,6 +571,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     authState.isAuthenticated,
     authState.loading,
     login,
+    googleLogin,
     register,
     logout,
     updatePassword,

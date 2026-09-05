@@ -32,7 +32,7 @@ const Login: React.FC = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const defaultPath = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard';
+      const defaultPath = user?.role === 'admin' ? '/admin/dashboard' : '/';
       const fromState = (location.state as any)?.from;
       const from = fromState
         ? (fromState.pathname + (fromState.search || ''))

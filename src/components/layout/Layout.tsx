@@ -1,6 +1,7 @@
 import React, { ReactNode } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import AIAssistant from '../ai/AIAssistant';
 import { useAccessibility } from '../../context/AccessibilityContext';
 
 interface LayoutProps {
@@ -33,6 +34,9 @@ const Layout: React.FC<LayoutProps> = ({ children, hideFooter = false }) => {
       </main>
 
       {!hideFooter && <Footer />}
+
+      {/* Floating AI Hotel Assistant */}
+      <AIAssistant />
     </div>
   );
 };

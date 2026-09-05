@@ -72,15 +72,16 @@ api.interceptors.response.use(
       return api(config);
     }
 
-    // Only logout on 401 for specific API calls and not during app initialization
-    const isAuthMeAPI = error.config?.url?.includes('/auth/me');
-
-    if (error.response?.status === 401 && !isAuthMeAPI) {
-      // Clear token and redirect to login
+    // Handle 401 Unauthorized (JWT token expired or invalid)
+    if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       localStorage.removeItem('userType');
-      window.location.href = '/login';
+
+      const errorMessage = (error.response?.data as any)?.message || 'Session expired. Please log in again.';
+      window.dispatchEvent(new CustomEvent('auth:expired', {
+        detail: { message: errorMessage }
+      }));
     }
 
     // Enhance error message for timeouts
