@@ -46,7 +46,7 @@ const INITIAL_STATE: BookingState = {
   selectedRooms: [],
   guests: { adults: 1, children: 0 },
   guestDetails: { name: '', email: '', phone: '' },
-  paymentMethod: 'Razorpay',
+  paymentMethod: 'Cash',
 };
 
 

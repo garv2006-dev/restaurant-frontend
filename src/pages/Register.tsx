@@ -21,7 +21,8 @@ const Register: React.FC = () => {
   const [errors, setErrors] = useState<Partial<RegisterData & { confirmPassword: string; terms: string }>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const { register, loading, isAuthenticated } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
@@ -188,9 +189,14 @@ const Register: React.FC = () => {
 
     if (!validateForm()) return;
 
-    const success = await register(formData);
-    if (success) {
-      navigate('/verify-code', { state: { email: formData.email, mode: 'register' } });
+    try {
+      setIsSubmitting(true);
+      const success = await register(formData);
+      if (success) {
+        navigate('/verify-code', { state: { email: formData.email, mode: 'register' } });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -417,10 +423,10 @@ const Register: React.FC = () => {
                       type="submit"
                       variant="primary"
                       size="lg"
-                      disabled={loading}
+                      disabled={isSubmitting}
                       className="d-flex align-items-center justify-content-center"
                     >
-                      {loading ? (
+                      {isSubmitting ? (
                         <LoadingSpinner size="sm" message="" />
                       ) : (
                         <>

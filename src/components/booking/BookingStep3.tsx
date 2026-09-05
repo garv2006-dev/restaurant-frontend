@@ -13,7 +13,7 @@ const getImageUrl = (room: any) => {
 
 // ── Payment methods ───────────────────────────────────────────────────────────
 const PAYMENT_METHODS = [
-    { methodId: 'Razorpay', label: 'Online Payment', desc: 'Credit Card, UPI, Wallets etc.', icon: <CreditCard size={20} /> },
+    { methodId: 'Razorpay', label: 'Online Payment', desc: 'Credit Card, UPI, Wallets etc.', icon: <CreditCard size={20} />, disabled: true, badge: 'Coming Soon' },
     { methodId: 'Cash', label: 'Pay at Hotel', desc: 'Cash on arrival', icon: <Wallet size={20} /> },
 ];
 
@@ -207,9 +207,14 @@ const BookingStep3: React.FC<Step3Props> = ({
     booking, subtotal, finalAmount, appliedDiscount, processing, gstPercentage,
     onPaymentMethodChange, onDiscountApplied, onBack, onPayNow,
 }) => {
-    const [selectedLabel, setSelectedLabel] = useState('Online Payment');
+    const defaultMethod = PAYMENT_METHODS.find(m => m.methodId === booking.paymentMethod && !m.disabled)
+        || PAYMENT_METHODS.find(m => !m.disabled)
+        || PAYMENT_METHODS[0];
+
+    const [selectedLabel, setSelectedLabel] = useState(defaultMethod.label);
 
     const handleMethodSelect = (method: typeof PAYMENT_METHODS[0]) => {
+        if (method.disabled) return;
         setSelectedLabel(method.label);
         onPaymentMethodChange(method.methodId);
     };
@@ -232,26 +237,43 @@ const BookingStep3: React.FC<Step3Props> = ({
                         <div className="lux-form-label" style={{ color: 'var(--booking-gold-dark)', marginBottom: '24px' }}>Select Payment Method</div>
 
                         <div className="payment-methods-grid">
-                            {PAYMENT_METHODS.map((m, idx) => (
-                                <div
-                                    key={idx}
-                                    className={`payment-method-card ${selectedLabel === m.label ? 'selected' : ''}`}
-                                    onClick={() => handleMethodSelect(m)}
-                                >
-                                    <div className="payment-method-icon">{m.icon}</div>
-                                    <div style={{ flex: 1 }}>
-                                        <div className="payment-method-name">{m.label}</div>
-                                        <div className="payment-method-desc">{m.desc}</div>
+                            {PAYMENT_METHODS.map((m, idx) => {
+                                const isSelected = selectedLabel === m.label;
+                                const isDisabled = !!m.disabled;
+
+                                return (
+                                    <div
+                                        key={idx}
+                                        className={`payment-method-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
+                                        onClick={() => handleMethodSelect(m)}
+                                    >
+                                        <div className="payment-method-icon">{m.icon}</div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                                <div className="payment-method-name" style={{ margin: 0 }}>{m.label}</div>
+                                                {isDisabled && m.badge && (
+                                                    <span className="badge-coming-soon">{m.badge}</span>
+                                                )}
+                                            </div>
+                                            <div className="payment-method-desc">{m.desc}</div>
+                                        </div>
+                                        <div className="payment-method-radio"><div /></div>
                                     </div>
-                                    <div className="payment-method-radio"><div /></div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
-                        <div className="booking-alert info" style={{ marginTop: '32px' }}>
-                            <Lock size={16} />
-                            <span style={{ fontWeight: 500 }}>Payments are securely handled by Razorpay. Your details are never stored on our servers.</span>
-                        </div>
+                        {selectedLabel === 'Online Payment' ? (
+                            <div className="booking-alert info" style={{ marginTop: '32px' }}>
+                                <Lock size={16} />
+                                <span style={{ fontWeight: 500 }}>Payments are securely handled by Razorpay. Your details are never stored on our servers.</span>
+                            </div>
+                        ) : (
+                            <div className="booking-alert info" style={{ marginTop: '32px' }}>
+                                <Wallet size={16} />
+                                <span style={{ fontWeight: 500 }}>Pay upon arrival at the hotel during check-in. No online payment required now.</span>
+                            </div>
+                        )}
 
                         {/* Discount */}
                         <div style={{ marginTop: '40px' }}>
