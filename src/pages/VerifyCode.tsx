@@ -113,7 +113,7 @@ const VerifyCode: React.FC = () => {
             if (mode === 'register') {
                 const res = await verifyAccount(email, otpString);
                 if (res) {
-                    navigate('/dashboard');
+                    navigate('/');
                 }
             } else {
                 const res = await verifyOtp(email, otpString);

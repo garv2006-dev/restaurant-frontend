@@ -17,32 +17,26 @@ const SocialLogin: React.FC<SocialLoginProps> = ({
   loading = false,
   setLoading
 }) => {
-  const { refreshUser } = useAuth();
+  const { googleLogin } = useAuth();
 
   const handleSocialLogin = async (provider: 'google', idToken?: string) => {
     if (setLoading) setLoading(true);
     
     try {
-      // Use Google OAuth directly without Firebase
       if (!idToken) {
         onError?.('Google authentication token is required');
         return;
       }
       
-      const result = await authAPI.googleLogin(idToken);
-      
-      if (result.success && result.user && result.token) {
-        // Store in localStorage
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('user', JSON.stringify(result.user));
-        localStorage.setItem('userType', result.user.role || 'customer');
-        
-        // Refresh the auth context to pick up new values
-        await refreshUser();
-        
-        onSuccess?.(result.user, result.token);
+      const success = await googleLogin(idToken);
+      if (success) {
+        const storedUser = localStorage.getItem('user');
+        const token = localStorage.getItem('token');
+        if (storedUser && token) {
+          onSuccess?.(JSON.parse(storedUser), token);
+        }
       } else {
-        onError?.(result.message || 'Login failed');
+        onError?.('Login failed');
       }
     } catch (error: any) {
       console.error(`${provider} login error:`, error);
