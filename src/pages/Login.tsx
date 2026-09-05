@@ -25,6 +25,8 @@ const Login: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const { login, loading, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -116,6 +118,7 @@ const Login: React.FC = () => {
     if (!validateForm()) return;
 
     try {
+      setIsSubmitting(true);
       const success = await login(credentials);
       if (!success) {
         // The error is likely already toasted by AuthContext, 
@@ -124,6 +127,8 @@ const Login: React.FC = () => {
       }
     } catch (err: any) {
       setServerError(err.message || 'An unexpected error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -176,7 +181,7 @@ const Login: React.FC = () => {
                 )}
 
                 <div className="mb-3">
-                  <GoogleLoginButton />
+                  <GoogleLoginButton onLoadingChange={setIsGoogleSubmitting} />
                 </div>
 
                 <div className="position-relative mb-4">
@@ -280,10 +285,10 @@ const Login: React.FC = () => {
                       type="submit"
                       variant="primary"
                       size="lg"
-                      disabled={loading}
+                      disabled={isSubmitting || isGoogleSubmitting}
                       className="d-flex align-items-center justify-content-center py-3 fw-semibold"
                     >
-                      {loading ? (
+                      {isSubmitting || isGoogleSubmitting ? (
                         <LoadingSpinner size="sm" message="" />
                       ) : (
                         <>
