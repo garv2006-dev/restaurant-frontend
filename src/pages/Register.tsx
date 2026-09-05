@@ -22,7 +22,7 @@ const Register: React.FC = () => {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { register, loading, isAuthenticated } = useAuth();
+  const { register, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
