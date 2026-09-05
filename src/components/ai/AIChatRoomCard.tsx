@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AvailableRoom } from '../../services/aiService';
-import { Users, Bed, Wifi, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Users, Bed, CheckCircle2, ArrowRight } from 'lucide-react';
 
 interface AIChatRoomCardProps {
   room: AvailableRoom;
