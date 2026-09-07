@@ -102,36 +102,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             return;
           }
 
-          if (storedUser) {
-            try {
-              const response = await authAPI.getMe();
-              if (response.success && response.user) {
-                const user = {
-                  ...response.user,
-                  role: response.user.role || (userType === 'admin' ? 'admin' : 'user')
-                };
+          try {
+            const response = await authAPI.getMe();
+            if (response.success && response.user) {
+              const user = {
+                ...response.user,
+                role: response.user.role || (userType === 'admin' ? 'admin' : 'user')
+              };
 
-                updateAuthState({
-                  user,
-                  token,
-                  isAuthenticated: true,
-                  loading: false,
-                });
-                localStorage.setItem('user', JSON.stringify(user));
-                return;
-              }
-            } catch (error: any) {
-              console.error('Auth initialization failed:', error);
-              if (
-                error.response?.status === 401 ||
-                error.message?.toLowerCase().includes('token expired') ||
-                error.message?.toLowerCase().includes('jwt expired')
-              ) {
-                handleAutoLogout('Your session has expired. Please sign in again.');
-                return;
-              }
+              updateAuthState({
+                user,
+                token,
+                isAuthenticated: true,
+                loading: false,
+              });
+              localStorage.setItem('user', JSON.stringify(user));
+              return;
+            }
+          } catch (error: any) {
+            console.error('Auth initialization failed:', error);
+            if (
+              error.response?.status === 401 ||
+              error.message?.toLowerCase().includes('token expired') ||
+              error.message?.toLowerCase().includes('jwt expired')
+            ) {
+              handleAutoLogout('Your session has expired. Please sign in again.');
+              return;
+            }
 
-              // Fallback for offline network failure (not 401)
+            // Fallback for offline network failure (not 401)
+            if (storedUser) {
               try {
                 const parsedUser = JSON.parse(storedUser);
                 updateAuthState({
@@ -148,6 +148,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           }
         }
+
+        // Clean up orphan tokens if unauthenticated
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userType');
 
         updateAuthState({
           user: null,

@@ -94,6 +94,9 @@ const AIAssistant: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const chatWindowRef = useRef<HTMLDivElement>(null);
+  const chatBodyRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMessages([
@@ -119,6 +122,79 @@ const AIAssistant: React.FC = () => {
     }
   }, [isOpen, messages, loading]);
 
+  // Close AI Assistant modal when clicking or scrolling outside the assistant widget
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleScrollOutside = (e: Event) => {
+      if (chatWindowRef.current && !chatWindowRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleWheelOutside = (e: WheelEvent) => {
+      if (chatWindowRef.current && !chatWindowRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    window.addEventListener('scroll', handleScrollOutside, true);
+    window.addEventListener('wheel', handleWheelOutside, { passive: true });
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScrollOutside, true);
+      window.removeEventListener('wheel', handleWheelOutside);
+    };
+  }, [isOpen]);
+
+  // Isolate scroll within the AI Assistant window to prevent background page scrolling
+  useEffect(() => {
+    const windowEl = chatWindowRef.current;
+    const bodyEl = chatBodyRef.current;
+    if (!windowEl || !isOpen) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      // Prevent wheel event from scrolling background document
+      e.preventDefault();
+
+      if (!bodyEl) return;
+      const { scrollTop, scrollHeight, clientHeight } = bodyEl;
+      const delta = e.deltaY;
+
+      if (delta < 0 && scrollTop > 0) {
+        bodyEl.scrollTop = Math.max(0, scrollTop + delta);
+      } else if (delta > 0 && scrollTop + clientHeight < scrollHeight) {
+        bodyEl.scrollTop = Math.min(scrollHeight - clientHeight, scrollTop + delta);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!bodyEl) return;
+      const isInsideBody = bodyEl.contains(e.target as Node);
+      const isScrollable = bodyEl.scrollHeight > bodyEl.clientHeight;
+
+      if (!isInsideBody || !isScrollable) {
+        e.preventDefault();
+      }
+    };
+
+    windowEl.addEventListener('wheel', handleWheel, { passive: false });
+    windowEl.addEventListener('touchmove', handleTouchMove, { passive: false });
+
+    return () => {
+      windowEl.removeEventListener('wheel', handleWheel);
+      windowEl.removeEventListener('touchmove', handleTouchMove);
+    };
+  }, [isOpen]);
+
   const handleSend = async (textToSend?: string) => {
     const query = (textToSend || input).trim();
     if (!query || loading) return;
@@ -137,7 +213,7 @@ const AIAssistant: React.FC = () => {
     setLoading(true);
 
     try {
-      const data: ChatResponseData = await sendChatMessage(query);
+      const data: ChatResponseData = await sendChatMessage(query, isAuthenticated);
 
       const aiMsgId = `ai-${Date.now()}`;
       const aiMessage: Message = {
@@ -200,7 +276,7 @@ const AIAssistant: React.FC = () => {
   ];
 
   return (
-    <div className="ai-assistant-wrapper">
+    <div className="ai-assistant-wrapper" ref={wrapperRef}>
       {/* Floating Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -214,7 +290,7 @@ const AIAssistant: React.FC = () => {
 
       {/* Chat Window Modal */}
       {isOpen && (
-        <div className="ai-chat-window">
+        <div className="ai-chat-window" ref={chatWindowRef}>
           {/* Header */}
           <div className="ai-chat-header">
             <div className="d-flex align-items-center gap-2">
@@ -251,7 +327,7 @@ const AIAssistant: React.FC = () => {
           </div>
 
           {/* Chat Body / Messages */}
-          <div className="ai-chat-body">
+          <div className="ai-chat-body" ref={chatBodyRef}>
             {messages.map((msg) => (
               <React.Fragment key={msg.id}>
                 <div className={`ai-chat-bubble ${msg.sender}`}>
@@ -275,9 +351,16 @@ const AIAssistant: React.FC = () => {
                       </span>
                       <div className="d-flex flex-wrap gap-1 mt-1" style={{ maxWidth: '100%' }}>
                         {msg.sources.map((src, i) => (
-                          <span key={i} className="ai-source-badge">
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => handleSend(src.title)}
+                            className="ai-source-badge"
+                            title={`Ask AI about: "${src.title}"`}
+                            disabled={loading}
+                          >
                             {src.title}
-                          </span>
+                          </button>
                         ))}
                       </div>
                     </div>

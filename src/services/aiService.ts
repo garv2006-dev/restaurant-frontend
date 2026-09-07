@@ -36,9 +36,13 @@ export interface ChatApiResponse {
   message?: string;
 }
 
-export const sendChatMessage = async (message: string): Promise<ChatResponseData> => {
+export const sendChatMessage = async (message: string, isAuthenticated: boolean = true): Promise<ChatResponseData> => {
   try {
-    const response = await api.post<ChatApiResponse>('/ai/chat', { message });
+    const headers: Record<string, string> = {};
+    if (!isAuthenticated) {
+      headers['Authorization'] = '';
+    }
+    const response = await api.post<ChatApiResponse>('/ai/chat', { message }, { headers });
     if (response.data && response.data.success && response.data.data) {
       return response.data.data;
     }
