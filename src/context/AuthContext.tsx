@@ -68,6 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Helper function for automatic logout when token expires
   const handleAutoLogout = useCallback((reason = 'Your session has expired. Please sign in again.') => {
+    const hadToken = !!localStorage.getItem('token');
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userType');
@@ -79,11 +80,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       loading: false,
     });
 
-    toast.error(reason, {
-      toastId: 'session-expired-toast',
-      position: "top-center",
-      autoClose: 4000,
-    });
+    if (hadToken) {
+      toast.error(reason, {
+        toastId: 'session-expired-toast',
+        position: "top-center",
+        autoClose: 4000,
+      });
+    }
   }, [updateAuthState]);
 
   // Initialize auth state from localStorage on mount
@@ -104,10 +107,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
           try {
             const response = await authAPI.getMe();
-            if (response.success && response.user) {
+            const fetchedUser = response.user || response.data || (storedUser ? JSON.parse(storedUser) : null);
+
+            if (fetchedUser) {
               const user = {
-                ...response.user,
-                role: response.user.role || (userType === 'admin' ? 'admin' : 'user')
+                ...fetchedUser,
+                role: fetchedUser.role || (userType === 'admin' ? 'admin' : 'user')
               };
 
               updateAuthState({
@@ -147,6 +152,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               }
             }
           }
+
+          // Fallback if stored user data exists locally and token is not expired
+          if (storedUser) {
+            try {
+              const parsedUser = JSON.parse(storedUser);
+              updateAuthState({
+                user: parsedUser,
+                token,
+                isAuthenticated: true,
+                loading: false,
+              });
+              return;
+            } catch (e) {
+              // ignore
+            }
+          }
         }
 
         // Clean up orphan tokens if unauthenticated
@@ -162,7 +183,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
       } catch (error) {
         console.error('Unexpected error during auth initialization:', error);
-        handleAutoLogout('Your session has expired. Please sign in again.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userType');
+        updateAuthState({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+          loading: false,
+        });
       }
     };
 
@@ -495,11 +524,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         const response = await authAPI.getMe();
-        if (response.success && response.user) {
+        const fetchedUser = response.user || response.data;
+        if (fetchedUser) {
           const userType = localStorage.getItem('userType') as 'admin' | 'user' | null;
           const user = {
-            ...response.user,
-            role: response.user.role || (userType === 'admin' ? 'admin' : 'user')
+            ...fetchedUser,
+            role: fetchedUser.role || (userType === 'admin' ? 'admin' : 'user')
           };
 
           updateAuthState({ user });
@@ -508,10 +538,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Refresh user error:', error);
-      // If there's an error refreshing, log out the user
-      logout();
     }
-  }, [logout, updateAuthState]);
+  }, [updateAuthState]);
 
   const verifyEmail = useCallback(async (token: string): Promise<boolean> => {
     try {
