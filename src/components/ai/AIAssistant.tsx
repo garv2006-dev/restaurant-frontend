@@ -343,8 +343,8 @@ const AIAssistant: React.FC = () => {
 
                   <FormattedText text={msg.text} />
 
-                  {/* Render Sources Badges */}
-                  {msg.sources && msg.sources.length > 0 && (
+                  {/* Render Sources Badges (only when no backend tool was used) */}
+                  {msg.sources && msg.sources.length > 0 && !msg.toolUsed && (
                     <div className="mt-2 pt-2 border-top border-secondary border-opacity-10 d-flex flex-column gap-1" style={{ fontSize: '0.72rem' }}>
                       <span className="text-muted fw-medium d-inline-flex align-items-center gap-1">
                         <Info size={12} /> Sources:

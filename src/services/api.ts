@@ -115,9 +115,15 @@ export const authAPI = {
     return response.data;
   },
 
-  getMe: async (): Promise<{ success: boolean; user?: User; message?: string }> => {
-    const response: AxiosResponse<{ success: boolean; user?: User; message?: string }> = await api.get('/auth/me');
-    return response.data;
+  getMe: async (): Promise<{ success: boolean; user?: User; data?: User; message?: string }> => {
+    const response: AxiosResponse<{ success: boolean; user?: User; data?: User; message?: string }> = await api.get('/auth/me');
+    const user = response.data?.user || response.data?.data;
+    return {
+      success: response.data?.success ?? true,
+      user,
+      data: user,
+      message: response.data?.message
+    };
   },
 
   updatePassword: async (currentPassword: string, password: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> => {
